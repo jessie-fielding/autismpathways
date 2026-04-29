@@ -1,9 +1,8 @@
 import { Stack } from 'expo-router';
 
-export default function AppealLayout() {
+export default function AppealJourneyLayout() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="intro" />
       <Stack.Screen name="step-0-situation" />
       <Stack.Screen name="step-1-understand" />
       <Stack.Screen name="step-2-admin-review" />

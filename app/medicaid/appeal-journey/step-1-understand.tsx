@@ -98,7 +98,7 @@ export default function AppealStep1() {
         // Admin issues go to appeal journey
         router.push('/medicaid/appeal-journey/step-2-admin-review');
       } else if (selected === 'income') {
-        // Income issues go to income journey
+        // Income issues go to income quiz (now direct, no intro)
         router.push('/medicaid/income-journey/intro');
       } else if (selected === 'unsure') {
         // Not sure - for now go to appeal journey (we'll build this later)
