@@ -1,0 +1,2655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script src="/js/auth.js"></script>
+  <script src="/js/ap-session.js"></script>
+  <script>Auth.requireAuth();</script>
+
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Medicaid Pathway | Autism Pathways</title>
+  <meta name="theme-color" content="#1a1f5e" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <link rel="apple-touch-icon" href="/images/icon-192.png" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:         #F5F4FB;
+      --card:       #ECEAF8;
+      --navy:       #1a1f5e;
+      --purple:     #7c6fd4;
+      --purple-dk:  #4a3f8f;
+      --text-mid:   #6b6490;
+      --text-light: #a09cbf;
+      --border:     #d4d0ef;
+      --border-lt:  #ede9fc;
+      --white:      #ffffff;
+      --teal:       #3BBFA3;
+      --orange:     #F2835E;
+      --amber:      #E6A817;
+      --green:      #2A9D8F;
+      --blue:       #5B8DEF;
+      --font:       'Inter', sans-serif;
+    }
+
+    html { background: var(--bg); }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--navy);
+      min-height: 100vh;
+      max-width: 430px;
+      margin: 0 auto;
+      padding-bottom: 76px;
+    }
+
+    @media (min-width: 500px) {
+      html { background: #e8e4f0; }
+      body { box-shadow: 0 0 60px rgba(26,31,94,.15); }
+    }
+
+    a { text-decoration: none; color: inherit; }
+
+    /* ============================================================
+       TOP NAV
+    ============================================================ */
+    .top-nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 13px 18px 10px; background: var(--bg);
+      position: sticky; top: 0; z-index: 50;
+      border-bottom: 1px solid rgba(212,208,239,.5);
+    }
+
+    .nav-logo {
+      width: 30px; height: 30px;
+      background: linear-gradient(135deg,#c4b8f0,#a89ee8);
+      border-radius: 8px; overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .nav-logo img { height: 22px; width: auto; }
+    .nav-title { font-size: 14px; font-weight: 700; color: var(--navy); }
+    .nav-title span { color: var(--purple); }
+
+    .nav-pill {
+      padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;
+      background: var(--card); color: var(--purple-dk);
+      border: none; cursor: pointer; font-family: var(--font);
+    }
+
+    /* ============================================================
+       JOURNEY HEADER BANNER
+    ============================================================ */
+    .mj-header {
+      background: var(--card);
+      padding: 20px 20px 16px;
+      text-align: center;
+    }
+
+    .mj-back-link {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 12px; font-weight: 600; color: var(--purple);
+      margin-bottom: 10px; cursor: pointer;
+      background: none; border: none; font-family: var(--font);
+      text-decoration: none;
+    }
+
+    .mj-header h1 {
+      font-size: 22px; font-weight: 800; color: var(--navy);
+      letter-spacing: -.02em; line-height: 1.2; margin-bottom: 6px;
+    }
+
+    .mj-header p {
+      font-size: 13px; color: var(--text-mid); line-height: 1.5;
+    }
+
+    /* ============================================================
+       PROGRESS BAR
+    ============================================================ */
+    .mj-progress {
+      padding: 12px 16px 0; background: var(--bg);
+    }
+
+    .mj-progress-meta {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .mj-progress-label { font-size: 12px; font-weight: 600; color: var(--navy); }
+    .mj-progress-count { font-size: 11px; color: var(--text-light); font-weight: 500; }
+
+    .mj-progress-track {
+      height: 6px; background: var(--border); border-radius: 3px; overflow: hidden;
+    }
+
+    .mj-progress-fill {
+      height: 6px; background: linear-gradient(90deg, var(--purple), #a06fd4);
+      border-radius: 3px; transition: width .4s ease;
+    }
+
+    /* ============================================================
+       STEP PILLS
+    ============================================================ */
+    .mj-pills {
+      display: flex; gap: 6px; overflow-x: auto;
+      padding: 10px 14px 8px; scrollbar-width: none;
+    }
+
+    .mj-pills::-webkit-scrollbar { display: none; }
+
+    .mj-pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 5px 12px; border-radius: 20px; font-size: 11.5px;
+      font-weight: 600; white-space: nowrap; cursor: pointer;
+      border: 1.5px solid var(--border); font-family: var(--font);
+      transition: all .15s;
+    }
+
+    .mj-pill.upcoming { background: var(--white); color: var(--text-light); }
+    .mj-pill.active   { background: var(--purple); color: var(--white); border-color: var(--purple); }
+    .mj-pill.done     { background: var(--card); color: var(--purple-dk); border-color: var(--border-lt); }
+
+    .mj-pill__dot {
+      width: 18px; height: 18px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 700;
+      background: rgba(255,255,255,.25); flex-shrink: 0;
+    }
+
+    .mj-pill.upcoming .mj-pill__dot { background: var(--border); color: var(--text-light); }
+    .mj-pill.active   .mj-pill__dot { background: rgba(255,255,255,.3); color: var(--white); }
+    .mj-pill.done     .mj-pill__dot { background: var(--purple); color: var(--white); }
+
+    .mj-divider { height: 1px; background: var(--border); margin: 0 14px 0; }
+
+    /* ============================================================
+       SCREENS
+    ============================================================ */
+    .mj-screen { display: none; padding: 0 0 16px; }
+    .mj-screen.active { display: block; }
+
+    /* ============================================================
+       CARD
+    ============================================================ */
+    .mj-card {
+      background: var(--white); border-radius: 18px;
+      margin: 14px 14px 0; padding: 18px 16px;
+      box-shadow: 0 2px 12px rgba(74,63,143,.08);
+      border: 1.5px solid var(--border-lt);
+    }
+
+    /* ============================================================
+       EYEBROW / STEP BADGE
+    ============================================================ */
+    .mj-eyebrow {
+      display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
+    }
+
+    .mj-step-badge {
+      width: 24px; height: 24px; border-radius: 50%;
+      background: var(--purple); color: var(--white);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700; flex-shrink: 0;
+    }
+
+    .mj-eyebrow-text {
+      font-size: 11px; font-weight: 700; letter-spacing: .08em;
+      text-transform: uppercase; color: var(--purple);
+    }
+
+    .mj-step-badge.complete { background: var(--teal); }
+
+    /* ============================================================
+       TITLE + BODY
+    ============================================================ */
+    .mj-title {
+      font-size: 19px; font-weight: 800; color: var(--navy);
+      line-height: 1.3; margin-bottom: 12px; letter-spacing: -.01em;
+    }
+
+    .mj-body {
+      font-size: 13.5px; color: var(--text-mid); line-height: 1.7;
+      margin-bottom: 12px;
+    }
+
+    /* ============================================================
+       FRIEND NOTE
+    ============================================================ */
+    .mj-friend-note {
+      display: flex; gap: 10px; align-items: flex-start;
+      background: var(--card); border-radius: 14px;
+      padding: 12px 14px; margin-bottom: 12px;
+      border-left: 3px solid var(--purple);
+    }
+
+    .mj-friend-avatar {
+      font-size: 20px; flex-shrink: 0; margin-top: 1px;
+    }
+
+    .mj-friend-note p {
+      font-size: 13px; color: #4a4570; line-height: 1.65;
+    }
+
+    /* ============================================================
+       CALLOUTS
+    ============================================================ */
+    .mj-callout {
+      border-radius: 12px; padding: 12px 14px;
+      margin-bottom: 12px; font-size: 13px; line-height: 1.6;
+    }
+
+    .mj-callout.yellow {
+      background: #FFF6D8; border: 1.5px solid #f0d080; color: #6a4a00;
+    }
+
+    .mj-callout.blue {
+      background: #EBF3FD; border: 1.5px solid #b8d8f8; color: #1a365d;
+    }
+
+    .mj-callout.red {
+      background: #fde8e8; border: 1.5px solid #e8a09a; color: #7a1a0a;
+    }
+
+    .mj-callout.green {
+      background: #e8fdf0; border: 1.5px solid #b8dece; color: #0a4a2a;
+    }
+
+    .mj-callout-label {
+      display: block; font-size: 11px; font-weight: 700;
+      letter-spacing: .06em; text-transform: uppercase;
+      margin-bottom: 4px; opacity: .7;
+    }
+
+    /* ============================================================
+       TIMELINE (in-card)
+    ============================================================ */
+    .mj-timeline { display: flex; flex-direction: column; gap: 0; }
+
+    .mj-tl-item {
+      display: flex; gap: 10px; position: relative;
+    }
+
+    .mj-tl-left {
+      display: flex; flex-direction: column; align-items: center;
+      width: 28px; flex-shrink: 0;
+    }
+
+    .mj-tl-dot {
+      width: 28px; height: 28px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700; color: var(--white);
+      flex-shrink: 0;
+    }
+
+    .mj-tl-dot.purple { background: var(--purple); }
+    .mj-tl-dot.teal   { background: var(--teal); }
+    .mj-tl-dot.orange { background: var(--orange); }
+    .mj-tl-dot.green  { background: var(--green); }
+    .mj-tl-dot.blue   { background: var(--blue); }
+    .mj-tl-dot.peach  { background: #F2835E; }
+
+    .mj-tl-line {
+      width: 2px; flex: 1; min-height: 16px;
+      background: var(--border); margin: 3px 0;
+    }
+
+    .mj-tl-content {
+      padding-bottom: 14px; flex: 1;
+    }
+
+    .mj-tl-content h4 {
+      font-size: 13.5px; font-weight: 700; color: var(--navy);
+      margin-bottom: 3px; line-height: 1.3;
+    }
+
+    .mj-tl-content p {
+      font-size: 12.5px; color: var(--text-mid); line-height: 1.55;
+    }
+
+    .mj-tl-badge {
+      display: inline-flex; align-items: center; gap: 3px;
+      font-size: 10px; font-weight: 700;
+      padding: 2px 8px; border-radius: 999px; margin-top: 5px;
+    }
+
+    .mj-tl-badge.current { background: var(--card); color: var(--purple); border: 1px solid var(--border); }
+    .mj-tl-badge.next    { background: #e8fdf0; color: var(--green); border: 1px solid #b8dece; }
+
+    /* ============================================================
+       CHOICE CARDS
+    ============================================================ */
+    .mj-choice-grid {
+      display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;
+    }
+
+    .mj-choice-card {
+      display: flex; gap: 12px; align-items: flex-start;
+      padding: 13px 14px; border-radius: 14px;
+      border: 1.5px solid var(--border-lt); background: #faf9ff;
+      cursor: pointer; transition: all .15s;
+    }
+
+    .mj-choice-card:hover  { border-color: var(--purple); background: #f0edfc; }
+    .mj-choice-card.selected { border-color: var(--purple); background: #ede9fc; }
+
+    .mj-choice-icon { font-size: 22px; flex-shrink: 0; margin-top: 1px; }
+
+    .mj-choice-title {
+      font-size: 14px; font-weight: 700; color: var(--navy); margin-bottom: 3px;
+    }
+
+    .mj-choice-desc {
+      font-size: 12.5px; color: var(--text-mid); line-height: 1.5;
+    }
+
+    /* ============================================================
+       STEP LIST (numbered)
+    ============================================================ */
+    .mj-step-list {
+      list-style: none; display: flex; flex-direction: column; gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .mj-step-item {
+      display: flex; gap: 12px; align-items: flex-start;
+    }
+
+    .mj-step-num {
+      width: 26px; height: 26px; border-radius: 50%;
+      background: var(--purple); color: var(--white);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px;
+    }
+
+    .mj-step-item strong {
+      display: block; font-size: 13.5px; font-weight: 700;
+      color: var(--navy); margin-bottom: 3px;
+    }
+
+    .mj-step-item span {
+      font-size: 12.5px; color: var(--text-mid); line-height: 1.55;
+    }
+
+    /* ============================================================
+       CHECKLIST
+    ============================================================ */
+    .mj-checklist {
+      list-style: none; display: flex; flex-direction: column; gap: 7px;
+      margin-bottom: 12px;
+    }
+
+    .mj-checklist-item {
+      display: flex; gap: 8px; align-items: flex-start;
+      font-size: 13px; color: var(--text-mid); line-height: 1.55;
+    }
+
+    .mj-ci-icon {
+      width: 18px; height: 18px; border-radius: 5px;
+      background: var(--teal); color: var(--white);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 700; flex-shrink: 0; margin-top: 2px;
+    }
+
+    /* ============================================================
+       SCRIPT BLOCKS (talking points)
+    ============================================================ */
+    .mj-script {
+      background: var(--card); border-radius: 12px;
+      padding: 12px 14px; margin-bottom: 10px;
+      border-left: 3px solid var(--purple);
+    }
+
+    .mj-script-label {
+      font-size: 10px; font-weight: 700; letter-spacing: .08em;
+      text-transform: uppercase; color: var(--purple); margin-bottom: 6px;
+    }
+
+    .mj-script p {
+      font-size: 13px; color: #4a4570; line-height: 1.65;
+      font-style: italic;
+    }
+
+    /* ============================================================
+       PLAN ACTIONS
+    ============================================================ */
+    .mj-plan-actions {
+      display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;
+    }
+
+    .mj-plan-btn {
+      width: 100%; padding: 13px 16px; border-radius: 50px;
+      font-size: 14px; font-weight: 600; cursor: pointer;
+      font-family: var(--font); border: none; transition: all .15s;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+
+    .mj-plan-btn.purple {
+      background: linear-gradient(135deg,#6ec6e6,var(--purple),#a06fd4);
+      color: var(--white);
+      box-shadow: 0 4px 14px rgba(124,111,212,.35);
+    }
+
+    .mj-plan-btn.outline {
+      background: var(--white); border: 1.5px solid var(--border);
+      color: var(--text-mid);
+    }
+
+    .mj-plan-btn.outline:hover { border-color: var(--purple); color: var(--purple-dk); }
+
+    /* Premium gate */
+    .wv-premium-gate { position: relative; }
+    .wv-premium-gate__content { filter: blur(3px); pointer-events: none; user-select: none; }
+    .wv-gate-overlay {
+      position: absolute; inset: 0; background: rgba(245,244,251,.85);
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; gap: 8px; border-radius: 12px; padding: 16px;
+      text-align: center;
+    }
+    .wv-gate-overlay p { font-size: 13px; color: var(--navy); font-weight: 600; }
+    .wv-gate-btn {
+      padding: 10px 20px; border-radius: 50px;
+      background: linear-gradient(135deg,#f0c040,#e8a800);
+      border: none; font-size: 13px; font-weight: 700;
+      color: var(--navy); cursor: pointer; font-family: var(--font);
+    }
+
+    /* Disclosure / accordion */
+    .mj-disclosure { margin-bottom: 10px; }
+    .mj-disclosure-toggle {
+      width: 100%; display: flex; justify-content: space-between;
+      align-items: center; padding: 10px 14px;
+      background: var(--card); border: none; border-radius: 10px;
+      font-size: 13px; font-weight: 600; color: var(--navy);
+      cursor: pointer; font-family: var(--font); text-align: left;
+    }
+    .mj-disclosure-content { padding: 10px 14px 0; }
+
+    /* Date input */
+    .mj-date-input {
+      width: 100%; padding: 11px 14px;
+      border: 1.5px solid var(--border); border-radius: 12px;
+      font-size: 14px; font-family: var(--font); color: var(--navy);
+      background: var(--white); outline: none; margin-bottom: 10px;
+    }
+
+    .mj-date-input:focus { border-color: var(--purple); }
+
+    /* Denial days */
+    #mj-denial-days {
+      font-size: 12px; color: var(--text-light);
+      font-weight: 500; margin-bottom: 10px; display: block;
+    }
+
+    /* Action cards in plan */
+    .ap-card {
+      background: var(--white); border-radius: 14px;
+      border: 1.5px solid var(--border-lt);
+      padding: 14px; margin-bottom: 10px;
+      box-shadow: 0 2px 8px rgba(74,63,143,.06);
+    }
+
+    .ap-card__title {
+      font-size: 14px; font-weight: 700; color: var(--navy);
+      margin-bottom: 6px; display: flex; align-items: center; gap: 6px;
+    }
+
+    .ap-card__body {
+      font-size: 13px; color: var(--text-mid); line-height: 1.6;
+    }
+
+    .step-badge {
+      font-size: 10px; font-weight: 700; padding: 2px 7px;
+      border-radius: 999px; background: var(--card);
+      color: var(--purple); border: 1px solid var(--border);
+    }
+
+    /* ============================================================
+       NAV BUTTONS
+    ============================================================ */
+    .mj-nav {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 14px 14px 0;
+    }
+
+    .mj-btn-next {
+      padding: 13px 22px;
+      background: linear-gradient(135deg,#6ec6e6,var(--purple),#a06fd4);
+      border: none; border-radius: 50px; font-size: 14px; font-weight: 700;
+      color: var(--white); cursor: pointer; font-family: var(--font);
+      box-shadow: 0 4px 14px rgba(124,111,212,.35);
+      transition: transform .15s;
+    }
+
+    .mj-btn-next:hover { transform: translateY(-1px); }
+
+    .mj-btn-back {
+      padding: 12px 18px; background: var(--white);
+      border: 1.5px solid var(--border); border-radius: 50px;
+      font-size: 14px; font-weight: 600; color: var(--text-mid);
+      cursor: pointer; font-family: var(--font);
+    }
+
+    .mj-btn-back:hover { border-color: var(--purple); color: var(--purple-dk); }
+
+    /* ============================================================
+       COMING SOON SCREENS
+    ============================================================ */
+    .mj-coming-soon {
+      text-align: center; padding: 32px 20px;
+      display: flex; flex-direction: column; align-items: center; gap: 12px;
+    }
+
+    .mj-coming-soon__icon { font-size: 3rem; opacity: .4; }
+    .mj-coming-soon__title { font-size: 18px; font-weight: 800; color: var(--navy); }
+    .mj-coming-soon__sub   { font-size: 13px; color: var(--text-mid); line-height: 1.6; max-width: 260px; }
+
+    /* ============================================================
+       TOAST
+    ============================================================ */
+    #mj-toast {
+      position: fixed; bottom: 82px; left: 50%;
+      transform: translateX(-50%) translateY(8px);
+      background: var(--teal); color: var(--white);
+      font-size: 12.5px; font-weight: 600;
+      padding: 9px 20px; border-radius: 999px;
+      box-shadow: 0 4px 16px rgba(42,157,143,.35); z-index: 9999;
+      opacity: 0; transition: opacity .25s ease, transform .25s ease;
+      pointer-events: none; white-space: nowrap; font-family: var(--font);
+    }
+
+    /* ============================================================
+       RAINBOW + BOTTOM NAV
+    ============================================================ */
+    .rainbow-bar {
+      height: 4px; width: 100%; margin-top: 20px;
+      background: linear-gradient(90deg,#ff6b6b 0%,#ffa94d 16.6%,#ffe066 33.3%,#69db7c 50%,#4dabf7 66.6%,#cc5de8 83.3%,#ff6b6b 100%);
+    }
+
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
+      background: var(--white); border-top: 1px solid var(--border-lt);
+      display: flex; justify-content: space-around; padding: 8px 0 14px;
+      max-width: 430px; margin: 0 auto;
+    }
+
+    @media (min-width: 500px) {
+      .bottom-nav { left: 50%; transform: translateX(-50%); width: 430px; }
+    }
+
+    .bn-item {
+      display: flex; flex-direction: column; align-items: center; gap: 3px;
+      font-size: 10px; font-weight: 600; color: var(--text-light);
+      cursor: pointer; text-decoration: none;
+      background: none; border: none; font-family: var(--font); padding: 4px 8px;
+    }
+
+    .bn-item.active { color: var(--purple-dk); }
+    .bn-icon { font-size: 20px; }
+    .bn-dot  { width: 4px; height: 4px; border-radius: 50%; background: var(--purple); margin: 0 auto; }
+
+    /* ============================================================
+       UPGRADE MODAL
+    ============================================================ */
+    #mj-upgrade-modal {
+      position: fixed; inset: 0; background: rgba(26,31,94,.55);
+      z-index: 9999; display: none; align-items: flex-end;
+      justify-content: center; padding: 16px;
+      backdrop-filter: blur(3px);
+    }
+
+    .mj-modal-card {
+      background: var(--white); border-radius: 20px 20px 16px 16px;
+      padding: 24px 20px 28px; width: 100%; max-width: 400px;
+      box-shadow: 0 -8px 32px rgba(26,31,94,.15);
+    }
+
+    .mj-modal-card h3 {
+      font-size: 18px; font-weight: 800; color: var(--navy);
+      margin-bottom: 8px; letter-spacing: -.01em;
+    }
+
+    .mj-modal-card p {
+      font-size: 13px; color: var(--text-mid); line-height: 1.6; margin-bottom: 16px;
+    }
+
+    .btn--primary {
+      width: 100%; padding: 14px;
+      background: linear-gradient(135deg,#6ec6e6,var(--purple),#a06fd4);
+      border: none; border-radius: 50px; font-size: 15px; font-weight: 700;
+      color: var(--white); cursor: pointer; font-family: var(--font);
+      box-shadow: 0 4px 14px rgba(124,111,212,.35);
+      margin-bottom: 10px;
+    }
+
+    .mj-modal-dismiss {
+      display: block; text-align: center; font-size: 13px;
+      color: var(--text-light); cursor: pointer; font-weight: 500;
+      background: none; border: none; font-family: var(--font); width: 100%;
+    }
+
+    .mj-modal-close {
+      float: right; background: none; border: none;
+      font-size: 18px; color: var(--text-light); cursor: pointer;
+      font-family: var(--font); margin-top: -4px;
+    }
+
+    /* Fix any remaining old styles */
+    .mj-shell { background: transparent; }
+    .page-hero, .page-section, .page-nav, .roadmap,
+    .hero-pills, .disclaimer-card, .section-header,
+    .info-banner, .accordion-toggle, .accordion-content { display: none !important; }
+
+    /* Hide print guide on screen */
+    .mj-print-guide,
+    #mj-print-guide,
+    .mj-print-header,
+    .mj-print-section,
+    .mj-print-checklist { display: none !important; }
+
+    @media print {
+      .mj-print-guide,
+      #mj-print-guide { display: block !important; }
+      .top-nav, .bottom-nav, .mj-progress,
+      .mj-pills, .mj-screen, .mj-divider,
+      .mj-header { display: none !important; }
+    }
+  </style>
+  <!-- Privacy-friendly analytics by Plausible -->
+  <script async src="https://plausible.io/js/pa-eJ51ZANZ8LPBVlq76XANx.js"></script>
+  <script>
+    window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
+    plausible.init()
+  </script>
+</head>
+<body>
+
+  <!-- TOP NAV -->
+  <div class="top-nav">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div class="nav-logo">
+        <img src="/images/autism-pathways-logo.png" alt="AP"
+             onerror="this.parentElement.innerHTML='🌈';" />
+      </div>
+      <div class="nav-title">Autism <span>Pathways</span></div>
+    </div>
+    <button class="nav-pill" onclick="window.location.href='dashboard.html'">← Dashboard</button>
+  </div>
+
+  <!-- JOURNEY SHELL -->
+  <div id="medicaid-journey">
+    <div class="mj-shell">
+
+      <!-- Header banner -->
+      <div class="mj-header">
+        <a href="dashboard.html" class="mj-back-link">← How this works</a>
+        <h1>Medicaid Pathway</h1>
+        <p>A guided walkthrough based on exactly where you are right now — not a wall of information.</p>
+      </div>
+
+      <!-- Progress bar -->
+      <div class="mj-progress" id="mj-progress-bar">
+        <div class="mj-progress-meta">
+          <span class="mj-progress-label" id="mj-progress-label">Step 1 of 6</span>
+          <span class="mj-progress-count" id="mj-progress-count">17% complete</span>
+        </div>
+        <div class="mj-progress-track">
+          <div class="mj-progress-fill" id="mj-progress-fill" style="width:17%;"></div>
+        </div>
+      </div>
+
+      <!-- Step pills -->
+      <div class="mj-pills" id="mj-pills" role="tablist" aria-label="Medicaid pathway steps">
+        <!-- Rendered by mjBuildPills() -->
+      </div>
+
+      <div class="mj-divider"></div>
+
+      <!-- ALL SCREENS -->
+<!-- ════════════════════════════════════════════════════════
+           SCREEN 0 — Overview / How This Works
+      ════════════════════════════════════════════════════════════ -->
+      <div class="mj-screen active" id="mj-screen-0">
+        <div class="mj-card">
+
+          <!-- Eyebrow -->
+          <div class="mj-eyebrow">
+            <div class="mj-step-badge" aria-hidden="true">1</div>
+            <span class="mj-eyebrow-text">Before We Start</span>
+          </div>
+
+          <!-- Title -->
+          <h2 class="mj-title">
+            Here's how the Medicaid pathway works
+          </h2>
+
+          <!-- Friend note -->
+          <div class="mj-friend-note" role="note">
+            <div class="mj-friend-avatar" aria-hidden="true">👋</div>
+            <p>
+              Getting denied is more common than you think — and it is not
+              the final word. I want to walk you through exactly what this
+              means and what comes next. You're not behind.
+              You're still moving forward.
+            </p>
+          </div>
+
+          <!-- Yellow callout -->
+          <div class="mj-callout yellow" role="note">
+            <span class="mj-callout-label">⚡ Important to know</span>
+            Being denied for household Medicaid based on income does
+            <strong>not</strong> necessarily mean your child will never
+            qualify. There may be a disability-based pathway — but it
+            usually requires a separate process.
+          </div>
+
+          <!-- Mini-timeline -->
+          <p style="font-size:.78rem; font-weight:700;
+                    color:var(--ap-text-light); text-transform:uppercase;
+                    letter-spacing:.08em; margin-bottom:.75rem;">
+            The full pathway at a glance
+          </p>
+
+          <div class="mj-timeline" role="list">
+
+            <!-- Step 1 -->
+            <div class="mj-tl-item" role="listitem">
+              <div class="mj-tl-left">
+                <div class="mj-tl-dot purple"
+                     aria-hidden="true">1</div>
+                <div class="mj-tl-line"></div>
+              </div>
+              <div class="mj-tl-content">
+                <h4>Apply for Medicaid for the Whole Family</h4>
+                <p>
+                  The starting point for most families — even if you're
+                  unsure whether you'll qualify.
+                </p>
+              </div>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="mj-tl-item" role="listitem">
+              <div class="mj-tl-left">
+                <div class="mj-tl-dot teal"
+                     aria-hidden="true">2</div>
+                <div class="mj-tl-line"></div>
+              </div>
+              <div class="mj-tl-content">
+                <h4>If Approved — Explore Child-Specific Supports</h4>
+                <p>
+                  Medicaid approval opens the door to waivers and
+                  disability-related services.
+                </p>
+              </div>
+            </div>
+
+            <!-- Step 3 — current -->
+            <div class="mj-tl-item" role="listitem">
+              <div class="mj-tl-left">
+                <div class="mj-tl-dot orange"
+                     aria-hidden="true">3</div>
+                <div class="mj-tl-line"></div>
+              </div>
+              <div class="mj-tl-content">
+                <h4>If Denied — This Is Not the End</h4>
+                <p>
+                  A denial often reflects income, not your child's
+                  eligibility. There's usually another path.
+                </p>
+                <span class="mj-tl-badge current"
+                      aria-label="You are here">
+                  You are here
+                </span>
+              </div>
+            </div>
+
+            <!-- Step 4 -->
+            <div class="mj-tl-item" role="listitem">
+              <div class="mj-tl-left">
+                <div class="mj-tl-dot green"
+                     aria-hidden="true">4</div>
+                <div class="mj-tl-line"></div>
+              </div>
+              <div class="mj-tl-content">
+                <h4>Apply for Disability Determination for the Child</h4>
+                <p>
+                  A separate process through SSI or your state's disability
+                  office — not the same as Medicaid.
+                </p>
+                <span class="mj-tl-badge next">Coming up</span>
+              </div>
+            </div>
+
+            <!-- Step 5 -->
+            <div class="mj-tl-item" role="listitem">
+              <div class="mj-tl-left">
+                <div class="mj-tl-dot blue"
+                     aria-hidden="true">5</div>
+                <div class="mj-tl-line"></div>
+              </div>
+              <div class="mj-tl-content">
+                <h4>After Disability Approval — Reapply for Medicaid</h4>
+                <p>
+                  Disability approval can open a different Medicaid
+                  eligibility pathway for your child.
+                </p>
+              </div>
+            </div>
+
+            <!-- Step 6 -->
+            <div class="mj-tl-item" role="listitem">
+              <div class="mj-tl-left">
+                <div class="mj-tl-dot peach"
+                     aria-hidden="true">6</div>
+                <!-- No line — last item -->
+              </div>
+              <div class="mj-tl-content">
+                <h4>Explore Waivers, County Programs &amp; Support Services</h4>
+                <p>
+                  With Medicaid in place, the next layer is finding what
+                  specific programs are available in your area.
+                </p>
+              </div>
+            </div>
+
+          </div>
+          <!-- /mj-timeline -->
+
+        </div>
+        <!-- /mj-card -->
+
+        <!-- Nav — screen 0 has no back button -->
+        <div class="mj-nav">
+          <span></span>
+          <button class="mj-btn-next"
+                  onclick="mjGoTo(1)"
+                  aria-label="Continue to your situation">
+            Let's get started →
+          </button>
+        </div>
+
+      </div>
+      <!-- /mj-screen-0 -->
+
+      <!-- ════════════════════════════════════════════════════════
+           SCREEN 1 — Your Situation
+      ════════════════════════════════════════════════════════════ -->
+      <div class="mj-screen" id="mj-screen-1">
+        <div class="mj-card">
+
+          <!-- Eyebrow -->
+          <div class="mj-eyebrow">
+            <div class="mj-step-badge" aria-hidden="true">2</div>
+            <span class="mj-eyebrow-text">Your Situation</span>
+          </div>
+
+          <!-- Title -->
+          <h2 class="mj-title">
+            What happened with your Medicaid application?
+          </h2>
+
+          <p class="mj-body">
+            Pick the one that fits closest. This helps the app figure out
+            exactly which path makes sense for your family.
+          </p>
+
+          <!-- Choice cards -->
+          <span class="mj-choice-label">Choose one</span>
+
+          <div class="mj-choice-grid"
+               data-save-key="ap_medicaid_situation"
+               role="radiogroup"
+               aria-label="Medicaid application status">
+
+            <button class="mj-choice-card"
+                    data-value="denied"
+                    onclick="mjSelectChoice(this)"
+                    role="radio"
+                    aria-checked="false">
+              <div class="mj-choice-icon yellow"
+                   aria-hidden="true">📄</div>
+              <div class="mj-choice-text">
+                <strong>We were denied</strong>
+                <span>
+                  We got a denial letter and aren't sure what to do next
+                </span>
+              </div>
+              <div class="mj-choice-check"
+                   aria-hidden="true">✓</div>
+            </button>
+
+            <button class="mj-choice-card"
+                    data-value="approved"
+                    onclick="mjSelectChoice(this)"
+                    role="radio"
+                    aria-checked="false">
+              <div class="mj-choice-icon green"
+                   aria-hidden="true">✅</div>
+              <div class="mj-choice-text">
+                <strong>We were approved</strong>
+                <span>
+                  We have Medicaid and want to know what comes next
+                </span>
+              </div>
+              <div class="mj-choice-check"
+                   aria-hidden="true">✓</div>
+            </button>
+
+            <button class="mj-choice-card"
+                    data-value="not_yet"
+                    onclick="mjSelectChoice(this)"
+                    role="radio"
+                    aria-checked="false">
+              <div class="mj-choice-icon red"
+                   aria-hidden="true">🕐</div>
+              <div class="mj-choice-text">
+                <strong>We haven't applied yet</strong>
+                <span>
+                  We're not sure where to start or if we'll qualify
+                </span>
+              </div>
+              <div class="mj-choice-check"
+                   aria-hidden="true">✓</div>
+            </button>
+
+          </div>
+          <!-- /mj-choice-grid -->
+
+          <!-- Teal callout -->
+          <div class="mj-callout teal" role="note">
+            <span class="mj-callout-label">💡 How this works</span>
+            Each situation leads to a different set of next steps.
+            The app will only show you what's actually relevant to
+            where you are right now.
+          </div>
+
+        </div>
+        <!-- /mj-card -->
+
+        <!-- Nav -->
+        <div class="mj-nav">
+          <button class="mj-btn-back"
+                  onclick="mjGoTo(0)"
+                  aria-label="Go back to overview">
+            ← Back
+          </button>
+          <button class="mj-btn-next"
+                  id="mj-next-1"
+                  onclick="mjNext()"
+                  aria-label="Continue with selected situation">
+            This is us →
+          </button>
+        </div>
+
+      </div>
+      <!-- /mj-screen-1 -->
+
+      <!-- ════════════════════════════════════════════════════════
+           SCREEN 2 — Understanding Your Denial
+           (shown when situation = denied)
+      ════════════════════════════════════════════════════════════ -->
+      <div class="mj-screen" id="mj-screen-2">
+        <div class="mj-card">
+
+          <!-- Eyebrow -->
+          <div class="mj-eyebrow">
+            <div class="mj-step-badge" aria-hidden="true">3</div>
+            <span class="mj-eyebrow-text">Understanding Your Denial</span>
+          </div>
+
+          <!-- Title -->
+          <h2 class="mj-title">
+            What does your denial notice say?
+          </h2>
+
+          <p class="mj-body">
+            Pick the category that best matches the reason listed on
+            your denial letter. If you're not sure, start with the
+            one that feels closest.
+          </p>
+
+          <!-- Choice cards -->
+          <span class="mj-choice-label">Choose one</span>
+
+          <div class="mj-choice-grid"
+               data-save-key="ap_medicaid_denial_reason"
+               role="radiogroup"
+               aria-label="Denial reason">
+
+            <button class="mj-choice-card"
+                    data-value="admin"
+                    onclick="mjSelectChoice(this)"
+                    role="radio"
+                    aria-checked="false">
+              <div class="mj-choice-icon yellow"
+                   aria-hidden="true">📋</div>
+              <div class="mj-choice-text">
+                <strong>Administrative or paperwork issue</strong>
+                <span>
+                  Missing documents, incomplete application,
+                  or a processing error
+                </span>
+              </div>
+              <div class="mj-choice-check"
+                   aria-hidden="true">✓</div>
+            </button>
+
+            <button class="mj-choice-card"
+                    data-value="income"
+                    onclick="mjSelectChoice(this)"
+                    role="radio"
+                    aria-checked="false">
+              <div class="mj-choice-icon red"
+                   aria-hidden="true">💰</div>
+              <div class="mj-choice-text">
+                <strong>Income or eligibility issue</strong>
+                <span>
+                  Income was above the threshold, or child wasn't
+                  evaluated under disability criteria
+                </span>
+              </div>
+              <div class="mj-choice-check"
+                   aria-hidden="true">✓</div>
+            </button>
+
+            <button class="mj-choice-card"
+                    data-value="unsure"
+                    onclick="mjSelectChoice(this)"
+                    role="radio"
+                    aria-checked="false">
+              <div class="mj-choice-icon green"
+                   aria-hidden="true">❓</div>
+              <div class="mj-choice-text">
+                <strong>I'm not sure why we were denied</strong>
+                <span>
+                  The letter was confusing or didn't clearly
+                  explain the reason
+                </span>
+              </div>
+              <div class="mj-choice-check"
+                   aria-hidden="true">✓</div>
+            </button>
+
+          </div>
+          <!-- /mj-choice-grid -->
+
+          <!-- Purple callout -->
+          <div class="mj-callout purple" role="note">
+            <span class="mj-callout-label">📌 What this means</span>
+            An income-based denial for the household does
+            <strong>not</strong> mean your child can't qualify.
+            Children with significant support needs often have a
+            separate eligibility pathway. That's exactly what
+            we're going to walk through.
+          </div>
+
+        </div>
+        <!-- /mj-card -->
+
+        <!-- Nav -->
+        <div class="mj-nav">
+          <button class="mj-btn-back"
+                  onclick="mjGoTo(1)"
+                  aria-label="Go back to your situation">
+            ← Back
+          </button>
+          <button class="mj-btn-next"
+                  onclick="mjGoTo(3)"
+                  aria-label="Continue to your rights">
+            That's our reason →
+          </button>
+        </div>
+
+      </div>
+      <!-- /mj-screen-2 -->
+
+      <!-- ════════════════════════════════════════════════════════
+           SCREEN 3 — Your Rights
+      ════════════════════════════════════════════════════════════ -->
+      <div class="mj-screen" id="mj-screen-3">
+        <div class="mj-card">
+
+          <!-- Eyebrow -->
+          <div class="mj-eyebrow">
+            <div class="mj-step-badge" aria-hidden="true">4</div>
+            <span class="mj-eyebrow-text">Your Rights</span>
+          </div>
+
+          <!-- Title -->
+          <h2 class="mj-title">
+            You have the right to appeal any Medicaid denial.
+          </h2>
+
+          <!-- Friend note -->
+          <div class="mj-friend-note" role="note">
+            <div class="mj-friend-avatar" aria-hidden="true">💜</div>
+            <p>
+              This is the part most families don't know about until
+              it's too late. You have a window to appeal — and many
+              appeals are won when families show up with the right
+              documentation. Please don't wait on this one.
+            </p>
+          </div>
+
+          <!-- Yellow callout -->
+          <div class="mj-callout yellow" role="alert">
+            <span class="mj-callout-label">
+              ⏰ Deadlines vary by state
+            </span>
+            Your denial notice should include the specific deadline
+            and instructions for how to file. Read it carefully and
+            act before the deadline passes. If you're unsure, call
+            the agency and ask:
+            <strong>"What is the deadline to request a fair hearing?"</strong>
+          </div>
+
+          <!-- Checklist -->
+          <p style="font-size:.82rem; font-weight:700;
+                    color:var(--ap-text); margin-bottom:.75rem;">
+            When appealing makes sense:
+          </p>
+
+          <ul class="mj-checklist"
+              aria-label="When to appeal">
+            <li class="mj-checklist-item">
+              <span class="mj-ci-icon" aria-hidden="true">✓</span>
+              You believe the denial was based on incorrect information
+            </li>
+            <li class="mj-checklist-item">
+              <span class="mj-ci-icon" aria-hidden="true">✓</span>
+              You have documentation that wasn't included in
+              the original application
+            </li>
+            <li class="mj-checklist-item">
+              <span class="mj-ci-icon" aria-hidden="true">✓</span>
+              The denial reason doesn't match your situation
+              as you understand it
+            </li>
+            <li class="mj-checklist-item">
+              <span class="mj-ci-icon" aria-hidden="true">✓</span>
+              You were denied under a category that may not have
+              been the right one for your child
+            </li>
+          </ul>
+
+        </div>
+        <!-- /mj-card -->
+
+        <!-- Nav -->
+        <div class="mj-nav">
+          <button class="mj-btn-back"
+                  onclick="mjGoTo(2)"
+                  aria-label="Go back to denial reason">
+            ← Back
+          </button>
+          <button class="mj-btn-next"
+                  onclick="mjGoTo(4)"
+                  aria-label="Continue to next steps">
+            Got it, what do I do? →
+          </button>
+        </div>
+
+      </div>
+      <!-- /mj-screen-3 -->
+
+      <!-- ════════════════════════════════════════════════════════
+           SCREEN 4 — Next Steps
+      ════════════════════════════════════════════════════════════ -->
+      <div class="mj-screen" id="mj-screen-4">
+        <div class="mj-card">
+
+          <!-- Eyebrow -->
+          <div class="mj-eyebrow">
+            <div class="mj-step-badge" aria-hidden="true">5</div>
+            <span class="mj-eyebrow-text">Right Now</span>
+          </div>
+
+          <!-- Title -->
+          <h2 class="mj-title">
+            Here's what to do right now
+          </h2>
+
+          <p class="mj-body">
+            These are the five things that matter most in the next
+            few days. You don't have to do them all at once —
+            but don't wait too long on the first two.
+          </p>
+
+          <!-- Numbered step list -->
+          <ol class="mj-step-list"
+              aria-label="Five immediate next steps">
+
+            <li class="mj-step-item">
+              <div class="mj-step-num" aria-hidden="true">1</div>
+              <div>
+                <strong>Save the denial letter</strong>
+                <span>
+                  Note the date it was issued and the exact reason
+                  listed. You'll need both.
+                </span>
+              </div>
+            </li>
+
+            <li class="mj-step-item">
+              <div class="mj-step-num" aria-hidden="true">2</div>
+              <div>
+                <strong>
+                  Call the agency and ask them to explain the
+                  reason in plain language
+                </strong>
+                <span>
+                  It's okay to say you don't understand the letter.
+                  That's what they're there for.
+                </span>
+              </div>
+            </li>
+
+            <li class="mj-step-item">
+              <div class="mj-step-num" aria-hidden="true">3</div>
+              <div>
+                <strong>
+                  Ask: "Is there a disability-based Medicaid pathway
+                  for my child?"
+                </strong>
+                <span>
+                  Many caseworkers won't volunteer this. You have
+                  to ask directly.
+                </span>
+              </div>
+            </li>
+
+            <li class="mj-step-item">
+              <div class="mj-step-num" aria-hidden="true">4</div>
+              <div>
+                <strong>Ask about your right to appeal</strong>
+                <span>
+                  Deadlines vary by state and are listed on the
+                  denial notice.
+                </span>
+              </div>
+            </li>
+
+            <li class="mj-step-item">
+              <div class="mj-step-num" aria-hidden="true">5</div>
+              <div>
+                <strong>
+                  Consider starting a disability determination
+                  process in parallel
+                </strong>
+                <span>
+                  You don't have to wait for the appeal to resolve
+                  before starting this.
+                </span>
+              </div>
+            </li>
+
+          </ol>
+
+        </div>
+        <!-- /mj-card -->
+
+        <!-- Appeal CTA -->
+        <div style="margin:0 0 16px;background:linear-gradient(135deg,#fde8e8,#fdf0ee);border:1.5px solid #e8a09a;border-radius:16px;padding:16px 18px;">
+          <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#c0392b;margin-bottom:6px;">⚖️ Ready to appeal?</div>
+          <div style="font-size:14px;font-weight:700;color:#1a1f5e;margin-bottom:6px;">Track your denial and never miss a deadline.</div>
+          <div style="font-size:12.5px;color:#6b6490;line-height:1.5;margin-bottom:12px;">The Appeal Tracker walks you through every step — what documents to gather, when your hearing is, and what to say.</div>
+          <a href="appeal-tracker.html?new=medicaid" style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#6ec6e6,#7c6fd4,#a06fd4);color:#fff;padding:12px 20px;border-radius:50px;font-size:14px;font-weight:700;text-decoration:none;box-shadow:0 4px 14px rgba(124,111,212,.35);">⚖️ File an Appeal →</a>
+        </div>
+        <!-- Nav -->
+
+        <div style="margin:0 0 14px;background:linear-gradient(135deg,#fde8e8,#fdf0ee);border:1.5px solid #e8a09a;border-radius:16px;padding:14px 16px;">
+          <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#c0392b;margin-bottom:6px;">⚖️ Know your rights</div>
+          <div style="font-size:14px;font-weight:700;color:#1a1f5e;margin-bottom:4px;">How to file for a State Fair Hearing</div>
+          <div style="font-size:12.5px;color:#6b6490;line-height:1.5;margin-bottom:10px;">If your Medicaid is denied, you have the right to a fair hearing. Our guide walks you through exactly how to request one, what to bring, and what to say.</div>
+          <a href="https://info.autismpathways.app/state-fair-hearing-guide" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#e8605a,#c0392b);color:#fff;padding:10px 18px;border-radius:50px;font-size:13px;font-weight:700;text-decoration:none;">Read the Fair Hearing Guide →</a>
+        </div>
+        <div class="mj-nav">
+          <button class="mj-btn-back"
+                  onclick="mjGoTo(3)"
+                  aria-label="Go back to your rights">
+            ← Back
+          </button>
+          <button class="mj-btn-next"
+                  onclick="mjGoTo(5)"
+                  aria-label="Continue to your action plan">
+            Build my action plan →
+          </button>
+        </div>
+
+      </div>
+      <!-- /mj-screen-4 -->
+
+      <!-- ════════════════════════════════════════════════════════
+           SCREEN 5 — Your Plan
+      ════════════════════════════════════════════════════════════ -->
+      <div class="mj-screen" id="mj-screen-5">
+        <div class="mj-card">
+
+          <!-- Eyebrow -->
+          <div class="mj-eyebrow">
+            <div class="mj-step-badge complete"
+                 aria-hidden="true">✓</div>
+            <span class="mj-eyebrow-text"
+                  style="color:var(--accent-teal);">
+              Your Plan Is Ready
+            </span>
+          </div>
+
+          <!-- Centered outcome header -->
+          <div style="text-align:center; margin-bottom:1.5rem;">
+            <div style="font-size:2rem; margin-bottom:.5rem;"
+                 aria-hidden="true">🗺️</div>
+            <h2 class="mj-title" style="margin-bottom:.3rem;">
+              Your Personalized Action Plan
+            </h2>
+            <p style="font-size:.82rem; color:var(--ap-text-light);
+                      margin:0;" id="mj-plan-subtitle">
+              Based on what you told us —
+              <span id="mj-plan-denial-reason">your situation</span>,
+              <span class="mj-state-placeholder">your state</span>
+            </p>
+          </div>
+
+          <!-- Date-based callout -->
+          <div class="mj-callout teal" role="note">
+            <span class="mj-callout-label"
+                  id="mj-denial-days">
+              📅 Based on your dates
+            </span>
+            Check your denial letter immediately for the appeal
+            deadline. If you applied recently, you may still be
+            within the appeal window.
+          </div>
+
+          <!-- Key next step callout -->
+          <div class="mj-callout purple" role="note">
+            <span class="mj-callout-label">🔑 Your most important next step</span>
+            Ask the agency about a disability-specific Medicaid
+            pathway for your child. This is separate from the
+            household application and is often the right path for
+            children with significant support needs.
+          </div>
+
+          <!-- What to prepare -->
+          <p style="font-size:.82rem; font-weight:700;
+                    color:var(--ap-text); margin-bottom:.75rem;">
+            What to prepare:
+          </p>
+
+          <ul class="mj-checklist"
+              aria-label="Documents to prepare">
+            <li class="mj-checklist-item">
+              <span class="mj-ci-icon" aria-hidden="true">📄</span>
+              The original denial letter — you'll need the date
+              and reason
+            </li>
+            <li class="mj-checklist-item">
+              <span class="mj-ci-icon" aria-hidden="true">🏥</span>
+              All diagnostic evaluations and medical records
+            </li>
+            <li class="mj-checklist-item">
+              <span class="mj-ci-icon" aria-hidden="true">📝</span>
+              Therapy notes and progress reports
+            </li>
+            <li class="mj-checklist-item">
+              <span class="mj-ci-icon" aria-hidden="true">🏫</span>
+              School IEP or eligibility documentation
+            </li>
+            <li class="mj-checklist-item">
+              <span class="mj-ci-icon" aria-hidden="true">💬</span>
+              A written description in your own words of your
+              child's daily support requirements
+            </li>
+          </ul>
+
+          <!-- Friend note -->
+          <div class="mj-friend-note" role="note">
+            <div class="mj-friend-avatar" aria-hidden="true">💜</div>
+            <p>
+              This process is hard and it is not your fault it's
+              this complicated. Many families go through multiple
+              applications before finding the right program.
+              Each step — even a denial — gives you more information
+              and moves you closer to the right answer.
+            </p>
+          </div>
+
+          <!-- Free / Premium plan cards -->
+          <div class="mj-plan-cards">
+
+            <!-- Free card -->
+            <div class="mj-plan-card free"
+                 role="region"
+                 aria-label="Free printable action guide">
+
+              <h3>
+                📄 Printable Action Guide
+                <span class="mj-free-badge">✓ Free</span>
+              </h3>
+
+              <p>
+                A complete checklist covering every step — what to
+                do right now, what to gather, what to say when you
+                call, and what comes next. Print it, save it,
+                share it.
+              </p>
+
+              <p style="font-size:.78rem; font-weight:700;
+                        color:var(--ap-text-mid); margin-bottom:.5rem;
+                        text-transform:uppercase; letter-spacing:.05em;">
+                What's included
+              </p>
+
+              <ul class="mj-plan-checklist">
+                <li>
+                  <span style="color:var(--accent-teal);
+                               font-weight:700;">✓</span>
+                  The 5 immediate action steps
+                </li>
+                <li>
+                  <span style="color:var(--accent-teal);
+                               font-weight:700;">✓</span>
+                  Document gathering checklist (8 items)
+                </li>
+                <li>
+                  <span style="color:var(--accent-teal);
+                               font-weight:700;">✓</span>
+                  What to say when you call (3 scripts)
+                </li>
+                <li>
+                  <span style="color:var(--accent-teal);
+                               font-weight:700;">✓</span>
+                  The disability determination pathway explained
+                </li>
+                <li>
+                  <span style="color:var(--accent-teal);
+                               font-weight:700;">✓</span>
+                  What to do while you wait
+                </li>
+              </ul>
+
+              <button class="mj-plan-btn teal"
+                      onclick="mjPrintGuide()"
+                      aria-label="Print or download your free action guide">
+                🖨️ Print / Download Guide
+              </button>
+
+              <p class="mj-plan-note">
+                No account required. Save as PDF to keep
+                a digital copy.
+              </p>
+
+            </div>
+            <!-- /free card -->
+
+            <!-- Premium card -->
+            <div class="mj-plan-card premium"
+                 role="region"
+                 aria-label="Premium in-app action tracker">
+
+              <span class="mj-premium-badge"
+                    aria-label="Premium feature">
+                ⭐ Premium
+              </span>
+
+              <h3>📱 In-App Action Tracker</h3>
+
+              <p>
+                Interactive checklists, document vault, talking
+                point scripts with copy buttons, and personalized
+                next steps — everything the printable guide covers,
+                but alive and working for you every day.
+              </p>
+
+              <!-- Progress ring -->
+              <div class="mj-progress-ring"
+                   aria-label="Example progress ring showing 40 percent complete">
+                <svg width="60" height="60"
+                     viewBox="0 0 60 60"
+                     fill="none"
+                     role="img"
+                     aria-hidden="true">
+                  <defs>
+                    <linearGradient id="mj-ring-grad"
+                                    x1="0%" y1="0%"
+                                    x2="100%" y2="100%">
+                      <stop offset="0%"
+                            stop-color="var(--accent-purple)" />
+                      <stop offset="100%"
+                            stop-color="var(--accent-teal)" />
+                    </linearGradient>
+                  </defs>
+                  <circle cx="30" cy="30" r="23"
+                          stroke="var(--ap-border)"
+                          stroke-width="5"
+                          fill="none" />
+                  <circle cx="30" cy="30" r="23"
+                          stroke="url(#mj-ring-grad)"
+                          stroke-width="5"
+                          fill="none"
+                          stroke-linecap="round"
+                          stroke-dasharray="144.5"
+                          stroke-dashoffset="86.7"
+                          transform="rotate(-90 30 30)" />
+                  <text x="30" y="34"
+                        text-anchor="middle"
+                        font-family="Poppins, sans-serif"
+                        font-size="10"
+                        font-weight="700"
+                        fill="var(--ap-text)">40%</text>
+                </svg>
+                <span class="mj-ring-label">Your Progress</span>
+              </div>
+
+              <p style="font-size:.78rem; font-weight:700;
+                        color:var(--ap-text-mid); margin-bottom:.5rem;
+                        text-transform:uppercase; letter-spacing:.05em;">
+                What's included
+              </p>
+
+              <ul class="mj-plan-checklist">
+                <li>
+                  <span style="color:var(--accent-amber);
+                               font-weight:700;">⭐</span>
+                  Interactive checklist — checkboxes that save
+                  your progress
+                </li>
+                <li>
+                  <span style="color:var(--accent-amber);
+                               font-weight:700;">⭐</span>
+                  Document vault — upload and organize denial
+                  letter, evaluations, IEP
+                </li>
+                <li>
+                  <span style="color:var(--accent-amber);
+                               font-weight:700;">⭐</span>
+                  Talking point scripts with one-tap copy button
+                </li>
+                <li>
+                  <span style="color:var(--accent-amber);
+                               font-weight:700;">⭐</span>
+                  Appeal deadline countdown based on your
+                  denial date
+                </li>
+                <li>
+                  <span style="color:var(--accent-amber);
+                               font-weight:700;">⭐</span>
+                  Personalized timeline for your state
+                </li>
+                <li>
+                  <span style="color:var(--accent-amber);
+                               font-weight:700;">⭐</span>
+                  Push notification reminders for key deadlines
+                </li>
+              </ul>
+
+              <button class="mj-plan-btn purple"
+                      onclick="mjShowUpgradeModal()"
+                      aria-label="Upgrade to premium for $9.99/mo">
+                ⭐ Upgrade — $9.99/mo or $79.99/yr
+              </button>
+
+              <p class="mj-plan-note">
+                Cancel anytime.
+                Annual plan: $79.99/yr (~$6.67/mo)
+              </p>
+
+            </div>
+            <!-- /premium card -->
+
+          </div>
+          <!-- /mj-plan-cards -->
+
+        </div>
+        <!-- /mj-card -->
+
+        <!-- Nav -->
+        <div class="mj-nav">
+          <button class="mj-btn-back"
+                  onclick="mjGoTo(4)"
+                  aria-label="Go back to next steps">
+            ← Back
+          </button>
+          <button class="mj-btn-next teal"
+                  onclick="mjSavePlan()"
+                  aria-label="Save your action plan">
+            Save my plan 💾
+          </button>
+        </div>
+
+      </div>
+      <!-- /mj-screen-5 -->
+
+      <!-- ════════════════════════════════════════════════════════
+           SCREEN 7 — Coming Soon (Approved path)
+      ════════════════════════════════════════════════════════════ -->
+      <div class="mj-screen" id="mj-screen-7">
+        <div class="mj-card">
+          <div class="mj-eyebrow">
+            <div class="mj-step-badge complete">✓</div>
+            <span class="mj-eyebrow-text" style="color:var(--teal);">Approved Path</span>
+          </div>
+          <h2 class="mj-title">Great news — Medicaid is in place.</h2>
+          <div class="mj-friend-note" role="note">
+            <div class="mj-friend-avatar">🎉</div>
+            <p>Having Medicaid is a real foundation. The next step is exploring what disability-related services and waiver programs are available — and there is often more than families realize.</p>
+          </div>
+          <div class="mj-callout green">
+            <span class="mj-callout-label">✅ What Medicaid approval unlocks</span>
+            With Medicaid active, your child may now qualify for Home and Community-Based Services (HCBS) waivers — programs that fund respite, behavioral support, day habilitation, and more. These require a separate application.
+          </div>
+          <div class="mj-step-list">
+            <div class="mj-step-item"><div class="mj-step-num" style="background:var(--teal);">1</div><div><strong>Explore waiver programs in your state</strong><span>Use the Waiver Explorer to see every available program, wait times, and whether your child likely qualifies.</span></div></div>
+            <div class="mj-step-item"><div class="mj-step-num" style="background:var(--teal);">2</div><div><strong>Get on the waitlist immediately</strong><span>Most states have waitlists of 2-10+ years. The sooner you apply, the sooner the clock starts.</span></div></div>
+            <div class="mj-step-item"><div class="mj-step-num" style="background:var(--teal);">3</div><div><strong>Start the disability determination process</strong><span>Many waivers require formal disability determination in addition to Medicaid. The Disability Quiz shows what you need.</span></div></div>
+            <div class="mj-step-item"><div class="mj-step-num" style="background:var(--teal);">4</div><div><strong>Connect with your local agency</strong><span>In Colorado this is your Community Centered Board (CCB). In other states it may be a Regional Center, LIDDA, or county board.</span></div></div>
+          </div>
+        </div>
+        <div style="margin:12px 14px 0;background:linear-gradient(135deg,#e3f7f1,#c8f0e8);border:1.5px solid #a0d8cc;border-radius:16px;padding:14px 16px;">
+          <div style="font-size:13.5px;font-weight:700;color:#1a1f5e;margin-bottom:4px;">🔗 Find your local agency</div>
+          <div style="font-size:12.5px;color:#6b6490;line-height:1.5;margin-bottom:10px;">The Community Connector shows your exact local CCB, LIDDA, or Regional Center — with phone numbers and direct links to get on the waitlist.</div>
+          <a href="community-connector.html" style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#3BBFA3,#2a9d8f);color:#fff;padding:11px 18px;border-radius:50px;font-size:13px;font-weight:700;text-decoration:none;">Find My Local Agency →</a>
+        </div>
+        <div style="margin:10px 14px 0;background:#ECEAF8;border:1.5px solid #ede9fc;border-radius:16px;padding:14px 16px;">
+          <div style="font-size:13.5px;font-weight:700;color:#1a1f5e;margin-bottom:4px;">📋 Waiver Application Checklist</div>
+          <div style="font-size:12.5px;color:#6b6490;line-height:1.5;margin-bottom:10px;">Track every document and step needed to apply — from gathering records to getting on the waitlist.</div>
+          <a href="waiver-checklist.html" style="display:inline-flex;align-items:center;gap:6px;background:#fff;border:1.5px solid #d4d0ef;color:#4a3f8f;padding:10px 18px;border-radius:50px;font-size:13px;font-weight:700;text-decoration:none;">Open Checklist →</a>
+        </div>
+        <div class="mj-nav">
+          <button class="mj-btn-back" onclick="mjGoTo(1)">← Back</button>
+          <span></span>
+        </div>
+      </div>
+      <!-- /mj-screen-7 -->
+
+      <!-- ════════════════════════════════════════════════════════
+           SCREEN 8 — Coming Soon (Haven't applied path)
+      ════════════════════════════════════════════════════════════ -->
+      <div class="mj-screen" id="mj-screen-8">
+
+        <div id="s8-step-1">
+          <div class="mj-card">
+            <div class="mj-eyebrow"><div class="mj-step-badge">→</div><span class="mj-eyebrow-text">Getting Started</span></div>
+            <h2 class="mj-title">Applying is always the right first step.</h2>
+            <div class="mj-friend-note" role="note">
+              <div class="mj-friend-avatar">👋</div>
+              <p>Even if you are not sure you will qualify, applying tells you which path to take next. Both an approval and a denial have a clear forward path — and you cannot take either one without applying first.</p>
+            </div>
+            <div class="mj-callout yellow">
+              <span class="mj-callout-label">💡 Why this matters for your child</span>
+              Medicaid for your child is separate from household Medicaid. Even if your family income is too high for regular Medicaid, your child may qualify through a <strong>disability-based pathway</strong>. Always ask specifically about this when you apply.
+            </div>
+            <div class="mj-callout blue">
+              <span class="mj-callout-label">📋 What this guide covers</span>
+              We will walk you through exactly what to gather, where to apply, what to say, and what to do after — so you do not have to take notes or figure it out alone.
+            </div>
+          </div>
+          <div class="mj-nav"><button class="mj-btn-back" onclick="mjGoTo(1)">← Back</button><button class="mj-btn-next" onclick="s8Go(2)">Let's start →</button></div>
+        </div>
+
+        <div id="s8-step-2" style="display:none;">
+          <div class="mj-card">
+            <div class="mj-eyebrow"><div class="mj-step-badge">1</div><span class="mj-eyebrow-text">Before You Apply</span></div>
+            <h2 class="mj-title">Gather these before you start.</h2>
+            <p class="mj-body">Having everything ready before you open the application will save you from stopping and restarting. Most applications time out after 30–60 minutes.</p>
+            <p style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-light);margin-bottom:10px;">FOR YOUR CHILD</p>
+            <ul class="mj-checklist">
+              <li class="mj-checklist-item"><div class="mj-ci-icon">✓</div><div>Child birth certificate</div></li>
+              <li class="mj-checklist-item"><div class="mj-ci-icon">✓</div><div>Child Social Security card or number</div></li>
+              <li class="mj-checklist-item"><div class="mj-ci-icon">✓</div><div>Any existing diagnosis reports (autism, developmental delay, etc.)</div></li>
+              <li class="mj-checklist-item"><div class="mj-ci-icon">✓</div><div>Child current insurance card (if any)</div></li>
+            </ul>
+            <p style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-light);margin:14px 0 10px;">FOR YOUR HOUSEHOLD</p>
+            <ul class="mj-checklist">
+              <li class="mj-checklist-item"><div class="mj-ci-icon">✓</div><div>Recent pay stubs (last 30 days) for all working adults</div></li>
+              <li class="mj-checklist-item"><div class="mj-ci-icon">✓</div><div>Most recent federal tax return</div></li>
+              <li class="mj-checklist-item"><div class="mj-ci-icon">✓</div><div>Proof of address (utility bill or lease)</div></li>
+              <li class="mj-checklist-item"><div class="mj-ci-icon">✓</div><div>Social Security numbers for all household members</div></li>
+            </ul>
+            <div class="mj-callout yellow"><span class="mj-callout-label">⚡ Pro tip</span>Take photos of all documents before you go. Even if you apply online, you may need to upload or fax them later.</div>
+          </div>
+          <div class="mj-nav"><button class="mj-btn-back" onclick="s8Go(1)">← Back</button><button class="mj-btn-next" onclick="s8Go(3)">I am ready →</button></div>
+        </div>
+
+        <div id="s8-step-3" style="display:none;">
+          <div class="mj-card">
+            <div class="mj-eyebrow"><div class="mj-step-badge">2</div><span class="mj-eyebrow-text">Where to Apply</span></div>
+            <h2 class="mj-title">Online, in person, or by phone?</h2>
+            <p class="mj-body">Each method has real trade-offs. Here is what to know before you choose.</p>
+            <div style="background:var(--card);border-radius:14px;padding:14px;margin-bottom:10px;border:1.5px solid var(--border-lt);">
+              <div style="font-size:14px;font-weight:700;color:var(--navy);margin-bottom:6px;">💻 Online — recommended for most</div>
+              <div style="font-size:12.5px;color:var(--text-mid);line-height:1.6;margin-bottom:6px;">Apply through your state Medicaid portal or <strong>benefits.gov</strong>. Save and return anytime, upload documents directly, and get a confirmation number instantly.</div>
+              <div style="font-size:12px;color:#2e7d32;font-weight:600;">✓ Best if you have all your documents ready</div>
+            </div>
+            <div style="background:var(--card);border-radius:14px;padding:14px;margin-bottom:10px;border:1.5px solid var(--border-lt);">
+              <div style="font-size:14px;font-weight:700;color:var(--navy);margin-bottom:6px;">🏢 In person — best for disability pathway</div>
+              <div style="font-size:12.5px;color:var(--text-mid);line-height:1.6;margin-bottom:6px;">Visit your local Medicaid or DHHS office. Often the best option if applying for a disability-based pathway — you can ask questions directly and make sure your child situation is documented correctly.</div>
+              <div style="font-size:12px;color:#2e7d32;font-weight:600;">✓ Best if your child has a diagnosis or developmental delay</div>
+            </div>
+            <div style="background:var(--card);border-radius:14px;padding:14px;margin-bottom:10px;border:1.5px solid var(--border-lt);">
+              <div style="font-size:14px;font-weight:700;color:var(--navy);margin-bottom:6px;">📞 By phone</div>
+              <div style="font-size:12.5px;color:var(--text-mid);line-height:1.6;margin-bottom:6px;">Call your state Medicaid office to apply over the phone. Good if you have trouble with websites, but harder to track what was submitted.</div>
+              <div style="font-size:12px;color:#c45a00;font-weight:600;">⚠ Always ask for a reference number and write it down</div>
+            </div>
+            <div class="mj-callout blue"><span class="mj-callout-label">📍 Find your state office</span>Go to <strong>medicaid.gov/state-overviews</strong> and select your state. Or visit the Contacts section of this app for your state direct number.</div>
+          </div>
+          <div class="mj-nav"><button class="mj-btn-back" onclick="s8Go(2)">← Back</button><button class="mj-btn-next" onclick="s8Go(4)">What to say →</button></div>
+        </div>
+
+        <div id="s8-step-4" style="display:none;">
+          <div class="mj-card">
+            <div class="mj-eyebrow"><div class="mj-step-badge">3</div><span class="mj-eyebrow-text">What to Say</span></div>
+            <h2 class="mj-title">The exact words that matter.</h2>
+            <p class="mj-body">These phrases flag your child case for the right pathway. Without them, your application may be processed as a standard household income case and denied.</p>
+            <div class="mj-script">
+              <div class="mj-script-label">📞 Script 1 — Opening the application</div>
+              <p>"I am applying for Medicaid for my child who has a developmental disability. I want to make sure this is processed as a disability-based application, not just a household income application. Can you tell me what pathway is available for children with autism in <span class="mj-state-placeholder">your state</span>?"</p>
+            </div>
+            <div class="mj-script">
+              <div class="mj-script-label">📞 Script 2 — If they say you do not qualify</div>
+              <p>"I understand household income may be above the threshold, but I have read that children with disabilities may qualify through a separate pathway. Can you check specifically for a disability-based Medicaid category for my child?"</p>
+            </div>
+            <div class="mj-script">
+              <div class="mj-script-label">📞 Script 3 — Before you hang up or submit</div>
+              <p>"Can I get a reference number or confirmation for this application? And when should I expect a decision and how will it be communicated?"</p>
+            </div>
+            <div class="mj-callout yellow"><span class="mj-callout-label">📝 Write down every contact</span>Date, time, name of person you spoke with, reference number, and what they told you. This protects you if something goes wrong later.</div>
+          </div>
+          <div class="mj-nav"><button class="mj-btn-back" onclick="s8Go(3)">← Back</button><button class="mj-btn-next" onclick="s8Go(5)">After you apply →</button></div>
+        </div>
+
+        <div id="s8-step-5" style="display:none;">
+          <div class="mj-card">
+            <div class="mj-eyebrow"><div class="mj-step-badge">4</div><span class="mj-eyebrow-text">After You Apply</span></div>
+            <h2 class="mj-title">What happens next — and when to follow up.</h2>
+            <div class="mj-tl-item" style="margin-bottom:8px;"><div class="mj-tl-left"><div class="mj-tl-dot purple">1</div><div class="mj-tl-line"></div></div><div class="mj-tl-content"><h4>You receive a confirmation</h4><p>Should arrive within 1–3 days by mail or email. Save this — it has your application number.</p></div></div>
+            <div class="mj-tl-item" style="margin-bottom:8px;"><div class="mj-tl-left"><div class="mj-tl-dot teal">2</div><div class="mj-tl-line"></div></div><div class="mj-tl-content"><h4>Processing period (30–45 days)</h4><p>Most states must decide within 45 days. Disability-based applications can take up to 90 days in some states.</p></div></div>
+            <div class="mj-tl-item" style="margin-bottom:8px;"><div class="mj-tl-left"><div class="mj-tl-dot orange">3</div><div class="mj-tl-line"></div></div><div class="mj-tl-content"><h4>Follow up at 30 days</h4><p>If you have not heard anything, call and ask for a status update. Reference your application number.</p></div></div>
+            <div class="mj-tl-item" style="margin-bottom:8px;"><div class="mj-tl-left"><div class="mj-tl-dot green">4</div></div><div class="mj-tl-content"><h4>Decision arrives by mail</h4><p>Approval or denial — both have a clear next step. Save the letter either way.</p></div></div>
+            <div class="mj-callout green"><span class="mj-callout-label">✅ If approved</span>Return to this pathway and select "We were approved" to see your next steps — waiver programs and disability services in <span class="mj-state-placeholder">your state</span>.</div>
+            <div class="mj-callout red"><span class="mj-callout-label">❌ If denied</span>This is not the end. Return here and select "We were denied" — the full denial pathway walks you through your rights, appeal options, and the disability determination pathway.</div>
+          </div>
+          <div class="mj-nav"><button class="mj-btn-back" onclick="s8Go(4)">← Back</button><button class="mj-btn-next" onclick="s8Go(6)">I have applied →</button></div>
+        </div>
+
+        <div id="s8-step-6" style="display:none;">
+          <div class="mj-card">
+            <div class="mj-eyebrow"><div class="mj-step-badge">5</div><span class="mj-eyebrow-text">While You Wait</span></div>
+            <h2 class="mj-title">Do not wait to do these things.</h2>
+            <p class="mj-body">These steps happen in parallel and can save you months of time later.</p>
+            <div class="mj-step-list">
+              <div class="mj-step-item"><div class="mj-step-num">1</div><div><strong>Get your child formally evaluated</strong><span>If you do not have a formal diagnosis yet, start the process now. Medicaid decisions and waiver applications both require documentation.</span></div></div>
+              <div class="mj-step-item"><div class="mj-step-num">2</div><div><strong>Take the disability readiness quiz</strong><span>See how strong your documentation is — the quiz shows exactly what to gather before you need it.</span></div></div>
+              <div class="mj-step-item"><div class="mj-step-num">3</div><div><strong>Request your child school records</strong><span>IEP, evaluations, and teacher statements are powerful supporting documentation for both Medicaid and disability applications.</span></div></div>
+              <div class="mj-step-item"><div class="mj-step-num">4</div><div><strong>Start gathering therapy records</strong><span>ABA, speech, OT, PT notes from the last 12 months. Request these now — providers can take weeks to respond.</span></div></div>
+            </div>
+            <div style="margin-top:8px;background:linear-gradient(135deg,#f0edfc,#ede8f5);border:1.5px solid var(--border);border-radius:14px;padding:14px;">
+              <div style="font-size:13.5px;font-weight:700;color:var(--navy);margin-bottom:4px;">📋 Check your disability readiness score</div>
+              <div style="font-size:12.5px;color:var(--text-mid);line-height:1.5;margin-bottom:10px;">The Disability Quiz shows exactly what documents to gather and how strong your case is — before you need it.</div>
+              <a href="disability-quiz.html" style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#6ec6e6,#7c6fd4,#a06fd4);color:#fff;padding:10px 18px;border-radius:50px;font-size:13px;font-weight:700;text-decoration:none;">Take the Disability Quiz →</a>
+            </div>
+          </div>
+          <div class="mj-nav"><button class="mj-btn-back" onclick="s8Go(5)">← Back</button><button class="mj-btn-next" onclick="mjGoTo(1)">Back to start</button></div>
+        </div>
+
+      </div>
+      <!-- /mj-screen-8 -->
+
+      <!-- ════════════════════════════════════════════════════════
+           UPGRADE MODAL
+      ════════════════════════════════════════════════════════════ -->
+      <div id="mj-upgrade-modal"
+           class="mj-modal-backdrop"
+           style="display:none;"
+           role="dialog"
+           aria-modal="true"
+           aria-labelledby="mj-modal-title">
+
+        <div class="mj-modal-card">
+
+          <button class="mj-modal-close"
+                  id="mj-modal-close-btn"
+                  onclick="mjCloseUpgradeModal()"
+                  aria-label="Close upgrade modal">
+            ✕
+          </button>
+
+          <div style="text-align:center; margin-bottom:1rem;">
+            <div style="font-size:2rem; margin-bottom:.5rem;"
+                 aria-hidden="true">⭐</div>
+            <h2 id="mj-modal-title">
+              Unlock Your Full Action Tracker
+            </h2>
+            <p>
+              Everything in the printable guide — plus interactive
+              checklists, document vault, and deadline reminders
+              that work for you every day.
+            </p>
+          </div>
+
+          <ul class="mj-modal-benefits"
+              aria-label="Premium benefits">
+            <li>
+              <span class="check" aria-hidden="true">✓</span>
+              Interactive checklist — checkboxes that save
+              your progress
+            </li>
+            <li>
+              <span class="check" aria-hidden="true">✓</span>
+              Document vault — upload and organize your denial
+              letter, evaluations, and IEP
+            </li>
+            <li>
+              <span class="check" aria-hidden="true">✓</span>
+              Talking point scripts with one-tap copy button
+            </li>
+            <li>
+              <span class="check" aria-hidden="true">✓</span>
+              Appeal deadline countdown based on your denial date
+            </li>
+            <li>
+              <span class="check" aria-hidden="true">✓</span>
+              Personalized timeline for your state
+            </li>
+            <li>
+              <span class="check" aria-hidden="true">✓</span>
+              Push notification reminders for key deadlines
+            </li>
+          </ul>
+
+          <button class="btn btn--primary"
+                  style="width:100%; justify-content:center;"
+                  onclick="mjHandleUpgradeClick()"
+                  aria-label="Start premium for $9.99/mo">
+            Start Premium — $9.99/month
+          </button>
+
+          <p style="text-align:center; font-size:.8rem;
+                    color:var(--ap-text-light); margin-top:.5rem;">
+            Save 33% —
+            <a href="https://autismpathways.app"
+               style="color:var(--accent-purple); font-weight:600;
+                      text-decoration:underline;">
+              Annual plan $79.99/yr
+            </a>
+          </p>
+
+          <button class="mj-modal-dismiss"
+                  onclick="mjCloseUpgradeModal()"
+                  aria-label="Dismiss and continue with free version">
+            Maybe later
+          </button>
+
+        </div>
+        <!-- /mj-modal-card -->
+
+      </div>
+      <!-- /mj-upgrade-modal -->
+
+      <!-- ════════════════════════════════════════════════════════
+           PRINT GUIDE — hidden on screen, visible when printing
+      ════════════════════════════════════════════════════════════ -->
+      <div class="mj-print-guide"
+           id="mj-print-guide"
+           aria-hidden="true">
+
+        <!-- Print header -->
+        <div class="mj-print-header">
+          <h1>Autism Pathways — Medicaid Action Guide</h1>
+          <p id="mj-print-state-line">
+            Medicaid denial guidance and next steps
+          </p>
+          <p id="mj-print-date-line"></p>
+        </div>
+
+        <!-- Disclaimer -->
+        <div class="mj-print-section">
+          <p style="font-size:9pt; color:#555; line-height:1.65;
+                    border:1px solid #ddd; padding:.75rem;
+                    border-radius:6px;">
+            <strong>Important:</strong> This guide is for educational
+            and organizational purposes only. It does not constitute
+            legal, medical, or benefits advice. Rules and programs
+            vary by state and change frequently. Always confirm
+            current details directly with your state's agency before
+            submitting any application.
+          </p>
+        </div>
+
+        <!-- Section 1: Immediate action steps -->
+        <div class="mj-print-section">
+          <h2>1. Your Immediate Action Steps</h2>
+          <ol style="padding-left:1.2rem;">
+            <li style="margin-bottom:.5rem; line-height:1.65;">
+              <strong>Save the denial letter</strong> — note the date
+              it was issued and the exact reason listed. You'll need both.
+            </li>
+            <li style="margin-bottom:.5rem; line-height:1.65;">
+              <strong>Call the agency and ask them to explain
+              the reason in plain language</strong> — it's okay to
+              say you don't understand the letter.
+            </li>
+            <li style="margin-bottom:.5rem; line-height:1.65;">
+              <strong>Ask: "Is there a disability-based Medicaid
+              pathway for my child?"</strong> — many caseworkers
+              won't volunteer this. You have to ask directly.
+            </li>
+            <li style="margin-bottom:.5rem; line-height:1.65;">
+              <strong>Ask about your right to appeal</strong> —
+              deadlines vary by state and are listed on the
+              denial notice.
+            </li>
+            <li style="margin-bottom:.5rem; line-height:1.65;">
+              <strong>Consider starting a disability determination
+              process in parallel</strong> — you don't have to wait
+              for the appeal to resolve before starting this.
+            </li>
+          </ol>
+        </div>
+
+        <!-- Section 2: When to appeal -->
+        <div class="mj-print-section">
+          <h2>2. When to Appeal</h2>
+          <ul class="mj-print-checklist">
+            <li>
+              <span>☐</span>
+              You believe the denial was based on incorrect information
+            </li>
+            <li>
+              <span>☐</span>
+              You have documentation that wasn't included in the
+              original application
+            </li>
+            <li>
+              <span>☐</span>
+              The denial reason doesn't match your situation as
+              you understand it
+            </li>
+            <li>
+              <span>☐</span>
+              You were denied under a category that may not have
+              been the right one
+            </li>
+          </ul>
+        </div>
+
+        <!-- Section 3: Document checklist -->
+        <div class="mj-print-section">
+          <h2>3. Document Gathering Checklist</h2>
+          <ul class="mj-print-checklist">
+            <li>
+              <span>☐</span>
+              Denial letter — note the date issued and the
+              exact reason listed
+            </li>
+            <li>
+              <span>☐</span>
+              All diagnostic evaluations (autism, developmental,
+              psychological)
+            </li>
+            <li>
+              <span>☐</span>
+              Medical records from pediatrician and specialists
+            </li>
+            <li>
+              <span>☐</span>
+              Therapy notes and progress reports (OT, PT, SLP, ABA)
+            </li>
+            <li>
+              <span>☐</span>
+              School IEP or eligibility documentation
+            </li>
+            <li>
+              <span>☐</span>
+              Written description of your child's daily support needs
+            </li>
+            <li>
+              <span>☐</span>
+              Documentation of safety concerns (elopement,
+              self-injury, supervision needs)
+            </li>
+            <li>
+              <span>☐</span>
+              Any previous Medicaid correspondence or reference numbers
+            </li>
+          </ul>
+        </div>
+
+        <!-- Section 4: What to say when you call -->
+        <div class="mj-print-section">
+          <h2>4. What to Say When You Call</h2>
+
+          <h3>Asking about disability pathway</h3>
+          <p class="mj-print-script">
+            "I received a denial for household Medicaid. My child has
+            [diagnosis] and significant support needs. Is there a
+            separate disability-based Medicaid pathway for my child?
+            Who should I speak with about that?"
+          </p>
+
+          <h3>Asking about appeal</h3>
+          <p class="mj-print-script">
+            "I received a denial notice and I want to understand my
+            right to appeal. What is the deadline to request a fair
+            hearing, and what is the process?"
+          </p>
+
+          <h3>Asking about disability determination</h3>
+          <p class="mj-print-script">
+            "I want to start the disability determination process for
+            my child. Which office handles that in this state, and
+            what documentation do I need to bring?"
+          </p>
+        </div>
+
+        <!-- Section 5: What to do while you wait -->
+        <div class="mj-print-section">
+          <h2>5. What to Do While You Wait</h2>
+          <ul class="mj-print-checklist">
+            <li>
+              <span>☐</span>
+              Continue gathering documentation — more is always better
+            </li>
+            <li>
+              <span>☐</span>
+              Keep a log of every call: date, name of person,
+              what was said, any reference numbers
+            </li>
+            <li>
+              <span>☐</span>
+              Ask your child's pediatrician to document support
+              needs in the medical chart
+            </li>
+            <li>
+              <span>☐</span>
+              Contact your school district about IEP services —
+              these are separate from Medicaid
+            </li>
+            <li>
+              <span>☐</span>
+              Look into your state's disability services office
+              (separate from Medicaid)
+            </li>
+            <li>
+              <span>☐</span>
+              Connect with a parent advocacy organization in your
+              state for guidance
+            </li>
+          </ul>
+        </div>
+
+        <!-- Print footer -->
+        <div class="mj-print-footer">
+          <p>
+            This guide is for educational and organizational purposes
+            only. Always confirm current details with your local
+            Medicaid agency. | autismpathways.app
+          </p>
+        </div>
+
+      </div>
+      <!-- /mj-print-guide -->
+
+    </div>
+
+
+      <div class="rainbow-bar"></div>
+
+    </div><!-- /mj-shell -->
+  </div><!-- /medicaid-journey -->
+
+  <!-- Toast -->
+  <div id="mj-toast"></div>
+
+  <!-- Upgrade modal -->
+  <div id="mj-upgrade-modal" aria-hidden="true" aria-modal="true" role="dialog">
+    <div class="mj-modal-card">
+      <button class="mj-modal-close" id="mj-modal-close-btn" onclick="mjCloseUpgradeModal()" aria-label="Close">✕</button>
+      <h3>Unlock the Full Action Plan</h3>
+      <p>The free pathway gives you a complete picture of your situation and next steps. Premium unlocks your personalized printable action plan, talking point scripts, and document checklists.</p>
+      <button class="btn--primary" onclick="mjHandleUpgradeClick()">⭐ Subscribe at autismpathways.app</button>
+      <button class="mj-modal-dismiss" onclick="mjCloseUpgradeModal()">Maybe later</button>
+    </div>
+  </div>
+
+  <!-- Bottom nav -->
+  <nav class="bottom-nav">
+    <a href="dashboard.html" class="bn-item"><div class="bn-icon">🏠</div><div>Home</div></a>
+    <a href="medicaid-waivers.html" class="bn-item active"><div class="bn-icon">💳</div><div>Medicaid</div><div class="bn-dot"></div></a>
+    <a href="appeal-tracker.html" class="bn-item"><div class="bn-icon">⚖️</div><div>Appeals</div></a>
+    <a href="learning.html" class="bn-item"><div class="bn-icon">📚</div><div>Learn</div></a>
+    <a href="start-here.html" class="bn-item"><div class="bn-icon">👤</div><div>Profile</div></a>
+  </nav>
+
+  <script>
+    var mjProgressData = [
+          { label: 'Step 1 of 6', pct: 17,
+            pills: ['active','upcoming','upcoming','upcoming','upcoming','upcoming'] },
+          { label: 'Step 2 of 6', pct: 33,
+            pills: ['done','active','upcoming','upcoming','upcoming','upcoming'] },
+          { label: 'Step 3 of 6', pct: 50,
+            pills: ['done','done','active','upcoming','upcoming','upcoming'] },
+          { label: 'Step 4 of 6', pct: 67,
+            pills: ['done','done','done','active','upcoming','upcoming'] },
+          { label: 'Step 5 of 6', pct: 83,
+            pills: ['done','done','done','done','active','upcoming'] },
+          { label: 'Step 6 of 6', pct: 100,
+            pills: ['done','done','done','done','done','active'] }
+        ];
+
+        var mjPillLabels = [
+          'Overview',
+          'Your Situation',
+          'Denial Reason',
+          'Your Rights',
+          'Next Steps',
+          'Your Plan'
+        ];
+
+        /* ── Build pills ─────────────────────────────────────────────── */
+        function mjBuildPills() {
+          var container = document.getElementById('mj-pills');
+          if (!container) return;
+
+          container.innerHTML = '';
+
+          mjPillLabels.forEach(function (label, i) {
+            var btn = document.createElement('button');
+            btn.className   = 'mj-pill upcoming';
+            btn.setAttribute('role', 'tab');
+            btn.setAttribute('aria-selected', 'false');
+            btn.setAttribute('aria-label', 'Go to step ' + (i + 1) + ': ' + label);
+            btn.setAttribute('data-step', String(i));
+
+            var dot = document.createElement('span');
+            dot.className       = 'mj-pill__dot';
+            dot.textContent     = String(i + 1);
+            dot.setAttribute('aria-hidden', 'true');
+
+            btn.appendChild(dot);
+            btn.appendChild(document.createTextNode(' ' + label));
+
+            /* Clicking a pill jumps directly to that screen */
+            btn.addEventListener('click', function () {
+              /* Pills 0–5 map to screens 0–5 */
+              mjGoTo(i);
+            });
+
+            container.appendChild(btn);
+          });
+        }
+
+
+        /* ── Core navigation ─────────────────────────────────────────── */
+
+        function s8Go(step) {
+          for (var i = 1; i <= 6; i++) {
+            var el = document.getElementById('s8-step-' + i);
+            if (el) el.style.display = (i === step) ? 'block' : 'none';
+          }
+          var shell = document.getElementById('medicaid-journey');
+          if (shell) shell.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function mjGoTo(step) {
+          /* If going back to screen 1, clear saved situation so user
+             must re-select — prevents stale denial/approval state */
+          if (step === 1) {
+            try { localStorage.removeItem('ap_medicaid_situation'); } catch(e) {}
+            try { localStorage.removeItem('ap_medicaid_denial_reason'); } catch(e) {}
+          }
+          /* Clamp to valid screen range (0–5 for pill screens,
+             7–8 for coming-soon branches) */
+          var validScreens = [0, 1, 2, 3, 4, 5, 7, 8];
+          if (validScreens.indexOf(step) === -1) step = 0;
+
+          /* Hide all mj-screens */
+          document.querySelectorAll('.mj-screen').forEach(function (s) {
+            s.classList.remove('active');
+            s.setAttribute('aria-hidden', 'true');
+          });
+
+          /* Show target screen */
+          var target = document.getElementById('mj-screen-' + step);
+          if (target) {
+            target.classList.add('active');
+            target.removeAttribute('aria-hidden');
+          }
+
+          mjCurrentStep = step;
+
+          /* Save progress — only save pill-mapped steps (0–5) */
+          var pillStep = step <= 5 ? step : 1;
+          localStorage.setItem('apMjStep', String(step));
+
+          /* Update progress bar and pills using pill index (0–5) */
+          var pillIndex = step <= 5 ? step : 1;
+          mjUpdateProgress(pillIndex);
+
+          /* Scroll to top of journey shell */
+          var shell = document.getElementById('medicaid-journey');
+          if (shell) {
+            shell.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }
+
+        /* ── Next — reads saved situation and routes correctly ──────── */
+        function mjNext() {
+          /* Called from Screen 1 "This is us →" button */
+          var situation = localStorage.getItem('ap_medicaid_situation');
+
+          if (situation === 'denied') {
+            mjGoTo(2); /* → Understanding Your Denial */
+          } else if (situation === 'approved') {
+            mjGoTo(7); /* → Coming soon: Approved path */
+          } else if (situation === 'not_yet') {
+            mjGoTo(8); /* → Coming soon: Haven't applied */
+          } else {
+            /* Nothing selected yet — shake the choice grid as feedback */
+            var grid = document.querySelector(
+              '#mj-screen-1 .mj-choice-grid'
+            );
+            if (grid) {
+              grid.style.transition = 'transform .1s ease';
+              grid.style.transform  = 'translateX(6px)';
+              setTimeout(function () {
+                grid.style.transform = 'translateX(-6px)';
+                setTimeout(function () {
+                  grid.style.transform = '';
+                }, 100);
+              }, 100);
+            }
+          }
+        }
+
+        /* ── Update progress bar and pills ──────────────────────────── */
+        function mjUpdateProgress(pillIndex) {
+          /* pillIndex is 0–5 */
+          var d = mjProgressData[pillIndex];
+          if (!d) return;
+
+          /* Progress bar */
+          var labelEl = document.getElementById('mj-progress-label');
+          var countEl = document.getElementById('mj-progress-count');
+          var fillEl  = document.getElementById('mj-progress-fill');
+
+          if (labelEl) labelEl.textContent = d.label;
+          if (countEl) countEl.textContent = d.pct + '% complete';
+          if (fillEl)  fillEl.style.width  = d.pct + '%';
+
+          /* Pills */
+          var pills = document.querySelectorAll('.mj-pill');
+          pills.forEach(function (pill, i) {
+            var state = d.pills[i] || 'upcoming';
+            pill.className = 'mj-pill ' + state;
+            pill.setAttribute('aria-selected', state === 'active' ? 'true' : 'false');
+
+            var dot = pill.querySelector('.mj-pill__dot');
+            if (dot) {
+              dot.textContent = state === 'done' ? '✓' : String(i + 1);
+            }
+          });
+        }
+
+        /* ── Choice card selection ───────────────────────────────────── */
+        function mjSelectChoice(card) {
+          /* Deselect all siblings */
+          var grid = card.closest('.mj-choice-grid');
+          if (grid) {
+            grid.querySelectorAll('.mj-choice-card').forEach(function (c) {
+              c.classList.remove('selected');
+              c.setAttribute('aria-checked', 'false');
+            });
+          }
+
+          /* Select clicked card */
+          card.classList.add('selected');
+          card.setAttribute('aria-checked', 'true');
+
+          /* Save to localStorage */
+          var key = grid ? grid.getAttribute('data-save-key') : null;
+          var val = card.getAttribute('data-value');
+          if (key && val) {
+            try { localStorage.setItem(key, val); } catch(e) {}
+          }
+        }
+
+        /* ── Personalize UI ──────────────────────────────────────────── */
+        function mjPersonalizeUI() {
+          var state = localStorage.getItem('ap_state') || 'your state';
+
+          /* Fill all state placeholders */
+          document.querySelectorAll('.mj-state-placeholder').forEach(
+            function (el) { el.textContent = state; }
+          );
+
+          /* Update plan subtitle with denial reason */
+          var denialReason  = localStorage.getItem('ap_medicaid_denial_reason');
+          var reasonDisplay = '';
+          if (denialReason === 'admin')  reasonDisplay = 'administrative issue';
+          if (denialReason === 'income') reasonDisplay = 'income / eligibility issue';
+          if (denialReason === 'unsure') reasonDisplay = 'reason unclear';
+
+          var subtitleReason = document.getElementById('mj-plan-denial-reason');
+          if (subtitleReason && reasonDisplay) {
+            subtitleReason.textContent = reasonDisplay;
+          }
+
+          /* Denial date calculation */
+          var denialDate = localStorage.getItem('ap_denial_date');
+          var daysEl     = document.getElementById('mj-denial-days');
+          if (daysEl) {
+            if (denialDate) {
+              var days = Math.floor(
+                (Date.now() - new Date(denialDate).getTime()) / 86400000
+              );
+              if (!isNaN(days) && days >= 0) {
+                daysEl.textContent =
+                  '📅 Your denial was ' + days +
+                  ' day' + (days !== 1 ? 's' : '') + ' ago.';
+              }
+            } else {
+              daysEl.textContent = '📅 Based on your dates';
+            }
+          }
+
+          /* Update print content state line */
+          var printStateLine = document.getElementById('mj-print-state-line');
+          if (printStateLine && state !== 'your state') {
+            printStateLine.textContent =
+              'Medicaid denial guidance — ' + state;
+          }
+
+          /* Restore choice card selections from localStorage */
+          mjRestoreChoices();
+        }
+
+        /* ── Restore saved choice selections on return visits ──────── */
+        function mjRestoreChoices() {
+          var restoreMap = {
+            'ap_medicaid_situation'    : '#mj-screen-1 .mj-choice-grid',
+            'ap_medicaid_denial_reason': '#mj-screen-2 .mj-choice-grid'
+          };
+
+          Object.keys(restoreMap).forEach(function (storageKey) {
+            var savedVal = localStorage.getItem(storageKey);
+            if (!savedVal) return;
+
+            var grid = document.querySelector(restoreMap[storageKey]);
+            if (!grid) return;
+
+            grid.querySelectorAll('.mj-choice-card').forEach(function (card) {
+              if (card.getAttribute('data-value') === savedVal) {
+                card.classList.add('selected');
+                card.setAttribute('aria-checked', 'true');
+              }
+            });
+          });
+        }
+
+        /* ── Restore saved progress on page load ────────────────────── */
+        function mjRestoreProgress() {
+          var saved = parseInt(
+            localStorage.getItem('apMjStep') || '0', 10
+          );
+
+          /* Valid screen numbers */
+          var valid = [0, 1, 2, 3, 4, 5, 7, 8];
+          if (valid.indexOf(saved) === -1) saved = 0;
+
+          mjGoTo(saved);
+        }
+
+        /* ── Print guide ─────────────────────────────────────────────── */
+        function mjPrintGuide() {
+          /* Populate dynamic fields */
+          var state  = localStorage.getItem('ap_state') || 'Your State';
+          var dateStr = new Date().toLocaleDateString('en-US', {
+            year: 'numeric', month: 'long', day: 'numeric'
+          });
+
+          var stateLine = document.getElementById('mj-print-state-line');
+          if (stateLine) {
+            stateLine.textContent =
+              'Medicaid denial guidance and next steps' +
+              (state !== 'Your State' ? ' — ' + state : '');
+          }
+
+          var dateLine = document.getElementById('mj-print-date-line');
+          if (dateLine) {
+            dateLine.textContent = 'Generated: ' + dateStr;
+          }
+
+          window.print();
+        }
+
+        /* ── Save plan ───────────────────────────────────────────────── */
+        function mjSavePlan() {
+          try {
+            localStorage.setItem('apMjStep', '5');
+            localStorage.setItem('apMjPlanSaved', JSON.stringify({
+              situation:    localStorage.getItem('ap_medicaid_situation'),
+              denialReason: localStorage.getItem('ap_medicaid_denial_reason'),
+              state:        localStorage.getItem('ap_state'),
+              savedAt:      new Date().toISOString()
+            }));
+          } catch(e) {}
+
+          /* Show toast */
+          var toast = document.createElement('div');
+          toast.textContent = '✓ Plan saved!';
+          toast.setAttribute('role', 'status');
+          toast.setAttribute('aria-live', 'polite');
+          toast.style.cssText = [
+            'position:fixed',
+            'bottom:2rem',
+            'left:50%',
+            'transform:translateX(-50%)',
+            'background:#2A9D8F',
+            'color:#fff',
+            'padding:.6rem 1.5rem',
+            'border-radius:99px',
+            'font-size:.85rem',
+            'font-weight:600',
+            'z-index:9999',
+            'box-shadow:0 4px 16px rgba(42,157,143,.35)',
+            'font-family:var(--font)'
+          ].join(';');
+
+          document.body.appendChild(toast);
+
+          setTimeout(function () {
+            toast.style.transition = 'opacity .3s ease';
+            toast.style.opacity    = '0';
+            setTimeout(function () {
+              if (toast.parentNode) toast.parentNode.removeChild(toast);
+            }, 300);
+          }, 2200);
+        }
+
+        /* ── Upgrade modal ───────────────────────────────────────────── */
+        var _mjLastFocus = null;
+
+        function mjHandleUpgradeClick() {
+          window.open('https://autismpathways.app', '_blank');
+        }
+
+        function mjShowUpgradeModal() {
+          var modal = document.getElementById('mj-upgrade-modal');
+          if (!modal) return;
+
+          _mjLastFocus = document.activeElement;
+          modal.style.display = 'flex';
+          modal.removeAttribute('aria-hidden');
+          document.body.style.overflow = 'hidden';
+
+          /* Move focus to close button */
+          var closeBtn = document.getElementById('mj-modal-close-btn');
+          if (closeBtn) {
+            setTimeout(function () { closeBtn.focus(); }, 50);
+          }
+
+          /* Trap focus */
+          modal.addEventListener('keydown', mjTrapFocus);
+        }
+
+        function mjCloseUpgradeModal() {
+          var modal = document.getElementById('mj-upgrade-modal');
+          if (!modal) return;
+
+          modal.style.display = 'none';
+          modal.setAttribute('aria-hidden', 'true');
+          document.body.style.overflow = '';
+          modal.removeEventListener('keydown', mjTrapFocus);
+
+          /* Restore focus */
+          if (_mjLastFocus) {
+            _mjLastFocus.focus();
+            _mjLastFocus = null;
+          }
+        }
+
+        function mjTrapFocus(e) {
+          if (e.key !== 'Tab') return;
+          var modal     = document.getElementById('mj-upgrade-modal');
+          var focusable = modal.querySelectorAll(
+            'button:not([disabled]), [href], input, select, ' +
+            'textarea, [tabindex]:not([tabindex="-1"])'
+          );
+          var first = focusable[0];
+          var last  = focusable[focusable.length - 1];
+
+          if (e.shiftKey) {
+            if (document.activeElement === first) {
+              e.preventDefault();
+              last.focus();
+            }
+          } else {
+            if (document.activeElement === last) {
+              e.preventDefault();
+              first.focus();
+            }
+          }
+        }
+        function mjCheckPremiumStatus() {
+          var premium = localStorage.getItem('ap_premium') === 'true';
+          if (!premium) return;
+
+          /* Remove any wv-* gates on this page */
+          document.querySelectorAll('.wv-premium-gate').forEach(function (gate) {
+            var content = gate.querySelector('.wv-premium-gate__content');
+            var overlay = gate.querySelector('.wv-gate-overlay');
+            if (content) {
+              content.style.filter        = 'none';
+              content.style.pointerEvents = 'auto';
+              content.style.userSelect    = 'auto';
+              content.style.opacity       = '1';
+              content.removeAttribute('aria-hidden');
+            }
+            if (overlay) {
+              overlay.style.display = 'none';
+              overlay.setAttribute('aria-hidden', 'true');
+            }
+          });
+
+          /* Hide all gate buttons */
+          document.querySelectorAll('.wv-gate-btn').forEach(function (btn) {
+            btn.style.display = 'none';
+          });
+
+          /* Replace the purple upgrade button in the mj- plan card */
+          var mjUpgradeBtn = document.querySelector('.mj-plan-btn.purple');
+          if (mjUpgradeBtn) {
+            mjUpgradeBtn.outerHTML =
+              '<div style="display:flex; align-items:center; justify-content:center;' +
+              ' gap:.5rem; padding:.75rem 1rem; background:var(--ap-mint);' +
+              ' border-radius:50px; margin-top:1rem;">' +
+              '<span style="color:var(--accent-teal); font-weight:700; font-size:1rem;">✓</span>' +
+              '<span style="font-size:.875rem; color:var(--accent-teal);' +
+              ' font-weight:600; font-family:var(--font);">Premium Active</span>' +
+              '</div>';
+          }
+
+          /* Replace upgrade button inside the mj upgrade modal */
+          var mjModalBtn = document.querySelector('#mj-upgrade-modal .btn--primary');
+          if (mjModalBtn) {
+            mjModalBtn.textContent      = '✓ Premium Active';
+            mjModalBtn.disabled         = true;
+            mjModalBtn.style.background = 'var(--ap-mint)';
+            mjModalBtn.style.color      = 'var(--accent-teal)';
+            mjModalBtn.style.boxShadow  = 'none';
+            mjModalBtn.style.cursor     = 'default';
+          }
+
+          /* Hide the Maybe later dismiss link */
+          var mjDismiss = document.querySelector('.mj-modal-dismiss');
+          if (mjDismiss) mjDismiss.style.display = 'none';
+        }
+        function handleUpgradeClick() {
+          window.open('https://autismpathways.app', '_blank');
+        }
+        /* ── ESC key closes modal ────────────────────────────────────── */
+        document.addEventListener('keydown', function (e) {
+          if (e.key === 'Escape') mjCloseUpgradeModal();
+        });
+
+        /* ── Boot — runs on DOMContentLoaded ────────────────────────── */
+        document.addEventListener('DOMContentLoaded', function () {
+          /* Check premium first — before anything renders */
+          mjCheckPremiumStatus();
+
+          /* Build pills */
+          mjBuildPills();
+
+          /* Personalize with state/denial date */
+          mjPersonalizeUI();
+
+          /* Restore saved step */
+          mjGoTo(0);
+        });
+
+
+    /* Override toast to match new design */
+    function mjSavePlan() {
+      try {
+        localStorage.setItem('apMjStep', '5');
+        localStorage.setItem('apMjPlanSaved', JSON.stringify({
+          situation:    localStorage.getItem('ap_medicaid_situation'),
+          denialReason: localStorage.getItem('ap_medicaid_denial_reason'),
+          state:        localStorage.getItem('ap_state'),
+          savedAt:      new Date().toISOString()
+        }));
+      } catch(e) {}
+      var t = document.getElementById('mj-toast');
+      if (!t) return;
+      t.textContent = '✓ Plan saved!';
+      t.style.opacity = '1'; t.style.transform = 'translateX(-50%) translateY(0)';
+      setTimeout(function() {
+        t.style.opacity = '0'; t.style.transform = 'translateX(-50%) translateY(8px)';
+      }, 2200);
+    }
+  </script>
+
+</body>
+</html><script>
+function mjGoDeniedForward(){
+  var reason = localStorage.getItem('apmedicaiddenialreason');
+  if (!reason) {
+    var grid = document.querySelector('#mj-screen-2 .mj-choice-grid');
+    if (grid) {
+      grid.style.transition = 'transform .1s ease';
+      grid.style.transform = 'translateX(6px)';
+      setTimeout(function(){
+        grid.style.transform = 'translateX(-6px)';
+        setTimeout(function(){ grid.style.transform = ''; }, 100);
+      }, 100);
+    }
+    return;
+  }
+  if (typeof mjGoTo === 'function') mjGoTo(3);
+}
+</script>
