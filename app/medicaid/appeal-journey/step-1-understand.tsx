@@ -80,9 +80,9 @@ const styles = StyleSheet.create({
 });
 
 const reasons = [
-  { id: 'paperwork', title: 'Missing paperwork or processing issue', desc: 'Documents were missing, incomplete, or mishandled' },
-  { id: 'eligibility', title: 'Eligibility rule issue', desc: 'The agency says your child does not meet a requirement' },
-  { id: 'other', title: 'Other or unclear reason', desc: 'The denial does not fit neatly into the choices above' },
+  { id: 'admin', title: '📋 Admin Issues', desc: 'Missing paperwork, incomplete forms, or processing errors' },
+  { id: 'income', title: '💰 Income Related', desc: 'Denied due to income limits or financial eligibility' },
+  { id: 'unsure', title: '❓ Not Sure', desc: 'The denial reason is unclear or doesn\'t fit above' },
 ];
 
 export default function AppealStep1() {
@@ -94,10 +94,15 @@ export default function AppealStep1() {
     try {
       await AsyncStorage.setItem('appeal_reason', selected);
       
-      if (selected === 'paperwork') {
+      if (selected === 'admin') {
+        // Admin issues go to appeal journey
         router.push('/medicaid/appeal-journey/step-2-admin-review');
-      } else {
-        router.push('/medicaid/appeal-journey/step-2');
+      } else if (selected === 'income') {
+        // Income issues go to income journey
+        router.push('/medicaid/income-journey/intro');
+      } else if (selected === 'unsure') {
+        // Not sure - for now go to appeal journey (we'll build this later)
+        router.push('/medicaid/appeal-journey/step-2-admin-review');
       }
     } catch (error) {
       console.error('Error:', error);
@@ -110,16 +115,16 @@ export default function AppealStep1() {
         <TouchableOpacity onPress={() => router.back()}>
           <Text style={styles.backButton}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>Appeal</Text>
+        <Text style={styles.title}>Medicaid Denial</Text>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.heroSection}>
-          <Text style={styles.heroTitle}>What did your denial say?</Text>
+          <Text style={styles.heroTitle}>What did your denial notice say?</Text>
         </View>
 
         <View style={styles.content}>
-          <Text style={styles.heading}>Choose the reason that matches your denial:</Text>
+          <Text style={styles.heading}>Choose the reason that matches:</Text>
           
           {reasons.map((reason) => (
             <TouchableOpacity

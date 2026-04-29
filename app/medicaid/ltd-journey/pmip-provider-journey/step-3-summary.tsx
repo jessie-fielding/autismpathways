@@ -407,7 +407,7 @@ export default function Step3Summary() {
             <Text style={[styles.buttonText, styles.secondaryButtonText]}>Edit Answers</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            onPress={() => router.push('/medicaid/ltd-journey/action-plan')}
+            onPress={() => router.push('/medicaid/ltd-journey/pmip-provider-journey/step-3-pmip-form-check')}
             style={[styles.button, styles.primaryButton]}
           >
             <Text style={[styles.buttonText, styles.primaryButtonText]}>Continue to LTD</Text>

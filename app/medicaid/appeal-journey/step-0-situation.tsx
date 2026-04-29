@@ -95,12 +95,15 @@ export default function SituationStep() {
   const handleContinue = () => {
     if (!selected) return;
     
-    if (selected === 'denied') {
+    if (selected === 'approved') {
+      // Go to waiver pathway
+      router.push('/(tabs)/waiver-journey');
+    } else if (selected === 'not-applied') {
+      // Go to how to apply for medicaid
+      router.push('/medicaid/how-to-apply/step-1-intro');
+    } else if (selected === 'denied') {
+      // Go to step 1: why were you denied
       router.push('/medicaid/appeal-journey/step-1-understand');
-    } else if (selected === 'approved') {
-      router.push('/(tabs)/medicaid-pathway');
-    } else {
-      router.push('/medicaid/disability-journey/intro');
     }
   };
 
@@ -110,17 +113,15 @@ export default function SituationStep() {
         <TouchableOpacity onPress={() => router.back()}>
           <Text style={styles.backButton}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>Medicaid Status</Text>
+        <Text style={styles.title}>Medicaid Pathway</Text>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView>
         <View style={styles.heroSection}>
-          <Text style={styles.heroTitle}>Where Are You In The Process?</Text>
+          <Text style={styles.heroTitle}>What's your situation?</Text>
         </View>
 
         <View style={styles.content}>
-          <Text style={styles.heading}>Select your current situation:</Text>
-          
           {situations.map((situation) => (
             <TouchableOpacity
               key={situation.id}
@@ -140,15 +141,14 @@ export default function SituationStep() {
       </ScrollView>
 
       <View style={styles.buttons}>
-        <TouchableOpacity style={styles.button} onPress={() => router.back()}>
-          <Text style={styles.buttonText}>Back</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.button, styles.buttonPrimary, !selected && { opacity: 0.5 }]}
+        <TouchableOpacity 
+          style={[styles.button, selected && styles.buttonPrimary]} 
           onPress={handleContinue}
           disabled={!selected}
         >
-          <Text style={[styles.buttonText, styles.buttonTextWhite]}>Continue</Text>
+          <Text style={[styles.buttonText, selected && styles.buttonTextWhite]}>
+            Continue
+          </Text>
         </TouchableOpacity>
       </View>
     </View>
