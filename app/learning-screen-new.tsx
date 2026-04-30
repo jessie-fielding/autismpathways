@@ -10,7 +10,7 @@ import {
   Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { COLORS, SPACING, RADIUS, FONT_SIZES, SHADOWS } from '../../lib/theme';
+import { COLORS, SPACING, RADIUS, FONT_SIZES, SHADOWS } from '../lib/theme';
 
 // ── WordPress API ────────────────────────────────────────────────────────────
 const WP_API   = 'https://info.autismpathways.app/wp-json/wp/v2';
