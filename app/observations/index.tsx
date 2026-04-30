@@ -60,7 +60,7 @@ function detectPatterns(entries: Observation[]): { icon: string; text: string; s
   const recent5 = entries.slice(0, 5);
   const negMoods = recent5.filter((e) => e.mood === 'Frustrated' || e.mood === 'Dysregulated').length;
   if (negMoods >= 3) {
-    insights.push({ icon: '⚠️', text: `Difficult days in ${negMoods} of the last 5 entries — consider tracking triggers more closely.` }, severity: 'info' });
+    insights.push({ icon: '⚠️', text: `Difficult days in ${negMoods} of the last 5 entries — consider tracking triggers more closely.`, severity: 'info' as const });
   }
 
   // Tag frequency
