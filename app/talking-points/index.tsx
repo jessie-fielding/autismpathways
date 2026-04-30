@@ -8,8 +8,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  Alert, Share, Platform, Clipboard,
+  Alert, Share, Platform,
 } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -297,7 +298,7 @@ export default function TalkingPointsScreen() {
   };
 
   const copyToClipboard = (text: string, idx: number) => {
-    Clipboard.setString(text);
+    Clipboard.setStringAsync(text);
     setCopiedIdx(idx);
     setTimeout(() => setCopiedIdx(null), 2000);
     Alert.alert('Copied!', 'The text has been copied to your clipboard.');
