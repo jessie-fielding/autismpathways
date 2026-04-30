@@ -3,6 +3,7 @@ import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
 import { COLORS, SPACING, RADIUS, FONT_SIZES, SHADOWS } from '../../lib/theme';
@@ -322,6 +323,29 @@ export default function DisabilityQuizScreen() {
       setCurrentQ(currentQ + 1);
     } else {
       setScreen('results');
+      saveResultsToProfile(updated);
+    }
+  };
+  const saveResultsToProfile = async (finalAnswers: Record<string, string>) => {
+    try {
+      const categoryScores: Record<string, number> = {};
+      QUESTIONS.forEach((q) => {
+        const answer = finalAnswers[q.id];
+        if (!categoryScores[q.category]) categoryScores[q.category] = 0;
+        if (answer === 'yes_major') categoryScores[q.category] += 2;
+        else if (answer === 'sometimes') categoryScores[q.category] += 1;
+      });
+      const flagNames = Object.entries(categoryScores)
+        .filter(([, score]) => score >= 2)
+        .sort(([, a], [, b]) => b - a)
+        .map(([cat]) => CONDITIONS[cat]?.name)
+        .filter(Boolean) as string[];
+      await AsyncStorage.setItem('ap_dev_quiz_results', JSON.stringify({
+        flagNames,
+        completedAt: new Date().toISOString(),
+      }));
+    } catch (e) {
+      // silently fail — non-critical
     }
   };
 

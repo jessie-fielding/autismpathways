@@ -52,15 +52,15 @@ function fmtDate(dateStr: string): string {
   }
 }
 
-function detectPatterns(entries: Observation[]): { icon: string; text: string }[] {
+function detectPatterns(entries: Observation[]): { icon: string; text: string; severity: 'info' | 'warning' | 'positive' }[] {
   if (entries.length < 3) return [];
-  const insights: { icon: string; text: string }[] = [];
+  const insights: { icon: string; text: string; severity: 'info' | 'warning' | 'positive' }[] = [];
 
   // Mood pattern
   const recent5 = entries.slice(0, 5);
   const negMoods = recent5.filter((e) => e.mood === 'Frustrated' || e.mood === 'Dysregulated').length;
   if (negMoods >= 3) {
-    insights.push({ icon: '⚠️', text: `Difficult days in ${negMoods} of the last 5 entries — consider tracking triggers more closely.` });
+    insights.push({ icon: '⚠️', text: `Difficult days in ${negMoods} of the last 5 entries — consider tracking triggers more closely.` }, severity: 'info' });
   }
 
   // Tag frequency
@@ -73,7 +73,7 @@ function detectPatterns(entries: Observation[]): { icon: string; text: string }[
     .sort((a, b) => b[1] - a[1])
     .slice(0, 2)
     .forEach(([tag, count]) => {
-      insights.push({ icon: '📌', text: `"${tag}" has appeared ${count} times in the last 2 weeks.` });
+      insights.push({ icon: '📌', text: `"${tag}" has appeared ${count} times in the last 2 weeks.` }, severity: 'info' });
     });
 
   // Trigger frequency
@@ -86,13 +86,13 @@ function detectPatterns(entries: Observation[]): { icon: string; text: string }[
     .sort((a, b) => b[1] - a[1])
     .slice(0, 2)
     .forEach(([trig, count]) => {
-      insights.push({ icon: '🔍', text: `"${trig}" appears as a trigger ${count} times recently.` });
+      insights.push({ icon: '🔍', text: `"${trig}" appears as a trigger ${count} times recently.` }, severity: 'info' });
     });
 
   // IEP flag count
   const flagged = entries.filter((e) => e.iepFlag).length;
   if (flagged > 0) {
-    insights.push({ icon: '📌', text: `${flagged} observation${flagged > 1 ? 's' : ''} flagged for your next IEP meeting.` });
+    insights.push({ icon: '📌', text: `${flagged} observation${flagged > 1 ? 's' : ''} flagged for your next IEP meeting.` }, severity: 'info' });
   }
 
   return insights;
@@ -182,7 +182,7 @@ export default function ObservationsHomeScreen() {
           <View style={styles.patternCard}>
             <Text style={styles.patternHeading}>🧠 Patterns Detected</Text>
             {patterns.map((p, i) => (
-              <View key={i} style={[styles.patternRow, i < patterns.length - 1 && styles.patternRowBorder]}>
+              <View key={i} style={[styles.patternRow, i < patterns.length - 1 && styles.patternRowBorder, p.severity === 'warning' ? styles.patternRowWarning : p.severity === 'positive' ? styles.patternRowPositive : null]}>
                 <Text style={styles.patternIcon}>{p.icon}</Text>
                 <Text style={styles.patternText}>{p.text}</Text>
               </View>

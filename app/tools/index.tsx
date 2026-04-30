@@ -5,6 +5,7 @@ import {
 import { useRouter } from 'expo-router';
 import { COLORS, SPACING, RADIUS, FONT_SIZES, SHADOWS } from '../../lib/theme';
 import { useIsPremium } from '../../hooks/useIsPremium';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type Tool = {
   icon: string;
@@ -148,8 +149,24 @@ const SECTIONS: { label: string; tools: Tool[] }[] = [
         icon: '🔔',
         title: 'Reminders',
         description: 'Push notifications for appeal deadlines, waitlist check-ins, and renewals.',
-        cta: 'Coming soon',
-        soon: true,
+        cta: 'Open',
+        route: '/settings',
+        accentColor: COLORS.blueAccent,
+      },
+      {
+        icon: '📅',
+        title: 'Services Tracker',
+        description: 'Track active services (ABA, OT, ST, PT), hours, providers, and renewal dates.',
+        cta: 'Open',
+        route: '/services-tracker',
+        accentColor: COLORS.mintAccent,
+      },
+      {
+        icon: '🏛️',
+        title: 'CCB Tool',
+        description: 'Understand the Community Centered Board process, eligibility, and what it funds.',
+        cta: 'Open',
+        route: '/ccb-tool',
         accentColor: COLORS.blueAccent,
       },
     ],
@@ -157,6 +174,14 @@ const SECTIONS: { label: string; tools: Tool[] }[] = [
   {
     label: 'REFERENCE',
     tools: [
+      {
+        icon: '🗺️',
+        title: 'Provider Directory',
+        description: 'Find autism-informed providers, therapists, and specialists by state.',
+        cta: 'Search',
+        route: '/provider-directory',
+        accentColor: COLORS.peachAccent,
+      },
       {
         icon: '🧩',
         title: 'Developmental Quiz',
@@ -180,6 +205,7 @@ const SECTIONS: { label: string; tools: Tool[] }[] = [
 export default function AllToolsScreen() {
   const router = useRouter();
   const { isPremium } = useIsPremium();
+  const insets = useSafeAreaInsets();
 
   const handlePress = (tool: Tool) => {
     if (tool.soon) return;
@@ -261,7 +287,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
   header: {
     paddingHorizontal: SPACING.lg,
-    paddingTop: 56,
+    paddingTop: insets.top + 8,
     paddingBottom: SPACING.md,
     flexDirection: 'row',
     alignItems: 'center',

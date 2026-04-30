@@ -253,6 +253,7 @@ export default function StartHereScreen() {
   const [dob, setDob] = useState('');
   const [state, setState] = useState('');
   const [diagnosis, setDiagnosis] = useState('');
+  const [diagnosisLevel, setDiagnosisLevel] = useState('');
   const [selectedConcerns, setSelectedConcerns] = useState<string[]>([]);
 
   const toggleConcern = (id: string) => {
@@ -264,7 +265,7 @@ export default function StartHereScreen() {
   const handleNext = async () => {
     // Persist profile to AsyncStorage whenever user advances
     try {
-      const profile = { childName, dob, state, diagnosis, concerns: selectedConcerns };
+      const profile = { childName, dob, state, diagnosis, diagnosisLevel, concerns: selectedConcerns };
       await AsyncStorage.setItem('profile', JSON.stringify(profile));
     } catch (e) {}
     if (step < 3) setStep(step + 1);
@@ -369,6 +370,27 @@ export default function StartHereScreen() {
                   </TouchableOpacity>
                 ))}
               </View>
+                {(diagnosis === 'Yes — ASD' || diagnosis === 'Yes — other') && (
+                  <View style={{ marginTop: 12 }}>
+                    <Text style={styles.label}>Autism Level (if known)</Text>
+                    <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+                      {['1', '2', '3', 'Unknown'].map((lvl) => (
+                        <TouchableOpacity
+                          key={lvl}
+                          style={[styles.optionButton, diagnosisLevel === lvl && styles.optionButtonActive, { paddingHorizontal: 16 }]}
+                          onPress={() => setDiagnosisLevel(lvl)}
+                        >
+                          <Text style={[styles.optionButtonText, diagnosisLevel === lvl && styles.optionButtonTextActive]}>
+                            {diagnosisLevel === lvl ? '✓ ' : ''}Level {lvl}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                    <Text style={{ fontSize: 11, color: '#9090A8', marginTop: 6, lineHeight: 16 }}>
+                      Level 1 = needs support · Level 2 = needs substantial support · Level 3 = needs very substantial support
+                    </Text>
+                  </View>
+                )}
 
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>What are your main concerns? <Text style={styles.optionalLabel}>(pick all that apply)</Text></Text>

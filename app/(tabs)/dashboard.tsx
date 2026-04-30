@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../../services/useAuth';
 import { usePmipProviderStore } from '../../lib/pmip/pmipProviderStore';
+import { useIsPremium } from '../../hooks/useIsPremium';
 
 // Exact colors from your web app
 const COLORS = {
@@ -473,290 +476,357 @@ const styles = StyleSheet.create({
     color: COLORS.navy,
     textAlign: 'center',
   },
+
+  sectionLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#a09cbf',
+    letterSpacing: 0.8,
+    marginBottom: 10,
+    marginTop: 4,
+  },
+  tcCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: '#ede9fc',
+    padding: 16,
+    marginBottom: 16,
+  },
+  tcBadgeGreen: {
+    backgroundColor: '#e3f7f1',
+    color: '#0A7A5A',
+  },
+  quizResultsCard: {
+    backgroundColor: '#f0ebff',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#c5b8f0',
+  },
+  quizResultsTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#4a3f8f',
+    marginBottom: 8,
+  },
+  quizRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 4,
+    marginBottom: 4,
+  },
+  quizLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#6b6490',
+  },
+  quizValue: {
+    fontSize: 11,
+    color: '#4a3f8f',
+    flex: 1,
+  },
+  quizLink: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#7c6fd4',
+    marginTop: 6,
+  },
+  upgradeBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#4a3f8f',
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 16,
+  },
+  upgradeLeft: { flex: 1 },
+  upgradeTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#ffffff',
+    marginBottom: 4,
+  },
+  upgradeSub: {
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.8)',
+    lineHeight: 16,
+    marginBottom: 4,
+  },
+  upgradePrice: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#c5b8f0',
+  },
+  upgradeArrow: {
+    fontSize: 20,
+    color: '#ffffff',
+    marginLeft: 12,
+  },
 });
+// ─── Component ────────────────────────────────────────────────────────────────
 
-export default function Dashboard() {
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import ChildSwitcher from '../../components/ChildSwitcher';
+import { useActiveChild } from '../../services/childManager';
+
+export default function DashboardScreen() {
   const router = useRouter();
-  const { user } = useAuth();
-  const { childName } = usePmipProviderStore();
-  const [checklist, setChecklist] = useState([
-    { id: 1, text: 'Review Medicaid application', checked: false },
-    { id: 2, text: 'Schedule provider appointment', checked: false },
-    { id: 3, text: 'Update child profile', checked: true },
-  ]);
+  const insets = useSafeAreaInsets();
+  const { signOut } = useAuth();
+  const { isPremium } = useIsPremium();
+  const { child, childId, key: childKey } = useActiveChild();
 
-  const toggleChecklistItem = (id: number) => {
-    setChecklist(checklist.map(item =>
-      item.id === id ? { ...item, checked: !item.checked } : item
-    ));
+  // ── State ──────────────────────────────────────────────────────────────────
+  const [profile, setProfile] = useState<{ childName?: string; diagnosis?: string; diagnosisLevel?: string } | null>(null);
+  const [diagnosisStep, setDiagnosisStep] = useState(0);
+  const [medicaidProgress, setMedicaidProgress] = useState(0);
+  const [waiverProgress, setWaiverProgress] = useState(0);
+  const [iepProgress, setIepProgress] = useState(0);
+  const [weeklyChecks, setWeeklyChecks] = useState<boolean[]>([false, false, false, false]);
+  const [icdCodes, setIcdCodes] = useState<string[]>([]);
+  const [devFlags, setDevFlags] = useState<string[]>([]);
+
+  const DIAGNOSIS_TOTAL = 8;
+  const MEDICAID_TOTAL = 6;
+  const WAIVER_TOTAL = 7;
+  const IEP_TOTAL = 5;
+
+  // ── Load data ──────────────────────────────────────────────────────────────
+  const loadData = useCallback(async () => {
+    try {
+      const [
+        rawProfile,
+        rawDiag,
+        rawMedicaid,
+        rawWaiver,
+        rawIep,
+        rawWeekly,
+        rawIcd,
+        rawDev,
+      ] = await Promise.all([
+        AsyncStorage.getItem('profile'),
+        AsyncStorage.getItem(childKey('ap_diagnosis_step')),
+        AsyncStorage.getItem(childKey('ap_medicaid_progress')),
+        AsyncStorage.getItem(childKey('ap_waiver_progress')),
+        AsyncStorage.getItem(childKey('ap_iep_progress')),
+        AsyncStorage.getItem('ap_weekly_checks'),
+        AsyncStorage.getItem(childKey('ap_icd_quiz_codes')),
+        AsyncStorage.getItem(childKey('ap_disability_quiz_results')),
+      ]);
+      if (rawProfile) setProfile(JSON.parse(rawProfile));
+      setDiagnosisStep(rawDiag ? parseInt(rawDiag, 10) : 0);
+      setMedicaidProgress(rawMedicaid ? parseInt(rawMedicaid, 10) : 0);
+      setWaiverProgress(rawWaiver ? parseInt(rawWaiver, 10) : 0);
+      setIepProgress(rawIep ? parseInt(rawIep, 10) : 0);
+      if (rawWeekly) setWeeklyChecks(JSON.parse(rawWeekly));
+      if (rawIcd) setIcdCodes(JSON.parse(rawIcd));
+      if (rawDev) {
+        const flags = JSON.parse(rawDev);
+        setDevFlags(Array.isArray(flags) ? flags.slice(0, 3) : []);
+      }
+    } catch (_) {}
+  }, [childKey]);
+
+  useFocusEffect(useCallback(() => { loadData(); }, [loadData]));
+
+  const toggleWeekly = async (i: number) => {
+    const updated = weeklyChecks.map((v, idx) => idx === i ? !v : v);
+    setWeeklyChecks(updated);
+    await AsyncStorage.setItem('ap_weekly_checks', JSON.stringify(updated));
   };
 
-  const initials = (childName || 'AP')
-    .split(' ')
-    .map(n => n[0])
-    .join('')
-    .toUpperCase();
+  const displayName = child?.name || profile?.childName || 'your child';
+  const diagnosis = child?.diagnosis || profile?.diagnosis || '';
+  const diagLevel = child?.diagnosisLevel || profile?.diagnosisLevel || '';
+
+  const WEEKLY_TASKS = [
+    'Log an observation',
+    'Check upcoming appointments',
+    'Review IEP goals',
+    'Update service tracker',
+  ];
+
+  const PATHWAYS = [
+    { icon: '🔍', name: 'Diagnosis', route: '/diagnosis', progress: diagnosisStep, total: DIAGNOSIS_TOTAL },
+    { icon: '🏥', name: 'Medicaid', route: '/medicaid', progress: medicaidProgress, total: MEDICAID_TOTAL },
+    { icon: '📋', name: 'Waiver', route: '/waiver', progress: waiverProgress, total: WAIVER_TOTAL },
+    { icon: '🏫', name: 'IEP', route: '/iep', progress: iepProgress, total: IEP_TOTAL },
+    { icon: '🚽', name: 'Potty', route: '/potty', progress: 0, total: 5 },
+  ];
+
+  const TOOL_TILES = [
+    { icon: '🛠️', name: 'All Tools', route: '/tools' },
+    { icon: '⚙️', name: 'Settings', route: '/settings' },
+    { icon: '🤝', name: 'Support', route: 'mailto:support@autismpathways.app' },
+    { icon: '📄', name: 'Forms', route: '/tools' },
+  ];
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+    <View style={styles.container}>
       {/* TOP NAV */}
-      <View style={styles.topNav}>
+      <View style={[styles.topNav, { paddingTop: insets.top + 4 }]}>
         <View style={styles.navLeft}>
-          <View style={styles.navLogo} />
+          <View style={styles.navLogo}>
+            <Text style={{ fontSize: 14 }}>🧩</Text>
+          </View>
           <Text style={styles.navTitle}>
-            Autism<Text style={styles.navTitlePurple}> Pathways</Text>
+            Autism <Text style={styles.navTitlePurple}>Pathways</Text>
           </Text>
         </View>
         <View style={styles.navRight}>
-          <TouchableOpacity
-            onPress={() => router.push('/settings' as any)}
-            style={styles.navGear}
-          >
+          <ChildSwitcher onSwitch={() => loadData()} />
+          <TouchableOpacity style={styles.navGear} onPress={() => router.push('/settings')}>
             <Text style={styles.navGearIcon}>⚙️</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.navAvatar}>
-            <Text>{initials}</Text>
-          </TouchableOpacity>
         </View>
       </View>
 
-      {/* CHILD SELECTOR */}
-      <View style={styles.childSelector}>
-        <View style={styles.childAv}>
-          <Text style={{ color: COLORS.white, fontWeight: '700' }}>E</Text>
-        </View>
-        <View style={styles.childInfo}>
-          <Text style={styles.childName}>{childName || 'Child Name'}</Text>
-          <Text style={styles.childMeta}>Autism Spectrum Disorder</Text>
-        </View>
-      </View>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <View style={{ paddingHorizontal: SPACING.lg, paddingTop: SPACING.lg }}>
 
-      {/* HERO */}
-      <View style={styles.hero}>
-        <Text style={styles.heroEyebrow}>Welcome back</Text>
-        <Text style={styles.heroName}>Hi {childName || 'Friend'}</Text>
-        <View style={styles.statRow}>
-          <View style={styles.statPill}>
-            <Text style={styles.statPillNum}>60%</Text>
-            <Text style={styles.statPillLabel}>Waiver</Text>
-          </View>
-          <View style={styles.statPill}>
-            <Text style={styles.statPillNum}>2</Text>
-            <Text style={styles.statPillLabel}>Appeals</Text>
-          </View>
-          <View style={styles.statPill}>
-            <Text style={styles.statPillNum}>1</Text>
-            <Text style={styles.statPillLabel}>Waitlist</Text>
-          </View>
-          <View style={styles.statPill}>
-            <Text style={[styles.statPillNum, styles.statPillNumTeal]}>5</Text>
-            <Text style={styles.statPillLabel}>Done</Text>
-          </View>
-        </View>
-      </View>
-
-      {/* CONTENT */}
-      <View style={styles.content}>
-        {/* MEDICAID PATHWAY */}
-        <View style={styles.secHeader}>
-          <Text style={styles.secTitle}>📊 Medicaid Pathway</Text>
-        </View>
-        <View style={styles.trackerCard}>
-          <View style={styles.tcTop}>
-            <Text style={styles.tcTitle}>Medicaid Application</Text>
-            <Text style={[styles.tcBadge, styles.tcBadgePurple]}>IN PROGRESS</Text>
-          </View>
-          <View style={styles.tcSteps}>
-            <View style={[styles.tcStep, styles.tcStepDone]} />
-            <View style={[styles.tcStep, styles.tcStepDone]} />
-            <View style={[styles.tcStep, styles.tcStepDone]} />
-            <View style={styles.tcStep} />
-          </View>
-          <View style={styles.tcBottom}>
-            <Text style={styles.tcPhase}>Step 3 of 4</Text>
-            <Text style={styles.tcNext}>Continue</Text>
-          </View>
-        </View>
-
-        {/* DIAGNOSIS PATHWAY */}
-        <View style={styles.secHeader}>
-          <Text style={styles.secTitle}>📈 Diagnosis Pathway</Text>
-        </View>
-        <TouchableOpacity style={styles.trackerCard} onPress={() => router.push('/diagnosis')} activeOpacity={0.75}>
-          <View style={styles.tcTop}>
-            <Text style={styles.tcTitle}>Diagnosis Process</Text>
-            <Text style={[styles.tcBadge, styles.tcBadgeTeal]}>IN PROGRESS</Text>
-          </View>
-          <View style={styles.tcSteps}>
-            <View style={[styles.tcStep, styles.tcStepDoneTeal]} />
-            <View style={[styles.tcStep, styles.tcStepDoneTeal]} />
-            <View style={styles.tcStep} />
-          </View>
-          <View style={styles.tcBottom}>
-            <Text style={styles.tcPhase}>Step 2 of 6</Text>
-            <Text style={styles.tcNext}>Continue →</Text>
-          </View>
-        </TouchableOpacity>
-
-        {/* PROFILE CARD */}
-        <View style={styles.secHeader}>
-          <Text style={styles.secTitle}>👤 Profile</Text>
-        </View>
-        <View style={styles.profileCard}>
-          <View style={styles.pcAv}>
-            <Text style={{ color: COLORS.white }}>👧</Text>
-          </View>
-          <View style={styles.pcBody}>
-            <Text style={styles.pcName}>{childName || 'Emma Rose'}, 8</Text>
-            <Text style={styles.pcMeta}>Autism Spectrum Disorder</Text>
-            <View style={styles.pcTags}>
-              <Text style={[styles.pcTag, styles.pcTagPurple]}>Level 1</Text>
-              <Text style={[styles.pcTag, styles.pcTagTeal]}>School Age</Text>
+          {/* PROFILE CARD */}
+          <TouchableOpacity style={styles.profileCard} onPress={() => router.push('/settings')} activeOpacity={0.85}>
+            <View style={[styles.pcAv, { backgroundColor: child?.color || '#c4b8f0' }]}>
+              <Text style={{ fontSize: 20 }}>{child?.avatar ? child.avatar : '👧'}</Text>
             </View>
-          </View>
-        </View>
-
-        {/* YOUR PATHWAYS */}
-        <View style={styles.secHeader}>
-          <Text style={styles.secTitle}>🎯 Your Pathways</Text>
-        </View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pathwayScroll}>
-          <TouchableOpacity style={styles.pathwayTile} onPress={() => router.push('/medicaid')} activeOpacity={0.75}>
-            <Text style={styles.ptIcon}>🏥</Text>
-            <Text style={styles.ptName}>Medicaid</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.pathwayTile} onPress={() => router.push('/diagnosis')} activeOpacity={0.75}>
-            <Text style={styles.ptIcon}>🧠</Text>
-            <Text style={styles.ptName}>Diagnosis</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.pathwayTile} onPress={() => router.push('/potty')} activeOpacity={0.75}>
-            <Text style={styles.ptIcon}>🚽</Text>
-            <Text style={styles.ptName}>Potty</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.pathwayTile} onPress={() => router.push('/observations')} activeOpacity={0.75}>
-            <Text style={styles.ptIcon}>📋</Text>
-            <Text style={styles.ptName}>Observations</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.pathwayTile} onPress={() => router.push('/provider-prep')} activeOpacity={0.75}>
-            <Text style={styles.ptIcon}>🩺</Text>
-            <Text style={styles.ptName}>Provider Prep</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.pathwayTile} onPress={() => router.push('/iep')} activeOpacity={0.75}>
-            <Text style={styles.ptIcon}>📚</Text>
-            <Text style={styles.ptName}>IEP</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.pathwayTile} onPress={() => router.push('/waiver')} activeOpacity={0.75}>
-            <Text style={styles.ptIcon}>🗺️</Text>
-            <Text style={styles.ptName}>Waiver</Text>
-          </TouchableOpacity>
-          <View style={styles.pathwayTile}>
-            <Text style={styles.ptIcon}>💼</Text>
-            <Text style={styles.ptName}>Employment</Text>
-            <View style={styles.doneBadge}>
-              <Text style={{ color: COLORS.white }}>✓</Text>
-            </View>
-          </View>
-        </ScrollView>
-
-        {/* COMPLETED PATHWAYS */}
-        <View style={styles.secHeader}>
-          <Text style={styles.secTitle}>✅ Completed</Text>
-        </View>
-        <View style={styles.trackerCard}>
-          <Text style={styles.tcTitle}>Early Intervention</Text>
-          <Text style={styles.tcPhase}>Completed in 2023</Text>
-        </View>
-
-        {/* DUAL GRID: APPEALS + THIS WEEK */}
-        <View style={styles.dualGrid}>
-          {/* APPEALS */}
-          <View style={styles.miniCard}>
-            <Text style={styles.miniTitle}>🔔 Appeals</Text>
-            <View style={styles.amRow}>
-              <View style={[styles.amBar, styles.amBarRed]} />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.amName}>Appeal #1</Text>
-                <Text style={styles.amSub}>Under review</Text>
+            <View style={styles.pcBody}>
+              <Text style={styles.pcName}>{displayName}</Text>
+              {diagnosis ? (
+                <Text style={styles.pcMeta}>{diagnosis}{diagLevel ? ` · Level ${diagLevel}` : ''}</Text>
+              ) : (
+                <Text style={styles.pcMeta}>Tap to complete profile</Text>
+              )}
+              <View style={styles.pcTags}>
+                {isPremium ? (
+                  <Text style={[styles.pcTag, styles.pcTagTeal]}>⭐ Premium</Text>
+                ) : (
+                  <Text style={[styles.pcTag, styles.pcTagPurple]}>Beta Access</Text>
+                )}
+                {diagLevel ? <Text style={[styles.pcTag, styles.pcTagPurple]}>Level {diagLevel}</Text> : null}
               </View>
             </View>
-            <View style={styles.amRow}>
-              <View style={[styles.amBar, styles.amBarTeal]} />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.amName}>Appeal #2</Text>
-                <Text style={styles.amSub}>Pending</Text>
-              </View>
+          </TouchableOpacity>
+
+          {/* QUIZ RESULTS CALLOUT */}
+          {(icdCodes.length > 0 || devFlags.length > 0) && (
+            <View style={styles.quizResultsCard}>
+              <Text style={styles.quizResultsTitle}>📋 From Your Quizzes</Text>
+              {icdCodes.length > 0 && (
+                <View style={styles.quizRow}>
+                  <Text style={styles.quizLabel}>ICD Codes: </Text>
+                  <Text style={styles.quizValue}>{icdCodes.slice(0, 4).join(', ')}</Text>
+                </View>
+              )}
+              {devFlags.length > 0 && (
+                <View style={styles.quizRow}>
+                  <Text style={styles.quizLabel}>Flagged: </Text>
+                  <Text style={styles.quizValue}>{devFlags.join(', ')}</Text>
+                </View>
+              )}
+              <TouchableOpacity onPress={() => router.push('/talking-points')}>
+                <Text style={styles.quizLink}>Use in Talking Points →</Text>
+              </TouchableOpacity>
             </View>
+          )}
+
+          {/* SECTION: YOUR JOURNEY */}
+          <Text style={styles.sectionLabel}>YOUR JOURNEY</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pathwayScroll} contentContainerStyle={{ paddingRight: SPACING.lg }}>
+            {PATHWAYS.map((p) => {
+              const pct = p.total > 0 ? Math.round((p.progress / p.total) * 100) : 0;
+              const done = pct >= 100;
+              return (
+                <TouchableOpacity key={p.name} style={styles.pathwayTile} onPress={() => router.push(p.route as any)} activeOpacity={0.8}>
+                  {done && <Text style={styles.doneBadge}>✓</Text>}
+                  <Text style={styles.ptIcon}>{p.icon}</Text>
+                  <Text style={styles.ptName}>{p.name}</Text>
+                  {p.total > 0 && (
+                    <Text style={{ fontSize: 9, color: COLORS.textLight, marginTop: 2 }}>{pct}%</Text>
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+
+          {/* TRACKER CARDS */}
+          <View style={styles.dualGrid}>
+            {/* Diagnosis tracker */}
+            <TouchableOpacity style={styles.miniCard} onPress={() => router.push('/diagnosis')} activeOpacity={0.85}>
+              <Text style={styles.miniTitle}>🔍 Diagnosis</Text>
+              <View style={{ flexDirection: 'row', gap: 3, marginBottom: 6 }}>
+                {Array.from({ length: DIAGNOSIS_TOTAL }).map((_, i) => (
+                  <View key={i} style={[{ flex: 1, height: 5, borderRadius: 3, backgroundColor: COLORS.card }, i < diagnosisStep && { backgroundColor: COLORS.purple }]} />
+                ))}
+              </View>
+              <Text style={styles.miniLink}>Step {Math.min(diagnosisStep + 1, DIAGNOSIS_TOTAL)} of {DIAGNOSIS_TOTAL} →</Text>
+            </TouchableOpacity>
+
+            {/* Medicaid tracker */}
+            <TouchableOpacity style={styles.miniCard} onPress={() => router.push('/medicaid')} activeOpacity={0.85}>
+              <Text style={styles.miniTitle}>🏥 Medicaid</Text>
+              <View style={{ flexDirection: 'row', gap: 3, marginBottom: 6 }}>
+                {Array.from({ length: MEDICAID_TOTAL }).map((_, i) => (
+                  <View key={i} style={[{ flex: 1, height: 5, borderRadius: 3, backgroundColor: COLORS.card }, i < medicaidProgress && { backgroundColor: COLORS.teal }]} />
+                ))}
+              </View>
+              <Text style={styles.miniLink}>Step {Math.min(medicaidProgress + 1, MEDICAID_TOTAL)} of {MEDICAID_TOTAL} →</Text>
+            </TouchableOpacity>
           </View>
 
           {/* THIS WEEK */}
-          <View style={styles.miniCard}>
-            <Text style={styles.miniTitle}>☑️ This Week</Text>
-            {checklist.map(item => (
-              <TouchableOpacity
-                key={item.id}
-                style={styles.twItem}
-                onPress={() => toggleChecklistItem(item.id)}
-              >
-                <View
-                  style={[
-                    styles.twChk,
-                    item.checked && styles.twChkDone,
-                  ]}
-                >
-                  {item.checked && <Text style={styles.twChkText}>✓</Text>}
+          <View style={styles.tcCard}>
+            <View style={styles.tcTop}>
+              <Text style={styles.tcTitle}>📅 This Week</Text>
+              <Text style={[styles.tcBadge, styles.tcBadgePurple]}>{weeklyChecks.filter(Boolean).length}/{WEEKLY_TASKS.length} done</Text>
+            </View>
+            {WEEKLY_TASKS.map((task, i) => (
+              <TouchableOpacity key={i} style={styles.twItem} onPress={() => toggleWeekly(i)} activeOpacity={0.7}>
+                <View style={[styles.twChk, weeklyChecks[i] && styles.twChkDone]}>
+                  {weeklyChecks[i] && <Text style={styles.twChkText}>✓</Text>}
                 </View>
-                <Text
-                  style={[
-                    styles.twText,
-                    item.checked && styles.twTextDone,
-                  ]}
-                >
-                  {item.text}
-                </Text>
+                <Text style={[styles.twText, weeklyChecks[i] && styles.twTextDone]}>{task}</Text>
               </TouchableOpacity>
             ))}
           </View>
-        </View>
 
-        {/* TOOLS */}
-        <View style={styles.secHeader}>
-          <Text style={styles.secTitle}>🛠️ Tools & Resources</Text>
+          {/* TOOLS GRID */}
+          <Text style={styles.sectionLabel}>QUICK ACCESS</Text>
+          <View style={styles.toolsGrid}>
+            {TOOL_TILES.map((t) => (
+              <TouchableOpacity
+                key={t.name}
+                style={styles.toolTile}
+                onPress={() => {
+                  if (t.route.startsWith('mailto:')) {
+                    Linking.openURL(t.route);
+                  } else {
+                    router.push(t.route as any);
+                  }
+                }}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.toolIcon}>{t.icon}</Text>
+                <Text style={styles.toolName}>{t.name}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* UPGRADE BANNER (non-premium only) */}
+          {!isPremium && (
+            <TouchableOpacity style={styles.upgradeBanner} onPress={() => router.push('/paywall')} activeOpacity={0.9}>
+              <View style={styles.upgradeLeft}>
+                <Text style={styles.upgradeTitle}>Unlock Premium Access</Text>
+                <Text style={styles.upgradeSub}>Appeal Tracker, unlimited contacts, all talking points scripts, and more.</Text>
+                <Text style={styles.upgradePrice}>$4.99/mo · $39.99/yr</Text>
+              </View>
+              <Text style={styles.upgradeArrow}>→</Text>
+            </TouchableOpacity>
+          )}
+
         </View>
-        <View style={styles.toolsGrid}>
-          <TouchableOpacity
-            style={styles.toolTile}
-            onPress={() => router.push('/tools' as any)}
-            activeOpacity={0.75}
-          >
-            <Text style={styles.toolIcon}>📖</Text>
-            <Text style={styles.toolName}>All Tools</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.toolTile}
-            onPress={() => Linking.openURL('mailto:contact@autismpathways.app')}
-            activeOpacity={0.75}
-          >
-            <Text style={styles.toolIcon}>📞</Text>
-            <Text style={styles.toolName}>Support</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.toolTile}
-            onPress={() => router.push('/tools' as any)}
-            activeOpacity={0.75}
-          >
-            <Text style={styles.toolIcon}>📝</Text>
-            <Text style={styles.toolName}>Forms</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.toolTile}
-            onPress={() => router.push('/settings' as any)}
-            activeOpacity={0.75}
-          >
-            <Text style={styles.toolIcon}>⚙️</Text>
-            <Text style={styles.toolName}>Settings</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
