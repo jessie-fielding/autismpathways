@@ -54,13 +54,13 @@ const TP_CONTENT: Record<string, AudienceData> = {
       {
         script: "I have written observations documenting [CHILD]'s behavior. May I share these with you now, or submit them in advance so your team can review before our evaluation appointment?",
         pushbacks: [
-          { objection: '"We do our own assessment — parental notes aren\'t part of our process."', response: "I'd like to understand your process better. Research shows parent-reported observations are clinically significant in autism diagnosis. Can you tell me how parent input is factored into your evaluation?" },
+          { objection: `"We do our own assessment — parental notes aren\'t part of our process."`, response: "I'd like to understand your process better. Research shows parent-reported observations are clinically significant in autism diagnosis. Can you tell me how parent input is factored into your evaluation?" },
         ],
       },
       {
         script: "We're concerned about a potential autism diagnosis. Early identification is important for accessing services — especially school supports and Medicaid-funded therapies. Time matters for [CHILD].",
         pushbacks: [
-          { objection: '"A diagnosis isn\'t always necessary to get services."', response: "In our experience and from what we've researched, many of the most effective services — ABA therapy, certain school accommodations, and waiver programs — require a formal diagnosis. Can you help us understand what [CHILD] could access with and without a diagnosis?" },
+          { objection: `"A diagnosis isn\'t always necessary to get services."`, response: "In our experience and from what we've researched, many of the most effective services — ABA therapy, certain school accommodations, and waiver programs — require a formal diagnosis. Can you help us understand what [CHILD] could access with and without a diagnosis?" },
         ],
       },
       {
@@ -112,7 +112,7 @@ const TP_CONTENT: Record<string, AudienceData> = {
       {
         script: "I'm requesting that [CHILD]'s IEP include a Behavior Support Plan. The behaviors we're seeing are communication-based, and I want to make sure the team is addressing the underlying cause, not just the behavior.",
         pushbacks: [
-          { objection: '"The behaviors aren\'t severe enough to warrant a BSP."', response: "A BSP isn't just for severe behaviors — it's for any behavior that's impeding learning. [CHILD]'s behaviors are impacting their ability to access instruction. I'd like this formally assessed and addressed in the IEP." },
+          { objection: `"The behaviors aren\'t severe enough to warrant a BSP."`, response: "A BSP isn't just for severe behaviors — it's for any behavior that's impeding learning. [CHILD]'s behaviors are impacting their ability to access instruction. I'd like this formally assessed and addressed in the IEP." },
         ],
       },
       {
@@ -122,7 +122,7 @@ const TP_CONTENT: Record<string, AudienceData> = {
       {
         script: "I'm requesting an independent educational evaluation at the district's expense. I disagree with the school's evaluation findings and I believe an outside evaluator would give us a more complete picture.",
         pushbacks: [
-          { objection: '"You\'d need to pay for that yourself."', response: "Under IDEA, if I disagree with the school's evaluation, I have the right to request an IEE at public expense. I'm formally making that request now. Can you provide me with the district's IEE policy in writing?" },
+          { objection: `"You\'d need to pay for that yourself."`, response: "Under IDEA, if I disagree with the school's evaluation, I have the right to request an IEE at public expense. I'm formally making that request now. Can you provide me with the district's IEE policy in writing?" },
         ],
       },
       {
@@ -191,7 +191,7 @@ const TP_CONTENT: Record<string, AudienceData> = {
       {
         script: "I'd like to discuss [CHILD]'s therapy goals. I want to make sure they are aligned with our family's priorities and that we're seeing measurable progress in key areas.",
         pushbacks: [
-          { objection: '"We're already working on these goals."', response: "I understand, but I'd like to review them in detail. Can you explain how each goal is being addressed in sessions and what progress you're observing?" },
+          { objection: `"We're already working on these goals."`, response: "I understand, but I'd like to review them in detail. Can you explain how each goal is being addressed in sessions and what progress you're observing?" },
         ],
       },
       {
