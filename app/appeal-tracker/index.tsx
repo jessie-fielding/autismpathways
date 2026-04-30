@@ -857,4 +857,4 @@ const styles = StyleSheet.create({
   modalBtnPrimary: {
     backgroundColor: COLORS.primary,
   },
-}));
+});
