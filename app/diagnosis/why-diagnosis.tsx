@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '../../lib/theme';
+import { useActiveChild } from '../../services/childManager';
 
 const TOTAL_STEPS = 6;
 const CURRENT_STEP = 2;
@@ -23,6 +24,7 @@ const REASONS = [
 
 export default function WhyDiagnosisScreen() {
   const router = useRouter();
+  const { key: childKey } = useActiveChild();
   const [selected, setSelected] = useState<string[]>([]);
 
   const toggle = (id: string) => {
@@ -33,6 +35,7 @@ export default function WhyDiagnosisScreen() {
 
   const handleContinue = async () => {
     await AsyncStorage.setItem('diagnosis_reasons', JSON.stringify(selected));
+    await AsyncStorage.setItem(childKey('ap_diagnosis_step'), '2');
     router.push('/diagnosis/eval-type');
   };
 

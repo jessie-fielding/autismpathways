@@ -598,32 +598,41 @@ export default function DashboardScreen() {
     try {
       const [
         rawProfile,
-        rawDiag,
-        rawMedicaid,
-        rawWaiver,
-        rawIep,
+        rawDiag,      rawDiagFallback,
+        rawMedicaid,  rawMedicaidFallback,
+        rawWaiver,    rawWaiverFallback,
+        rawIep,       rawIepFallback,
         rawWeekly,
-        rawIcd,
-        rawDev,
+        rawIcd,       rawIcdFallback,
+        rawDev,       rawDevFallback,
       ] = await Promise.all([
         AsyncStorage.getItem('profile'),
-        AsyncStorage.getItem(childKey('ap_diagnosis_step')),
-        AsyncStorage.getItem(childKey('ap_medicaid_progress')),
-        AsyncStorage.getItem(childKey('ap_waiver_progress')),
-        AsyncStorage.getItem(childKey('ap_iep_progress')),
+        AsyncStorage.getItem(childKey('ap_diagnosis_step')),   AsyncStorage.getItem('ap_diagnosis_step'),
+        AsyncStorage.getItem(childKey('ap_medicaid_progress')), AsyncStorage.getItem('ap_medicaid_progress'),
+        AsyncStorage.getItem(childKey('ap_waiver_progress')),  AsyncStorage.getItem('ap_waiver_progress'),
+        AsyncStorage.getItem(childKey('ap_iep_progress')),     AsyncStorage.getItem('ap_iep_progress'),
         AsyncStorage.getItem('ap_weekly_checks'),
-        AsyncStorage.getItem(childKey('ap_icd_quiz_codes')),
-        AsyncStorage.getItem(childKey('ap_disability_quiz_results')),
+        AsyncStorage.getItem(childKey('ap_icd_quiz_codes')),   AsyncStorage.getItem('ap_icd_quiz_codes'),
+        AsyncStorage.getItem(childKey('ap_disability_quiz_results')), AsyncStorage.getItem('ap_disability_quiz_results'),
       ]);
+
+      // Prefer child-scoped value; fall back to legacy global key
+      const diagRaw     = rawDiag     ?? rawDiagFallback;
+      const medicaidRaw = rawMedicaid  ?? rawMedicaidFallback;
+      const waiverRaw   = rawWaiver   ?? rawWaiverFallback;
+      const iepRaw      = rawIep      ?? rawIepFallback;
+      const icdRaw      = rawIcd      ?? rawIcdFallback;
+      const devRaw      = rawDev      ?? rawDevFallback;
+
       if (rawProfile) setProfile(JSON.parse(rawProfile));
-      setDiagnosisStep(rawDiag ? parseInt(rawDiag, 10) : 0);
-      setMedicaidProgress(rawMedicaid ? parseInt(rawMedicaid, 10) : 0);
-      setWaiverProgress(rawWaiver ? parseInt(rawWaiver, 10) : 0);
-      setIepProgress(rawIep ? parseInt(rawIep, 10) : 0);
+      setDiagnosisStep(diagRaw     ? parseInt(diagRaw,     10) : 0);
+      setMedicaidProgress(medicaidRaw ? parseInt(medicaidRaw, 10) : 0);
+      setWaiverProgress(waiverRaw   ? parseInt(waiverRaw,   10) : 0);
+      setIepProgress(iepRaw        ? parseInt(iepRaw,       10) : 0);
       if (rawWeekly) setWeeklyChecks(JSON.parse(rawWeekly));
-      if (rawIcd) setIcdCodes(JSON.parse(rawIcd));
-      if (rawDev) {
-        const flags = JSON.parse(rawDev);
+      if (icdRaw) setIcdCodes(JSON.parse(icdRaw));
+      if (devRaw) {
+        const flags = JSON.parse(devRaw);
         setDevFlags(Array.isArray(flags) ? flags.slice(0, 3) : []);
       }
     } catch (_) {}

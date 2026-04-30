@@ -1,15 +1,17 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '../../lib/theme';
 import { getEvaluatorsForState, normalizeState, type Evaluator } from '../../data/evaluators';
+import { useActiveChild } from '../../services/childManager';
 
 const TOTAL_STEPS = 6;
 const CURRENT_STEP = 4;
 
 export default function EvaluatorListScreen() {
   const router = useRouter();
+  const { key: childKey } = useActiveChild();
   const params = useLocalSearchParams<{ retry?: string }>();
   const isRetry = params.retry === 'true';
 
@@ -60,6 +62,7 @@ export default function EvaluatorListScreen() {
 
   const handleSelect = async (evaluator: Evaluator) => {
     await AsyncStorage.setItem('selected_evaluator', JSON.stringify(evaluator));
+    await AsyncStorage.setItem(childKey('ap_diagnosis_step'), '4');
     router.push({
       pathname: '/diagnosis/appointment-date',
       params: {

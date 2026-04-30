@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '../../lib/theme';
+import { useActiveChild } from '../../services/childManager';
 
 const TOTAL_STEPS = 6;
 const CURRENT_STEP = 3;
@@ -30,11 +31,13 @@ const OPTIONS = [
 
 export default function EvalTypeScreen() {
   const router = useRouter();
+  const { key: childKey } = useActiveChild();
   const [selected, setSelected] = useState<string | null>(null);
 
   const handleContinue = async () => {
     if (!selected) return;
     await AsyncStorage.setItem('eval_type_preference', selected);
+    await AsyncStorage.setItem(childKey('ap_diagnosis_step'), '3');
     if (selected === 'help-me-decide') {
       router.push('/diagnosis/help-me-decide');
     } else {

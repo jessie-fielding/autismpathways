@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { COLORS, SPACING, FONT_SIZES, RADIUS } from '../../lib/theme';
+import { addChild, loadChildren, setActiveChildId, getActiveChildId, updateChild } from '../../services/childManager';
 
 const styles = StyleSheet.create({
   container: {
@@ -258,6 +259,22 @@ export default function StartHereScreen() {
   const [diagnosisLevel, setDiagnosisLevel] = useState('');
   const [selectedConcerns, setSelectedConcerns] = useState<string[]>([]);
 
+  // Pre-load any existing saved profile so the form is pre-filled on re-visits
+  useEffect(() => {
+    AsyncStorage.getItem('profile').then((raw) => {
+      if (!raw) return;
+      try {
+        const p = JSON.parse(raw);
+        if (p.childName) setChildName(p.childName);
+        if (p.dob) setDob(p.dob);
+        if (p.state) setState(p.state);
+        if (p.diagnosis) setDiagnosis(p.diagnosis);
+        if (p.diagnosisLevel) setDiagnosisLevel(p.diagnosisLevel);
+        if (p.concerns) setSelectedConcerns(p.concerns);
+      } catch (_) {}
+    });
+  }, []);
+
   const toggleConcern = (id: string) => {
     setSelectedConcerns((prev) =>
       prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]
@@ -265,17 +282,49 @@ export default function StartHereScreen() {
   };
 
   const handleNext = async () => {
-    // Persist profile to AsyncStorage whenever user advances
+    // Persist profile to AsyncStorage on every step advance
+    try {
+      const profile = { childName, dob, state, diagnosis, diagnosisLevel, concerns: selectedConcerns };
+      await AsyncStorage.setItem('profile', JSON.stringify(profile));
+    } catch (e) {}
+
+    if (step < 3) {
+      setStep(step + 1);
+      return;
+    }
+
+    // ── Step 3 complete: save to childManager so dashboard + all screens sync ──
     try {
       const profile = { childName, dob, state, diagnosis, diagnosisLevel, concerns: selectedConcerns };
       await AsyncStorage.setItem('profile', JSON.stringify(profile));
       await AsyncStorage.setItem('ap_onboarding_complete', 'true');
+
+      // Upsert into childManager: update existing active child or create first child
+      const existingId = await getActiveChildId();
+      const children = await loadChildren();
+      const existing = children.find((c) => c.id === existingId);
+
+      if (existing) {
+        // Update the active child with onboarding data
+        await updateChild(existing.id, {
+          name: childName || existing.name,
+          dob: dob || existing.dob,
+          diagnosis: diagnosis || existing.diagnosis,
+          diagnosisLevel: (diagnosisLevel as any) || existing.diagnosisLevel,
+        });
+      } else {
+        // No child yet — create one from onboarding data
+        const newChild = await addChild({
+          name: childName || 'My Child',
+          dob,
+          diagnosis,
+          diagnosisLevel: diagnosisLevel as any,
+        });
+        await setActiveChildId(newChild.id);
+      }
     } catch (e) {}
-    if (step < 3) {
-      setStep(step + 1);
-    } else {
-      router.replace('/(tabs)/dashboard');
-    }
+
+    router.replace('/(tabs)/dashboard');
   };
 
   const handleBack = () => {

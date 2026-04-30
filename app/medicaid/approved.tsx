@@ -6,6 +6,7 @@ import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useActiveChild } from '../../services/childManager';
 
 const COLORS = {
   bg: '#F5F4FB', card: '#FFFFFF', navy: '#1a1f5e', purple: '#7c6fd4',
@@ -61,6 +62,7 @@ const STORAGE_KEY = 'ap_medicaid_approved_steps';
 export default function MedicaidApprovedScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { key: childKey } = useActiveChild();
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
 
   useFocusEffect(
@@ -76,7 +78,10 @@ export default function MedicaidApprovedScreen() {
       ? completedSteps.filter((s) => s !== num)
       : [...completedSteps, num];
     setCompletedSteps(updated);
+    // Save the checklist state
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    // Also sync the count to the child-scoped progress key so Dashboard tracker updates
+    await AsyncStorage.setItem(childKey('ap_medicaid_progress'), String(updated.length));
   };
 
   const progress = Math.round((completedSteps.length / STEPS.length) * 100);

@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useActiveChild } from '../../services/childManager';
 
 const COLORS = {
   primary: '#5B4FCF',
@@ -28,6 +29,7 @@ const COLORS = {
 
 export default function AppointmentDateScreen() {
   const router = useRouter();
+  const { key: childKey } = useActiveChild();
   const params = useLocalSearchParams();
   const evaluatorName = params.evaluatorName as string || 'your evaluator';
   const evalType = params.evalType as string || 'telehealth';
@@ -54,6 +56,7 @@ export default function AppointmentDateScreen() {
     try {
       await AsyncStorage.setItem('diagnosis_appointment_date', dateStr);
       await AsyncStorage.setItem('diagnosis_evaluator_name', evaluatorName);
+      await AsyncStorage.setItem(childKey('ap_diagnosis_step'), '5');
     } catch (e) {}
     router.push({
       pathname: '/diagnosis/how-did-it-go',
@@ -65,6 +68,7 @@ export default function AppointmentDateScreen() {
     try {
       await AsyncStorage.setItem('diagnosis_appointment_status', 'working_on_it');
       await AsyncStorage.setItem('diagnosis_evaluator_name', evaluatorName);
+      await AsyncStorage.setItem(childKey('ap_diagnosis_step'), '5');
     } catch (e) {}
     router.push({
       pathname: '/diagnosis/how-did-it-go',

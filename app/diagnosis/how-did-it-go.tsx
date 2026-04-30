@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   Animated,
   ScrollView,
@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useActiveChild } from '../../services/childManager';
 
 const COLORS = {
   primary: '#5B4FCF',
@@ -37,6 +38,7 @@ const COLORS = {
 
 export default function HowDidItGoScreen() {
   const router = useRouter();
+  const { key: childKey } = useActiveChild();
   const params = useLocalSearchParams<{
     evaluatorName?: string;
     evalType?: string;
@@ -97,6 +99,8 @@ export default function HowDidItGoScreen() {
 
   const handleOutcome = async (choice: 'diagnosed' | 'no-diagnosis') => {
     setOutcome(choice);
+    // Mark diagnosis pathway complete (step 6 = 100%) on the dashboard tracker
+    await AsyncStorage.setItem(childKey('ap_diagnosis_step'), '6');
     if (choice === 'diagnosed') {
       setShowCelebration(true);
       await AsyncStorage.setItem('diagnosis_outcome', 'diagnosed');

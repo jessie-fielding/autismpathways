@@ -1,4 +1,5 @@
 import React, { useCallback, useRef, useState } from 'react';
+import { useActiveChild } from '../../services/childManager';
 import {
   Alert,
   Clipboard,
@@ -235,6 +236,7 @@ function ScriptCard({ item }: { item: typeof PUSHBACK_SCRIPTS[0] }) {
 export default function IEPScreen() {
   const router = useRouter();
   const scrollRef = useRef<ScrollView>(null);
+  const { key: childKey } = useActiveChild();
 
   const [activeTab, setActiveTab] = useState<'rights' | 'prep' | 'goals' | 'meetings' | 'flagged'>('rights');
   const [checkedItems, setCheckedItems] = useState<Set<number>>(new Set());
@@ -301,6 +303,8 @@ export default function IEPScreen() {
     next.has(i) ? next.delete(i) : next.add(i);
     setCheckedItems(next);
     await AsyncStorage.setItem('ap_iep_checklist', JSON.stringify([...next]));
+    // Sync progress count to child-scoped key so Dashboard tracker updates
+    await AsyncStorage.setItem(childKey('ap_iep_progress'), String(next.size));
   }
 
   // ── Setup ──
