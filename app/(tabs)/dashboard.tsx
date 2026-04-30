@@ -569,6 +569,7 @@ const styles = StyleSheet.create({
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import ChildSwitcher from '../../components/ChildSwitcher';
+import HamburgerMenu from '../../components/HamburgerMenu';
 import { useActiveChild } from '../../services/childManager';
 
 export default function DashboardScreen() {
@@ -580,6 +581,7 @@ export default function DashboardScreen() {
 
   // ── State ──────────────────────────────────────────────────────────────────
   const [profile, setProfile] = useState<{ childName?: string; diagnosis?: string; diagnosisLevel?: string } | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [diagnosisStep, setDiagnosisStep] = useState(0);
   const [medicaidProgress, setMedicaidProgress] = useState(0);
   const [waiverProgress, setWaiverProgress] = useState(0);
@@ -698,8 +700,8 @@ export default function DashboardScreen() {
         </View>
         <View style={styles.navRight}>
           <ChildSwitcher onSwitch={(newId: string) => loadData(newId)} />
-          <TouchableOpacity style={styles.navGear} onPress={() => router.push('/settings')}>
-            <Text style={styles.navGearIcon}>⚙️</Text>
+          <TouchableOpacity style={styles.navGear} onPress={() => setMenuOpen(true)}>
+            <Text style={styles.navGearIcon}>☰</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -848,6 +850,7 @@ export default function DashboardScreen() {
 
         </View>
       </ScrollView>
+      <HamburgerMenu visible={menuOpen} onClose={() => setMenuOpen(false)} />
     </View>
   );
 }
