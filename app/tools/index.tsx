@@ -215,7 +215,7 @@ export default function AllToolsScreen() {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Text style={styles.backText}>← Home</Text>
         </TouchableOpacity>
@@ -287,7 +287,6 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
   header: {
     paddingHorizontal: SPACING.lg,
-    paddingTop: insets.top + 8,
     paddingBottom: SPACING.md,
     flexDirection: 'row',
     alignItems: 'center',
