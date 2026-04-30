@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, SPACING, FONT_SIZES, RADIUS } from '../../lib/theme';
 
 const styles = StyleSheet.create({
@@ -260,7 +261,12 @@ export default function StartHereScreen() {
     );
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
+    // Persist profile to AsyncStorage whenever user advances
+    try {
+      const profile = { childName, dob, state, diagnosis, concerns: selectedConcerns };
+      await AsyncStorage.setItem('profile', JSON.stringify(profile));
+    } catch (e) {}
     if (step < 3) setStep(step + 1);
   };
 

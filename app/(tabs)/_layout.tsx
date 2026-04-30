@@ -33,11 +33,42 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="diagnosis-pathway"
+        options={{
+          title: 'Diagnosis',
+          href: '/diagnosis',
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'search' : 'search-outline'} color={color} size={24} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="medicaid-pathway"
         options={{
           title: 'Medicaid',
+          href: '/medicaid',
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'document' : 'document-outline'} color={color} size={24} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="tools-tab"
+        options={{
+          title: 'Tools',
+          href: '/tools',
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'grid' : 'grid-outline'} color={color} size={24} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="settings-tab"
+        options={{
+          title: 'Settings',
+          href: '/settings',
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'settings' : 'settings-outline'} color={color} size={24} />
           ),
         }}
       />

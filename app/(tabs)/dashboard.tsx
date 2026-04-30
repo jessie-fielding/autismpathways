@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useAuth } from '../../services/useAuth';
 import { usePmipProviderStore } from '../../lib/pmip/pmipProviderStore';
 
@@ -68,6 +69,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.md,
+  },
+  navGear: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(124,111,212,0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  navGearIcon: {
+    fontSize: 16,
   },
   navAvatar: {
     width: 32,
@@ -464,6 +476,7 @@ const styles = StyleSheet.create({
 });
 
 export default function Dashboard() {
+  const router = useRouter();
   const { user } = useAuth();
   const { childName } = usePmipProviderStore();
   const [checklist, setChecklist] = useState([
@@ -495,6 +508,12 @@ export default function Dashboard() {
           </Text>
         </View>
         <View style={styles.navRight}>
+          <TouchableOpacity
+            onPress={() => router.push('/settings' as any)}
+            style={styles.navGear}
+          >
+            <Text style={styles.navGearIcon}>⚙️</Text>
+          </TouchableOpacity>
           <TouchableOpacity style={styles.navAvatar}>
             <Text>{initials}</Text>
           </TouchableOpacity>
@@ -563,7 +582,7 @@ export default function Dashboard() {
         <View style={styles.secHeader}>
           <Text style={styles.secTitle}>📈 Diagnosis Pathway</Text>
         </View>
-        <View style={styles.trackerCard}>
+        <TouchableOpacity style={styles.trackerCard} onPress={() => router.push('/diagnosis')} activeOpacity={0.75}>
           <View style={styles.tcTop}>
             <Text style={styles.tcTitle}>Diagnosis Process</Text>
             <Text style={[styles.tcBadge, styles.tcBadgeTeal]}>IN PROGRESS</Text>
@@ -574,10 +593,10 @@ export default function Dashboard() {
             <View style={styles.tcStep} />
           </View>
           <View style={styles.tcBottom}>
-            <Text style={styles.tcPhase}>Step 2 of 3</Text>
-            <Text style={styles.tcNext}>Continue</Text>
+            <Text style={styles.tcPhase}>Step 2 of 6</Text>
+            <Text style={styles.tcNext}>Continue →</Text>
           </View>
-        </View>
+        </TouchableOpacity>
 
         {/* PROFILE CARD */}
         <View style={styles.secHeader}>
@@ -602,14 +621,34 @@ export default function Dashboard() {
           <Text style={styles.secTitle}>🎯 Your Pathways</Text>
         </View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pathwayScroll}>
-          <View style={styles.pathwayTile}>
+          <TouchableOpacity style={styles.pathwayTile} onPress={() => router.push('/medicaid')} activeOpacity={0.75}>
             <Text style={styles.ptIcon}>🏥</Text>
             <Text style={styles.ptName}>Medicaid</Text>
-          </View>
-          <View style={styles.pathwayTile}>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.pathwayTile} onPress={() => router.push('/diagnosis')} activeOpacity={0.75}>
             <Text style={styles.ptIcon}>🧠</Text>
             <Text style={styles.ptName}>Diagnosis</Text>
-          </View>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.pathwayTile} onPress={() => router.push('/potty')} activeOpacity={0.75}>
+            <Text style={styles.ptIcon}>🚽</Text>
+            <Text style={styles.ptName}>Potty</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.pathwayTile} onPress={() => router.push('/observations')} activeOpacity={0.75}>
+            <Text style={styles.ptIcon}>📋</Text>
+            <Text style={styles.ptName}>Observations</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.pathwayTile} onPress={() => router.push('/provider-prep')} activeOpacity={0.75}>
+            <Text style={styles.ptIcon}>🩺</Text>
+            <Text style={styles.ptName}>Provider Prep</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.pathwayTile} onPress={() => router.push('/iep')} activeOpacity={0.75}>
+            <Text style={styles.ptIcon}>📚</Text>
+            <Text style={styles.ptName}>IEP</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.pathwayTile} onPress={() => router.push('/waiver')} activeOpacity={0.75}>
+            <Text style={styles.ptIcon}>🗺️</Text>
+            <Text style={styles.ptName}>Waiver</Text>
+          </TouchableOpacity>
           <View style={styles.pathwayTile}>
             <Text style={styles.ptIcon}>💼</Text>
             <Text style={styles.ptName}>Employment</Text>
@@ -684,22 +723,38 @@ export default function Dashboard() {
           <Text style={styles.secTitle}>🛠️ Tools & Resources</Text>
         </View>
         <View style={styles.toolsGrid}>
-          <View style={styles.toolTile}>
+          <TouchableOpacity
+            style={styles.toolTile}
+            onPress={() => router.push('/tools' as any)}
+            activeOpacity={0.75}
+          >
             <Text style={styles.toolIcon}>📖</Text>
-            <Text style={styles.toolName}>Resources</Text>
-          </View>
-          <View style={styles.toolTile}>
+            <Text style={styles.toolName}>All Tools</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.toolTile}
+            onPress={() => Linking.openURL('mailto:contact@autismpathways.app')}
+            activeOpacity={0.75}
+          >
             <Text style={styles.toolIcon}>📞</Text>
             <Text style={styles.toolName}>Support</Text>
-          </View>
-          <View style={styles.toolTile}>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.toolTile}
+            onPress={() => router.push('/tools' as any)}
+            activeOpacity={0.75}
+          >
             <Text style={styles.toolIcon}>📝</Text>
             <Text style={styles.toolName}>Forms</Text>
-          </View>
-          <View style={styles.toolTile}>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.toolTile}
+            onPress={() => router.push('/settings' as any)}
+            activeOpacity={0.75}
+          >
             <Text style={styles.toolIcon}>⚙️</Text>
             <Text style={styles.toolName}>Settings</Text>
-          </View>
+          </TouchableOpacity>
         </View>
       </View>
     </ScrollView>
