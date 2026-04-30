@@ -1,0 +1,20 @@
+diff --git a/node_modules/expo-crypto/build/aes/ExpoCryptoAES.js b/node_modules/expo-crypto/build/aes/ExpoCryptoAES.js
+index 1234567..abcdefg 100644
+--- a/node_modules/expo-crypto/build/aes/ExpoCryptoAES.js
++++ b/node_modules/expo-crypto/build/aes/ExpoCryptoAES.js
+@@ -1,4 +1,14 @@
+-import { requireNativeModule } from 'expo';
+-// This call loads the native module object from the JSI.
+-export default requireNativeModule('ExpoCryptoAES');
++// Patched: ExpoCryptoAES native module not available in Expo SDK 54 builds.
++// Return a no-op stub so the module loads without crashing.
++const stub = {
++  EncryptionKey: class EncryptionKey {},
++  SealedData: class SealedData {
++    static fromParts() { return new this(); }
++    static fromCombined() { return new this(); }
++  },
++  encryptAsync: () => Promise.reject(new Error('AES encryption not available')),
++  decryptAsync: () => Promise.reject(new Error('AES decryption not available')),
++};
++export default stub;
