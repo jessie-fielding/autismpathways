@@ -1,6 +1,6 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet, Linking, Alert,
+  View, Text, ScrollView, TouchableOpacity, StyleSheet, Linking, Alert, Modal,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -80,9 +80,41 @@ export default function MedicaidApprovedScreen() {
   };
 
   const progress = Math.round((completedSteps.length / STEPS.length) * 100);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [celebrationShown, setCelebrationShown] = useState(false);
+
+  useEffect(() => {
+    if (completedSteps.length === STEPS.length && !celebrationShown) {
+      setShowCelebration(true);
+      setCelebrationShown(true);
+    }
+  }, [completedSteps]);
 
   return (
     <View style={styles.container}>
+      {/* CELEBRATION MODAL */}
+      <Modal visible={showCelebration} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalEmoji}>🎉</Text>
+            <Text style={styles.modalTitle}>You did it!</Text>
+            <Text style={styles.modalSub}>You've completed every step of the Medicaid post-approval checklist. Your child's coverage is fully activated!</Text>
+            <View style={styles.modalDivider} />
+            <Text style={styles.modalNextLabel}>READY FOR YOUR NEXT STEP?</Text>
+            <Text style={styles.modalNextText}>Apply for an HCBS Waiver to unlock additional services like respite care, behavioral support, and community integration. Waitlists can be years long — apply now.</Text>
+            <TouchableOpacity
+              style={styles.modalWaiverBtn}
+              onPress={() => { setShowCelebration(false); router.push('/waiver' as any); }}
+            >
+              <Text style={styles.modalWaiverBtnText}>Start Waiver Pathway 🌟</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.modalDismiss} onPress={() => setShowCelebration(false)}>
+              <Text style={styles.modalDismissText}>Maybe later</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
       {/* HEADER */}
       <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
@@ -244,4 +276,30 @@ const styles = StyleSheet.create({
     backgroundColor: '#e65100', borderRadius: 10, padding: SPACING.md, alignItems: 'center',
   },
   waiverBtnText: { fontSize: 13, fontWeight: '700', color: COLORS.white },
+  // Celebration modal styles
+  modalOverlay: {
+    flex: 1, backgroundColor: 'rgba(0,0,0,0.55)',
+    justifyContent: 'center', alignItems: 'center', paddingHorizontal: SPACING.xl,
+  },
+  modalCard: {
+    backgroundColor: COLORS.card, borderRadius: 20, padding: SPACING.xxl,
+    width: '100%', alignItems: 'center', shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.18, shadowRadius: 12, elevation: 8,
+  },
+  modalEmoji: { fontSize: 52, marginBottom: SPACING.md },
+  modalTitle: { fontSize: 24, fontWeight: '800', color: COLORS.navy, marginBottom: SPACING.sm, textAlign: 'center' },
+  modalSub: { fontSize: 14, color: COLORS.textMid, textAlign: 'center', lineHeight: 21, marginBottom: SPACING.lg },
+  modalDivider: { height: 1, backgroundColor: COLORS.border, width: '100%', marginBottom: SPACING.lg },
+  modalNextLabel: {
+    fontSize: 11, fontWeight: '700', color: COLORS.purple, letterSpacing: 1,
+    marginBottom: SPACING.sm, textAlign: 'center',
+  },
+  modalNextText: { fontSize: 13, color: COLORS.textMid, textAlign: 'center', lineHeight: 20, marginBottom: SPACING.xl },
+  modalWaiverBtn: {
+    backgroundColor: COLORS.purple, borderRadius: 50, paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.xxl, alignItems: 'center', width: '100%', marginBottom: SPACING.md,
+  },
+  modalWaiverBtnText: { fontSize: 15, fontWeight: '700', color: COLORS.white },
+  modalDismiss: { paddingVertical: SPACING.sm, alignItems: 'center' },
+  modalDismissText: { fontSize: 13, color: COLORS.textLight, fontWeight: '600' },
 });

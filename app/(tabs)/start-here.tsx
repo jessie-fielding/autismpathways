@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
 import { COLORS, SPACING, FONT_SIZES, RADIUS } from '../../lib/theme';
 
 const styles = StyleSheet.create({
@@ -248,6 +249,7 @@ const concerns = [
 ];
 
 export default function StartHereScreen() {
+  const router = useRouter();
   const [step, setStep] = useState(1);
   const [childName, setChildName] = useState('');
   const [dob, setDob] = useState('');
@@ -267,8 +269,13 @@ export default function StartHereScreen() {
     try {
       const profile = { childName, dob, state, diagnosis, diagnosisLevel, concerns: selectedConcerns };
       await AsyncStorage.setItem('profile', JSON.stringify(profile));
+      await AsyncStorage.setItem('ap_onboarding_complete', 'true');
     } catch (e) {}
-    if (step < 3) setStep(step + 1);
+    if (step < 3) {
+      setStep(step + 1);
+    } else {
+      router.replace('/(tabs)/dashboard');
+    }
   };
 
   const handleBack = () => {
