@@ -7,7 +7,7 @@
     "icon": "./assets/images/icon.png",
     "scheme": "autismpathways",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": false,
+    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.autismpathways.app"
