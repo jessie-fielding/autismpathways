@@ -1,15 +1,17 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
   Switch, Alert, Linking, ActivityIndicator,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, SPACING, RADIUS, FONT_SIZES, SHADOWS } from '../../lib/theme';
 import { useIsPremium } from '../../hooks/useIsPremium';
 import { useNotifications, NotifSettings } from '../../hooks/useNotifications';
 import { useAuth } from '../../services/useAuth';
 import { clearCredentials } from '../../services/secureCredentials';
+import { loadChildren, getActiveChildId, type ChildProfile } from '../../services/childManager';
 
 // All AsyncStorage keys used across the app
 const ALL_DATA_KEYS = [
@@ -61,6 +63,7 @@ export default function SettingsScreen() {
   const { signOut, signOutAndForget } = useAuth();
 
   const [profile, setProfile] = useState<{ childName?: string; state?: string; email?: string } | null>(null);
+  const [activeChild, setActiveChild] = useState<ChildProfile | null>(null);
   const [notifs, setNotifs] = useState<Record<NotifKey, boolean>>({
     ap_notification_appeal: true,
     ap_notification_appointment: true,
@@ -69,17 +72,26 @@ export default function SettingsScreen() {
   });
   const [deleting, setDeleting] = useState(false);
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useEffect(() => { loadData(); }, []);
+  useFocusEffect(React.useCallback(() => { loadData(); }, []));
 
   const loadData = async () => {
     try {
+      // Load active child from childManager for display
+      const [kids, activeId] = await Promise.all([loadChildren(), getActiveChildId()]);
+      const found = kids.find((c) => c.id === activeId) ?? kids[0] ?? null;
+      setActiveChild(found);
+
       const [profileRaw, ...notifValues] = await AsyncStorage.multiGet([
-        'ap_profile',
+        'profile',
         ...NOTIF_ITEMS.map(n => n.key),
       ]);
+      // Prefer childManager data; fall back to legacy ap_profile
       if (profileRaw[1]) setProfile(JSON.parse(profileRaw[1]));
+      else {
+        const legacy = await AsyncStorage.getItem('ap_profile');
+        if (legacy) setProfile(JSON.parse(legacy));
+      }
       const notifState = { ...notifs };
       NOTIF_ITEMS.forEach((item, i) => {
         const val = notifValues[i][1];
@@ -275,9 +287,16 @@ export default function SettingsScreen() {
         <View style={styles.card}>
           <Row
             icon="👧"
-            title="Child's Profile"
-            subtitle={profile?.childName || 'Not set'}
-            onPress={() => router.push('/(tabs)/start-here')}
+            title="Active Child"
+            subtitle={activeChild?.name || profile?.childName || 'Not set'}
+            onPress={() => router.push('/children')}
+          />
+          <View style={styles.divider} />
+          <Row
+            icon="👨‍👩‍👧‍👦"
+            title="Manage Children"
+            subtitle="Add, switch, or edit child profiles"
+            onPress={() => router.push('/children')}
           />
           <View style={styles.divider} />
           <Row
