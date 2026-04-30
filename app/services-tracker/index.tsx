@@ -7,6 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useChildChanged } from '../../hooks/useChildChanged';
 import { COLORS, SPACING, RADIUS, FONT_SIZES, SHADOWS } from '../../lib/theme';
 
 const STORAGE_KEY = 'ap_services_tracker';
@@ -90,13 +91,22 @@ export default function ServicesTrackerScreen() {
   const [form, setForm] = useState<Omit<Service, 'id' | 'createdAt'>>(EMPTY_FORM);
   const [filterStatus, setFilterStatus] = useState<ServiceStatus | 'all'>('all');
 
+  const loadData = useCallback(() => {
+    AsyncStorage.getItem(STORAGE_KEY).then((raw) => {
+      if (raw) setServices(JSON.parse(raw));
+      else setServices([]);
+    });
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
-      AsyncStorage.getItem(STORAGE_KEY).then((raw) => {
-        if (raw) setServices(JSON.parse(raw));
-      });
-    }, [])
+      loadData();
+    }, [loadData])
   );
+
+  useChildChanged(() => {
+    loadData();
+  });
 
   const save = async (updated: Service[]) => {
     setServices(updated);
@@ -251,220 +261,189 @@ export default function ServicesTrackerScreen() {
                 </View>
               </View>
 
-              <View style={styles.serviceMetaRow}>
-                {s.hoursPerWeek ? <Text style={styles.serviceMeta}>⏱️ {s.hoursPerWeek}h/week</Text> : null}
-                {s.fundingSource ? <Text style={styles.serviceMeta}>💳 {s.fundingSource}</Text> : null}
-                {s.authorizationNumber ? <Text style={styles.serviceMeta}>📋 Auth #{s.authorizationNumber}</Text> : null}
+              <View style={styles.serviceCardMiddle}>
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Funding:</Text>
+                  <Text style={styles.infoValue}>{s.fundingSource}</Text>
+                </View>
+                {s.hoursPerWeek && (
+                  <View style={styles.infoRow}>
+                    <Text style={styles.infoLabel}>Hours:</Text>
+                    <Text style={styles.infoValue}>{s.hoursPerWeek} / week</Text>
+                  </View>
+                )}
+                {s.authorizationNumber && (
+                  <View style={styles.infoRow}>
+                    <Text style={styles.infoLabel}>Auth #:</Text>
+                    <Text style={styles.infoValue}>{s.authorizationNumber}</Text>
+                  </View>
+                )}
+                {renewal !== null && (
+                  <View style={styles.infoRow}>
+                    <Text style={styles.infoLabel}>Renewal:</Text>
+                    <Text style={[styles.infoValue, renewal <= 30 && styles.renewalUrgent]}>
+                      {s.renewalDate} ({renewal} day{renewal !== 1 ? 's' : ''})
+                    </Text>
+                  </View>
+                )}
               </View>
 
-              {renewal !== null && (
-                <View style={[styles.renewalRow, renewal <= 30 && renewal >= 0 ? styles.renewalUrgent : styles.renewalNormal]}>
-                  <Text style={[styles.renewalText, renewal <= 30 && renewal >= 0 ? { color: COLORS.errorText } : { color: COLORS.textMid }]}>
-                    {renewal < 0
-                      ? `⚠️ Authorization expired ${Math.abs(renewal)} days ago`
-                      : renewal === 0
-                      ? '🔴 Authorization expires today!'
-                      : renewal <= 30
-                      ? `⚠️ Renewal due in ${renewal} days`
-                      : `🗓️ Renewal: ${new Date(s.renewalDate!).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
-                    }
-                  </Text>
-                </View>
-              )}
+              {s.notes && <Text style={styles.notes}>{s.notes}</Text>}
 
-              {s.notes ? <Text style={styles.serviceNotes}>{s.notes}</Text> : null}
-
-              <View style={styles.serviceActions}>
-                {s.providerPhone ? (
-                  <TouchableOpacity style={styles.actionChip}>
-                    <Text style={styles.actionChipText}>📞 Call</Text>
-                  </TouchableOpacity>
-                ) : null}
-                <TouchableOpacity style={styles.actionChip} onPress={() => openEdit(s)}>
-                  <Text style={styles.actionChipText}>✏️ Edit</Text>
+              <View style={styles.serviceCardBottom}>
+                <TouchableOpacity onPress={() => handleDelete(s.id)} style={styles.cardBtn}>
+                  <Text style={[styles.cardBtnText, { color: COLORS.errorText }]}>Remove</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={[styles.actionChip, styles.actionChipDanger]} onPress={() => handleDelete(s.id)}>
-                  <Text style={[styles.actionChipText, { color: COLORS.errorText }]}>Remove</Text>
+                <TouchableOpacity onPress={() => openEdit(s)} style={styles.cardBtn}>
+                  <Text style={styles.cardBtnText}>Edit</Text>
                 </TouchableOpacity>
               </View>
             </View>
           );
         })}
-
-        {/* How to get services info card */}
-        <View style={styles.infoCard}>
-          <Text style={styles.infoCardTitle}>💡 How to get services funded</Text>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoRowLabel}>Medicaid / EPSDT</Text>
-            <Text style={styles.infoRowBody}>ABA, speech, OT, PT are covered for children under 21. Ask your doctor for a referral and PMIP form.</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoRowLabel}>Waiver Programs</Text>
-            <Text style={styles.infoRowBody}>Cover personal care, respite, and behavioral support. Apply through your state's DD waiver program.</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoRowLabel}>School / IEP</Text>
-            <Text style={styles.infoRowBody}>Speech, OT, PT, and behavioral support can be included in your child's IEP at no cost to you.</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoRowLabel}>Insurance</Text>
-            <Text style={styles.infoRowBody}>Most states mandate autism insurance coverage. Check your plan and appeal denials — 40–60% are overturned.</Text>
-          </View>
-        </View>
-
-        <View style={{ height: 40 }} />
       </ScrollView>
 
-      {/* Add/Edit Modal */}
-      <Modal visible={modalVisible} animationType="slide" transparent>
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-          <View style={styles.overlay}>
-            <View style={styles.sheet}>
-              <View style={styles.sheetHandle} />
-              <Text style={styles.sheetTitle}>{editingId ? 'Edit Service' : 'Add Service'}</Text>
+      {/* Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.modalBackdrop}
+        >
+          <View style={styles.modalView}>
+            <Text style={styles.modalTitle}>{editingId ? 'Edit Service' : 'Add Service'}</Text>
 
-              <ScrollView style={styles.sheetScroll} showsVerticalScrollIndicator={false}>
-                {/* Service type */}
-                <Text style={styles.formLabel}>Service Type</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: SPACING.lg }}>
-                  {SERVICE_TYPES.map((t) => (
-                    <TouchableOpacity
-                      key={t.value}
-                      style={[styles.typeChip, form.type === t.value && { borderColor: COLORS.purple, backgroundColor: COLORS.lavender }]}
-                      onPress={() => setForm({ ...form, type: t.value })}
-                    >
-                      <Text style={[styles.typeChipText, form.type === t.value && { color: COLORS.purpleDark }]}>{t.label}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-
-                {form.type === 'Other' && (
-                  <>
-                    <Text style={styles.formLabel}>Custom Service Name</Text>
-                    <TextInput
-                      style={styles.input}
-                      value={form.customType}
-                      onChangeText={(v) => setForm({ ...form, customType: v })}
-                      placeholder="e.g. Hippotherapy"
-                      placeholderTextColor={COLORS.textLight}
-                    />
-                  </>
-                )}
-
-                <Text style={styles.formLabel}>Provider / Agency Name *</Text>
-                <TextInput
-                  style={styles.input}
-                  value={form.providerName}
-                  onChangeText={(v) => setForm({ ...form, providerName: v })}
-                  placeholder="e.g. Sunshine ABA Center"
-                  placeholderTextColor={COLORS.textLight}
-                />
-
-                <Text style={styles.formLabel}>Provider Phone</Text>
-                <TextInput
-                  style={styles.input}
-                  value={form.providerPhone}
-                  onChangeText={(v) => setForm({ ...form, providerPhone: v })}
-                  placeholder="(303) 555-0100"
-                  keyboardType="phone-pad"
-                  placeholderTextColor={COLORS.textLight}
-                />
-
-                <Text style={styles.formLabel}>Provider Email</Text>
-                <TextInput
-                  style={styles.input}
-                  value={form.providerEmail}
-                  onChangeText={(v) => setForm({ ...form, providerEmail: v })}
-                  placeholder="provider@example.com"
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  placeholderTextColor={COLORS.textLight}
-                />
-
-                <Text style={styles.formLabel}>Hours Per Week</Text>
-                <TextInput
-                  style={styles.input}
-                  value={form.hoursPerWeek}
-                  onChangeText={(v) => setForm({ ...form, hoursPerWeek: v })}
-                  placeholder="e.g. 20"
-                  keyboardType="decimal-pad"
-                  placeholderTextColor={COLORS.textLight}
-                />
-
-                <Text style={styles.formLabel}>Start Date</Text>
-                <TextInput
-                  style={styles.input}
-                  value={form.startDate}
-                  onChangeText={(v) => setForm({ ...form, startDate: v })}
-                  placeholder="MM/DD/YYYY"
-                  placeholderTextColor={COLORS.textLight}
-                />
-
-                <Text style={styles.formLabel}>Authorization / Renewal Date</Text>
-                <TextInput
-                  style={styles.input}
-                  value={form.renewalDate}
-                  onChangeText={(v) => setForm({ ...form, renewalDate: v })}
-                  placeholder="MM/DD/YYYY"
-                  placeholderTextColor={COLORS.textLight}
-                />
-
-                <Text style={styles.formLabel}>Authorization Number</Text>
-                <TextInput
-                  style={styles.input}
-                  value={form.authorizationNumber}
-                  onChangeText={(v) => setForm({ ...form, authorizationNumber: v })}
-                  placeholder="e.g. AUTH-2024-00123"
-                  placeholderTextColor={COLORS.textLight}
-                />
-
-                <Text style={styles.formLabel}>Funding Source</Text>
-                <View style={styles.fundingRow}>
-                  {FUNDING_SOURCES.map((f) => (
-                    <TouchableOpacity
-                      key={f}
-                      style={[styles.fundingChip, form.fundingSource === f && styles.fundingChipOn]}
-                      onPress={() => setForm({ ...form, fundingSource: f })}
-                    >
-                      <Text style={[styles.fundingChipText, form.fundingSource === f && styles.fundingChipTextOn]}>{f}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-
-                <Text style={styles.formLabel}>Status</Text>
-                <View style={styles.fundingRow}>
-                  {(Object.keys(STATUS_CONFIG) as ServiceStatus[]).map((s) => (
-                    <TouchableOpacity
-                      key={s}
-                      style={[styles.fundingChip, form.status === s && styles.fundingChipOn]}
-                      onPress={() => setForm({ ...form, status: s })}
-                    >
-                      <Text style={[styles.fundingChipText, form.status === s && styles.fundingChipTextOn]}>{STATUS_CONFIG[s].label}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-
-                <Text style={styles.formLabel}>Notes</Text>
-                <TextInput
-                  style={[styles.input, styles.inputMulti]}
-                  value={form.notes}
-                  onChangeText={(v) => setForm({ ...form, notes: v })}
-                  placeholder="Any notes about this service..."
-                  multiline
-                  numberOfLines={3}
-                  placeholderTextColor={COLORS.textLight}
-                />
-
-                <View style={styles.sheetActions}>
-                  <TouchableOpacity style={styles.cancelBtn} onPress={() => setModalVisible(false)}>
-                    <Text style={styles.cancelBtnText}>Cancel</Text>
+            <ScrollView style={{ width: '100%' }}>
+              <Text style={styles.label}>Service Type</Text>
+              <View style={styles.typeGrid}>
+                {SERVICE_TYPES.map((t) => (
+                  <TouchableOpacity
+                    key={t.value}
+                    style={[
+                      styles.typeChip,
+                      form.type === t.value && { backgroundColor: t.color, borderColor: t.color },
+                    ]}
+                    onPress={() => setForm({ ...form, type: t.value })}
+                  >
+                    <Text style={[styles.typeChipText, form.type === t.value && styles.typeChipTextOn]}>
+                      {t.label}
+                    </Text>
                   </TouchableOpacity>
-                  <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
-                    <Text style={styles.saveBtnText}>{editingId ? 'Save Changes' : 'Add Service'}</Text>
+                ))}
+              </View>
+
+              {form.type === 'Other' && (
+                <>
+                  <Text style={styles.label}>Custom Service Name</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={form.customType}
+                    onChangeText={(v) => setForm({ ...form, customType: v })}
+                    placeholder="e.g., Hippotherapy"
+                  />
+                </>
+              )}
+
+              <Text style={styles.label}>Provider Name</Text>
+              <TextInput
+                style={styles.input}
+                value={form.providerName}
+                onChangeText={(v) => setForm({ ...form, providerName: v })}
+                placeholder="e.g., ABC Therapy Center"
+              />
+
+              <Text style={styles.label}>Funding Source</Text>
+              <View style={styles.fundingGrid}>
+                {FUNDING_SOURCES.map((fs) => (
+                  <TouchableOpacity
+                    key={fs}
+                    style={[styles.fundingChip, form.fundingSource === fs && styles.fundingChipOn]}
+                    onPress={() => setForm({ ...form, fundingSource: fs })}
+                  >
+                    <Text style={[styles.fundingChipText, form.fundingSource === fs && styles.fundingChipTextOn]}>
+                      {fs}
+                    </Text>
                   </TouchableOpacity>
-                </View>
-                <View style={{ height: 40 }} />
-              </ScrollView>
+                ))}
+              </View>
+
+              <Text style={styles.label}>Status</Text>
+              <View style={styles.fundingGrid}>
+                {(Object.keys(STATUS_CONFIG) as ServiceStatus[]).map((st) => (
+                  <TouchableOpacity
+                    key={st}
+                    style={[styles.fundingChip, form.status === st && { backgroundColor: STATUS_CONFIG[st].bg, borderColor: STATUS_CONFIG[st].color }]}
+                    onPress={() => setForm({ ...form, status: st })}
+                  >
+                    <Text style={[styles.fundingChipText, form.status === st && { color: STATUS_CONFIG[st].color }]}>
+                      {STATUS_CONFIG[st].label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <Text style={styles.label}>Hours per Week</Text>
+              <TextInput
+                style={styles.input}
+                value={form.hoursPerWeek}
+                onChangeText={(v) => setForm({ ...form, hoursPerWeek: v })}
+                placeholder="e.g., 10"
+                keyboardType="numeric"
+              />
+
+              <Text style={styles.label}>Renewal Date</Text>
+              <TextInput
+                style={styles.input}
+                value={form.renewalDate}
+                onChangeText={(v) => setForm({ ...form, renewalDate: v })}
+                placeholder="YYYY-MM-DD"
+              />
+
+              <Text style={styles.label}>Authorization Number</Text>
+              <TextInput
+                style={styles.input}
+                value={form.authorizationNumber}
+                onChangeText={(v) => setForm({ ...form, authorizationNumber: v })}
+              />
+
+              <Text style={styles.label}>Provider Phone</Text>
+              <TextInput
+                style={styles.input}
+                value={form.providerPhone}
+                onChangeText={(v) => setForm({ ...form, providerPhone: v })}
+                keyboardType="phone-pad"
+              />
+
+              <Text style={styles.label}>Provider Email</Text>
+              <TextInput
+                style={styles.input}
+                value={form.providerEmail}
+                onChangeText={(v) => setForm({ ...form, providerEmail: v })}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+
+              <Text style={styles.label}>Notes</Text>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                value={form.notes}
+                onChangeText={(v) => setForm({ ...form, notes: v })}
+                multiline
+                placeholder="Contact person, portal URL, etc."
+              />
+            </ScrollView>
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={styles.modalBtn} onPress={() => setModalVisible(false)}>
+                <Text style={styles.modalBtnText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.modalBtn, styles.modalBtnSave]} onPress={handleSave}>
+                <Text style={[styles.modalBtnText, styles.modalBtnSaveText]}>Save</Text>
+              </TouchableOpacity>
             </View>
           </View>
         </KeyboardAvoidingView>
@@ -478,137 +457,103 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: SPACING.lg, paddingBottom: SPACING.md,
-    backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.border,
+    paddingHorizontal: SPACING.md, paddingBottom: SPACING.sm,
+    backgroundColor: COLORS.bg, ...SHADOWS.sm,
   },
-  backBtn: { padding: SPACING.xs, minWidth: 60 },
-  backText: { fontSize: FONT_SIZES.sm, fontWeight: '600', color: COLORS.purple },
-  headerTitle: { fontSize: FONT_SIZES.lg, fontWeight: '700', color: COLORS.text },
-  addBtn: {
-    backgroundColor: COLORS.purple, borderRadius: RADIUS.pill,
-    paddingHorizontal: SPACING.lg, paddingVertical: 6,
-  },
-  addBtnText: { color: COLORS.white, fontWeight: '700', fontSize: FONT_SIZES.sm },
-  scroll: { padding: SPACING.lg },
-
-  statsRow: { flexDirection: 'row', gap: SPACING.md, marginBottom: SPACING.lg },
+  backBtn: { padding: SPACING.xs },
+  backText: { fontSize: FONT_SIZES.md, color: COLORS.text },
+  headerTitle: { fontSize: FONT_SIZES.lg, fontWeight: 'bold', color: COLORS.text },
+  addBtn: { backgroundColor: COLORS.primary, paddingVertical: SPACING.sm, paddingHorizontal: SPACING.md, borderRadius: RADIUS.md },
+  addBtnText: { color: 'white', fontWeight: 'bold' },
+  scroll: { padding: SPACING.md, paddingBottom: 100 },
+  statsRow: { flexDirection: 'row', justifyContent: 'space-around', marginBottom: SPACING.lg },
   statCard: {
-    flex: 1, backgroundColor: COLORS.white, borderRadius: RADIUS.md,
-    padding: SPACING.md, alignItems: 'center', borderWidth: 1,
-    borderColor: COLORS.border, borderTopWidth: 3, ...SHADOWS.sm,
+    flex: 1, backgroundColor: COLORS.card, padding: SPACING.md, borderRadius: RADIUS.lg,
+    marginHorizontal: SPACING.sm, alignItems: 'center', borderTopWidth: 4,
   },
-  statNum: { fontSize: FONT_SIZES.xxl, fontWeight: '800', color: COLORS.text },
-  statLabel: { fontSize: 10, color: COLORS.textLight, textAlign: 'center', marginTop: 2 },
-
+  statNum: { fontSize: FONT_SIZES.xl, fontWeight: 'bold', color: COLORS.text, marginBottom: SPACING.xs },
+  statLabel: { fontSize: FONT_SIZES.sm, color: COLORS.textLight, textAlign: 'center' },
   urgentCard: {
-    flexDirection: 'row', alignItems: 'center', gap: SPACING.md,
-    backgroundColor: COLORS.errorBg, borderRadius: RADIUS.sm, padding: SPACING.md,
-    marginBottom: SPACING.md, borderWidth: 1, borderColor: COLORS.errorBorder,
+    backgroundColor: COLORS.warningBg,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: SPACING.md,
+    borderLeftWidth: 4,
+    borderLeftColor: COLORS.warningText,
   },
-  urgentIcon: { fontSize: 20 },
-  urgentTitle: { fontSize: FONT_SIZES.sm, fontWeight: '700', color: COLORS.errorText },
-  urgentSub: { fontSize: FONT_SIZES.xs, color: COLORS.textMid, marginTop: 2 },
-
-  filterRow: { marginBottom: SPACING.lg },
-  filterChip: {
-    borderRadius: RADIUS.pill, paddingHorizontal: SPACING.lg, paddingVertical: 7,
-    borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.white,
-    marginRight: SPACING.sm,
+  urgentIcon: { fontSize: FONT_SIZES.lg, marginRight: SPACING.md },
+  urgentTitle: { color: COLORS.warningText, fontWeight: 'bold', marginBottom: 2 },
+  urgentSub: { color: COLORS.warningText, fontSize: FONT_SIZES.sm },
+  filterRow: { flexGrow: 0, marginBottom: SPACING.md },
+  filterChip: { 
+    paddingVertical: SPACING.sm, paddingHorizontal: SPACING.md, borderRadius: RADIUS.xl, 
+    backgroundColor: COLORS.card, marginRight: SPACING.sm, borderWidth: 1, borderColor: COLORS.border
   },
-  filterChipOn: { backgroundColor: COLORS.lavender, borderColor: COLORS.lavenderAccent },
-  filterChipText: { fontSize: FONT_SIZES.xs, fontWeight: '600', color: COLORS.textMid },
-  filterChipTextOn: { color: COLORS.purpleDark },
-
-  emptyState: { alignItems: 'center', paddingVertical: SPACING.xxxl },
-  emptyIcon: { fontSize: 48, marginBottom: SPACING.lg, opacity: 0.5 },
-  emptyTitle: { fontSize: FONT_SIZES.lg, fontWeight: '700', color: COLORS.text, marginBottom: SPACING.sm },
-  emptyBody: { fontSize: FONT_SIZES.sm, color: COLORS.textMid, textAlign: 'center', lineHeight: 20, marginBottom: SPACING.xl },
-  emptyBtn: {
-    backgroundColor: COLORS.purple, borderRadius: RADIUS.pill,
-    paddingHorizontal: SPACING.xl, paddingVertical: SPACING.md,
+  filterChipOn: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  filterChipText: { color: COLORS.text, fontWeight: '500' },
+  filterChipTextOn: { color: 'white' },
+  emptyState: {
+    alignItems: 'center', justifyContent: 'center', paddingVertical: SPACING.xl,
+    backgroundColor: COLORS.card, borderRadius: RADIUS.lg, marginVertical: SPACING.md,
   },
-  emptyBtnText: { color: COLORS.white, fontWeight: '700', fontSize: FONT_SIZES.sm },
-
+  emptyIcon: { fontSize: 48, marginBottom: SPACING.md },
+  emptyTitle: { fontSize: FONT_SIZES.lg, fontWeight: 'bold', color: COLORS.text, marginBottom: SPACING.sm },
+  emptyBody: { color: COLORS.textLight, textAlign: 'center', maxWidth: '80%', marginBottom: SPACING.lg },
+  emptyBtn: { backgroundColor: COLORS.primary, paddingVertical: SPACING.md, paddingHorizontal: SPACING.lg, borderRadius: RADIUS.lg },
+  emptyBtnText: { color: 'white', fontWeight: 'bold', fontSize: FONT_SIZES.md },
   serviceCard: {
-    backgroundColor: COLORS.white, borderRadius: RADIUS.md, padding: SPACING.lg,
-    marginBottom: SPACING.md, borderWidth: 1, borderColor: COLORS.border,
-    borderTopWidth: 4, ...SHADOWS.sm,
+    backgroundColor: COLORS.card, borderRadius: RADIUS.lg, marginBottom: SPACING.md,
+    ...SHADOWS.sm, borderTopWidth: 4,
   },
-  serviceCardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: SPACING.sm },
-  serviceCardLeft: { flex: 1 },
-  serviceType: { fontSize: FONT_SIZES.base, fontWeight: '700', color: COLORS.text },
-  serviceProvider: { fontSize: FONT_SIZES.sm, color: COLORS.textMid, marginTop: 2 },
-  statusBadge: { borderRadius: RADIUS.pill, paddingHorizontal: SPACING.md, paddingVertical: 4 },
-  statusBadgeText: { fontSize: FONT_SIZES.xs, fontWeight: '700' },
-  serviceMetaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.md, marginBottom: SPACING.sm },
-  serviceMeta: { fontSize: FONT_SIZES.xs, color: COLORS.textMid },
-  renewalRow: { borderRadius: RADIUS.xs, padding: SPACING.sm, marginBottom: SPACING.sm },
-  renewalUrgent: { backgroundColor: COLORS.errorBg },
-  renewalNormal: { backgroundColor: COLORS.infoBg },
-  renewalText: { fontSize: FONT_SIZES.xs, fontWeight: '600' },
-  serviceNotes: { fontSize: FONT_SIZES.xs, color: COLORS.textMid, fontStyle: 'italic', marginBottom: SPACING.sm },
-  serviceActions: { flexDirection: 'row', gap: SPACING.sm, marginTop: SPACING.sm },
-  actionChip: {
-    borderRadius: RADIUS.pill, paddingHorizontal: SPACING.md, paddingVertical: 5,
-    borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.bg,
+  serviceCardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', padding: SPACING.md },
+  serviceCardLeft: { flex: 1, marginRight: SPACING.sm },
+  serviceType: { fontSize: FONT_SIZES.md, fontWeight: 'bold', color: COLORS.text, marginBottom: 2 },
+  serviceProvider: { color: COLORS.textLight, fontSize: FONT_SIZES.sm },
+  statusBadge: { paddingVertical: 4, paddingHorizontal: 8, borderRadius: RADIUS.sm },
+  statusBadgeText: { fontSize: FONT_SIZES.xs, fontWeight: 'bold' },
+  serviceCardMiddle: { paddingHorizontal: SPACING.md, paddingBottom: SPACING.sm, borderTopWidth: 1, borderTopColor: COLORS.border },
+  infoRow: { flexDirection: 'row', justifyContent: 'space-between', marginVertical: 4 },
+  infoLabel: { color: COLORS.textLight, fontWeight: '500' },
+  infoValue: { color: COLORS.text, fontWeight: '500' },
+  renewalUrgent: { color: COLORS.errorText, fontWeight: 'bold' },
+  notes: { padding: SPACING.md, fontStyle: 'italic', color: COLORS.textLight, borderTopWidth: 1, borderTopColor: COLORS.border },
+  serviceCardBottom: { flexDirection: 'row', justifyContent: 'flex-end', padding: SPACING.sm, borderTopWidth: 1, borderTopColor: COLORS.border },
+  cardBtn: { paddingVertical: SPACING.xs, paddingHorizontal: SPACING.md },
+  cardBtnText: { color: COLORS.primary, fontWeight: 'bold' },
+  modalBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' },
+  modalView: {
+    backgroundColor: COLORS.card, borderTopLeftRadius: RADIUS.xl, borderTopRightRadius: RADIUS.xl,
+    padding: SPACING.lg, alignItems: 'center', ...SHADOWS.lg, maxHeight: '90%',
   },
-  actionChipDanger: { borderColor: COLORS.errorBorder, backgroundColor: COLORS.errorBg },
-  actionChipText: { fontSize: FONT_SIZES.xs, fontWeight: '600', color: COLORS.textMid },
-
-  infoCard: {
-    backgroundColor: COLORS.lavender, borderRadius: RADIUS.md, padding: SPACING.lg,
-    marginTop: SPACING.lg, borderWidth: 1, borderColor: COLORS.lavenderAccent,
+  modalTitle: { fontSize: FONT_SIZES.lg, fontWeight: 'bold', marginBottom: SPACING.lg },
+  label: { fontSize: FONT_SIZES.md, fontWeight: 'bold', color: COLORS.text, marginTop: SPACING.md, marginBottom: SPACING.sm },
+  input: { 
+    backgroundColor: COLORS.bg, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.md, 
+    padding: SPACING.md, fontSize: FONT_SIZES.md, width: '100%', color: COLORS.text
   },
-  infoCardTitle: { fontSize: FONT_SIZES.base, fontWeight: '700', color: COLORS.purpleDark, marginBottom: SPACING.md },
-  infoRow: { marginBottom: SPACING.md },
-  infoRowLabel: { fontSize: FONT_SIZES.xs, fontWeight: '700', color: COLORS.purpleDark, marginBottom: 2 },
-  infoRowBody: { fontSize: FONT_SIZES.xs, color: COLORS.textMid, lineHeight: 18 },
-
-  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
-  sheet: {
-    backgroundColor: COLORS.white, borderTopLeftRadius: RADIUS.lg,
-    borderTopRightRadius: RADIUS.lg, maxHeight: '92%',
-  },
-  sheetHandle: {
-    width: 40, height: 4, borderRadius: 2, backgroundColor: COLORS.border,
-    alignSelf: 'center', marginTop: SPACING.md, marginBottom: SPACING.sm,
-  },
-  sheetTitle: {
-    fontSize: FONT_SIZES.lg, fontWeight: '700', color: COLORS.text,
-    textAlign: 'center', marginBottom: SPACING.lg, paddingHorizontal: SPACING.lg,
-  },
-  sheetScroll: { paddingHorizontal: SPACING.lg },
-  formLabel: { fontSize: FONT_SIZES.xs, fontWeight: '700', color: COLORS.textMid, marginBottom: SPACING.sm, textTransform: 'uppercase', letterSpacing: 0.5 },
-  input: {
-    borderWidth: 1.5, borderColor: COLORS.border, borderRadius: RADIUS.sm,
-    paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md,
-    fontSize: FONT_SIZES.base, color: COLORS.text, backgroundColor: COLORS.white,
-    marginBottom: SPACING.lg,
-  },
-  inputMulti: { height: 80, textAlignVertical: 'top' },
+  textArea: { minHeight: 80, textAlignVertical: 'top' },
+  typeGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-start', marginBottom: SPACING.sm },
   typeChip: {
-    borderRadius: RADIUS.pill, paddingHorizontal: SPACING.md, paddingVertical: 7,
-    borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.bg,
-    marginRight: SPACING.sm,
+    paddingVertical: SPACING.sm, paddingHorizontal: SPACING.md, borderRadius: RADIUS.lg,
+    backgroundColor: COLORS.card, marginRight: SPACING.sm, marginBottom: SPACING.sm, 
+    borderWidth: 1, borderColor: COLORS.border
   },
-  typeChipText: { fontSize: FONT_SIZES.xs, fontWeight: '600', color: COLORS.textMid },
-  fundingRow: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm, marginBottom: SPACING.lg },
+  typeChipText: { color: COLORS.text, fontWeight: '500' },
+  typeChipTextOn: { color: 'white' },
+  fundingGrid: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: SPACING.sm },
   fundingChip: {
-    borderRadius: RADIUS.pill, paddingHorizontal: SPACING.md, paddingVertical: 6,
-    borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.bg,
+    paddingVertical: SPACING.sm, paddingHorizontal: SPACING.md, borderRadius: RADIUS.lg,
+    backgroundColor: COLORS.card, marginRight: SPACING.sm, marginBottom: SPACING.sm, 
+    borderWidth: 1, borderColor: COLORS.border
   },
-  fundingChipOn: { backgroundColor: COLORS.lavender, borderColor: COLORS.lavenderAccent },
-  fundingChipText: { fontSize: FONT_SIZES.xs, fontWeight: '600', color: COLORS.textMid },
-  fundingChipTextOn: { color: COLORS.purpleDark },
-  sheetActions: { flexDirection: 'row', gap: SPACING.md, marginTop: SPACING.lg },
-  cancelBtn: {
-    flex: 1, borderWidth: 1.5, borderColor: COLORS.border, borderRadius: RADIUS.pill,
-    paddingVertical: SPACING.md, alignItems: 'center',
-  },
-  cancelBtnText: { fontSize: FONT_SIZES.sm, fontWeight: '700', color: COLORS.textMid },
-  saveBtn: {
-    flex: 2, backgroundColor: COLORS.purple, borderRadius: RADIUS.pill,
-    paddingVertical: SPACING.md, alignItems: 'center',
-  },
-  saveBtnText: { color: COLORS.white, fontWeight: '700', fontSize: FONT_SIZES.sm },
+  fundingChipOn: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  fundingChipText: { color: COLORS.text, fontWeight: '500' },
+  fundingChipTextOn: { color: 'white' },
+  modalActions: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginTop: SPACING.lg, paddingTop: SPACING.md, borderTopWidth: 1, borderTopColor: COLORS.border },
+  modalBtn: { flex: 1, padding: SPACING.md, alignItems: 'center' },
+  modalBtnSave: { backgroundColor: COLORS.primary, borderRadius: RADIUS.md },
+  modalBtnText: { fontSize: FONT_SIZES.md, fontWeight: 'bold', color: COLORS.primary },
+  modalBtnSaveText: { color: 'white' },
 });

@@ -30,7 +30,7 @@ import { useBiometrics } from '../hooks/useBiometrics';
 
 export default function SignInScreen() {
   const router    = useRouter();
-  const { signIn } = useAuth();
+  const { signIn, signInWithGoogle } = useAuth();
   const biometrics = useBiometrics();
 
   const [email, setEmail]           = useState('');
@@ -152,6 +152,22 @@ export default function SignInScreen() {
 
     setLoading(false);
     setBiometricLoading(false);
+  };
+
+  // ── Google Sign-In ────────────────────────────────────────────────────────
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  const handleGoogleSignIn = async () => {
+    setGoogleLoading(true);
+    setError('');
+    const result = await signInWithGoogle();
+    if (result.success) {
+      const profile = await storage.getProfile();
+      router.replace(profile ? '/(tabs)/dashboard' : '/profile-setup');
+    } else {
+      setError(result.error || 'Google sign-in failed. Please try again.');
+    }
+    setGoogleLoading(false);
   };
 
   // ── Forgot password ─────────────────────────────────────────────────────────
@@ -309,6 +325,28 @@ export default function SignInScreen() {
                 {loading
                   ? <ActivityIndicator color="#fff" />
                   : <Text style={styles.signInBtnText}>Sign In</Text>
+                }
+              </TouchableOpacity>
+
+              {/* Google Sign-In */}
+              <View style={styles.dividerRow}>
+                <View style={styles.dividerLine} />
+                <Text style={styles.dividerText}>or continue with</Text>
+                <View style={styles.dividerLine} />
+              </View>
+
+              <TouchableOpacity
+                onPress={handleGoogleSignIn}
+                disabled={loading || biometricLoading || googleLoading}
+                style={[styles.googleBtn, (loading || biometricLoading || googleLoading) && styles.signInBtnDisabled]}
+                activeOpacity={0.85}
+              >
+                {googleLoading
+                  ? <ActivityIndicator color="#444" size="small" />
+                  : <>
+                      <Text style={styles.googleIcon}>G</Text>
+                      <Text style={styles.googleBtnText}>Sign in with Google</Text>
+                    </>
                 }
               </TouchableOpacity>
 
@@ -513,6 +551,32 @@ const styles = StyleSheet.create({
   createAccountBtn: { paddingVertical: SPACING.sm, alignItems: 'center' },
   createAccountText: { fontSize: FONT_SIZES.sm, color: COLORS.textLight },
   createAccountLink: { color: COLORS.purple, fontWeight: '600' },
+
+  // Google button
+  googleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING.sm,
+    backgroundColor: COLORS.white,
+    borderRadius: RADIUS.sm,
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+    paddingVertical: SPACING.lg,
+    marginBottom: SPACING.md,
+    minHeight: 48,
+    ...SHADOWS.sm,
+  },
+  googleIcon: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#4285F4',
+  },
+  googleBtnText: {
+    fontSize: FONT_SIZES.sm,
+    fontWeight: '700',
+    color: '#444',
+  },
 
   // Security note
   securityNote: {

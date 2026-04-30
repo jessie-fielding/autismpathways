@@ -15,6 +15,7 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useState, useEffect, useCallback } from 'react';
+import { emitChildChanged } from './childEvents';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -198,6 +199,8 @@ export function useActiveChild(): ActiveChildState {
   const switchChild = useCallback(async (id: string) => {
     await setActiveChildId(id);
     setActiveId(id);
+    // Notify all subscribed screens to reload their data
+    emitChildChanged(id);
   }, []);
 
   const activeChild = children.find((c) => c.id === activeId) ?? null;

@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, SPACING, RADIUS, FONT_SIZES, SHADOWS } from '../../lib/theme';
 import { useIsPremium } from '../../hooks/useIsPremium';
+import { useChildChanged } from '../../hooks/useChildChanged';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 type AppealStatus = 'preparing' | 'submitted' | 'pending' | 'approved' | 'denied' | 'escalated';
@@ -41,7 +42,7 @@ const STATUS_META: Record<AppealStatus, { label: string; color: string; bg: stri
   submitted:  { label: 'Submitted',  color: '#2C5F8A', bg: '#DCEEFF', icon: '📤' },
   pending:    { label: 'Pending',    color: '#a07800', bg: '#fff9c4', icon: '⏳' },
   approved:   { label: 'Approved',   color: '#2e7d32', bg: '#d4edda', icon: '✅' },
-  denied:     { label: 'Denied',     color: '#c0392b', bg: '#ffe0e0', icon: '❌' },
+  denied:     { label: '#c0392b', bg: '#ffe0e0', icon: '❌' },
   escalated:  { label: 'Escalated',  color: '#c45a00', bg: '#fff0e0', icon: '⚠️' },
 };
 
@@ -163,6 +164,7 @@ function FullTracker() {
   const toastTimer = React.useRef<any>(null);
 
   useFocusEffect(useCallback(() => { loadAppeals(); }, []));
+  useChildChanged(() => { loadAppeals(); });
 
   const loadAppeals = async () => {
     try {
@@ -181,7 +183,7 @@ function FullTracker() {
   const showToast = (msg: string) => {
     setToast(msg);
     if (toastTimer.current) clearTimeout(toastTimer.current);
-    toastTimer.current = setTimeout(() => setToast(''), 2400);
+    toastTimer.current = setTimeout(() => setToast('', 2400));
   };
 
   const openModal = (appeal?: Appeal) => {
@@ -263,405 +265,596 @@ function FullTracker() {
             { label: 'Urgent', value: stats.urgent, color: '#c0392b' },
           ].map((s, i) => (
             <View key={i} style={styles.statCard}>
-              <Text style={[styles.statValue, { color: s.color }]}>{s.value}</Text>
+              <Text style={[styles.statNumber, { color: s.color }]}>{s.value}</Text>
               <Text style={styles.statLabel}>{s.label}</Text>
             </View>
           ))}
         </View>
 
-        {/* Filter chips */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll} contentContainerStyle={styles.filterRow}>
-          {(['all', ...Object.keys(STATUS_META)] as Array<AppealStatus | 'all'>).map(s => (
+        {/* Filter buttons */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
+          {[ 'all', 'preparing', 'submitted', 'pending', 'approved', 'denied', 'escalated' ].map(s => (
             <TouchableOpacity
               key={s}
-              style={[styles.filterChip, filterStatus === s && styles.filterChipActive]}
-              onPress={() => setFilterStatus(s)}
+              style={[styles.filterBtn, filterStatus === s && styles.filterBtnActive]}
+              onPress={() => setFilterStatus(s as AppealStatus | 'all')}
             >
-              <Text style={[styles.filterChipText, filterStatus === s && styles.filterChipTextActive]}>
-                {s === 'all' ? 'All' : STATUS_META[s as AppealStatus].icon + ' ' + STATUS_META[s as AppealStatus].label}
+              <Text style={[styles.filterBtnText, filterStatus === s && styles.filterBtnTextActive]}>
+                {s === 'all' ? 'All' : STATUS_META[s as AppealStatus].label}
               </Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
 
-        <View style={styles.content}>
+        {/* Appeal list */}
+        <View style={styles.appealList}>
           {filtered.length === 0 ? (
             <View style={styles.emptyState}>
-              <Text style={styles.emptyIcon}>⚖️</Text>
-              <Text style={styles.emptyTitle}>{appeals.length === 0 ? 'No appeals yet' : 'No results'}</Text>
-              <Text style={styles.emptySub}>
-                {appeals.length === 0
-                  ? 'Tap ＋ Add to log your first insurance appeal.'
-                  : 'Try a different filter.'}
-              </Text>
+              <Text style={styles.emptyStateText}>No appeals yet. Tap '＋ Add' to get started.</Text>
             </View>
           ) : (
-            filtered.map(appeal => {
-              const sm = STATUS_META[appeal.status];
-              const days = daysUntil(appeal.deadlineDate);
-              const expanded = expandedId === appeal.id;
-              const urgent = days !== null && days <= 7 && days >= 0 && appeal.status !== 'approved' && appeal.status !== 'denied';
-
-              return (
-                <TouchableOpacity
-                  key={appeal.id}
-                  style={[styles.appealCard, urgent && styles.appealCardUrgent]}
-                  onPress={() => setExpandedId(expanded ? null : appeal.id)}
-                  activeOpacity={0.85}
-                >
-                  <View style={styles.appealCardTop}>
-                    <View style={[styles.statusBadge, { backgroundColor: sm.bg }]}>
-                      <Text style={[styles.statusBadgeText, { color: sm.color }]}>{sm.icon} {sm.label}</Text>
+            filtered.map(appeal => (
+              <View key={appeal.id} style={styles.appealCard}>
+                <TouchableOpacity onPress={() => setExpandedId(expandedId === appeal.id ? null : appeal.id)} activeOpacity={0.85}>
+                  <View style={styles.appealSummary}>
+                    <View style={styles.appealSummaryLeft}>
+                      <Text style={styles.appealTitle}>{appeal.title}</Text>
+                      <Text style={styles.appealMeta}>{appeal.insurer} — {appeal.serviceType}</Text>
                     </View>
-                    {urgent && (
-                      <View style={styles.urgentBadge}>
-                        <Text style={styles.urgentBadgeText}>⚠️ {days}d left</Text>
+                    <View style={styles.appealSummaryRight}>
+                      <View style={[styles.statusBadge, { backgroundColor: STATUS_META[appeal.status].bg }]}>
+                        <Text style={[styles.statusBadgeText, { color: STATUS_META[appeal.status].color }]}>
+                          {STATUS_META[appeal.status].icon} {STATUS_META[appeal.status].label}
+                        </Text>
                       </View>
-                    )}
-                  </View>
-
-                  <Text style={styles.appealTitle}>{appeal.title}</Text>
-                  {appeal.insurer ? <Text style={styles.appealInsurer}>{appeal.insurer}</Text> : null}
-                  {appeal.serviceType ? <Text style={styles.appealService}>{appeal.serviceType}</Text> : null}
-
-                  <View style={styles.appealDates}>
-                    {appeal.denialDate ? (
-                      <Text style={styles.appealDateText}>Denied: {fmtDate(appeal.denialDate)}</Text>
-                    ) : null}
-                    {appeal.deadlineDate ? (
-                      <Text style={[styles.appealDateText, urgent && { color: '#c0392b', fontWeight: '700' }]}>
-                        Deadline: {fmtDate(appeal.deadlineDate)}
-                        {days !== null && days >= 0 ? ` (${days}d)` : days !== null && days < 0 ? ' (past)' : ''}
-                      </Text>
-                    ) : null}
-                  </View>
-
-                  {expanded && (
-                    <View style={styles.appealDetail}>
-                      {appeal.claimNumber ? <Text style={styles.detailRow}>Claim #: {appeal.claimNumber}</Text> : null}
-                      {appeal.submittedDate ? <Text style={styles.detailRow}>Submitted: {fmtDate(appeal.submittedDate)}</Text> : null}
-                      {appeal.notes ? <Text style={styles.detailNotes}>{appeal.notes}</Text> : null}
-                      <View style={styles.detailBtnRow}>
-                        <TouchableOpacity style={styles.detailBtn} onPress={() => openModal(appeal)}>
-                          <Text style={styles.detailBtnText}>✏️ Edit</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={[styles.detailBtn, styles.detailBtnDanger]} onPress={() => handleDelete(appeal.id)}>
-                          <Text style={[styles.detailBtnText, { color: COLORS.errorText }]}>🗑️ Delete</Text>
-                        </TouchableOpacity>
-                      </View>
+                      {daysUntil(appeal.deadlineDate) !== null && (
+                        <Text style={styles.deadlineText}>
+                          {daysUntil(appeal.deadlineDate) === 0 ? 'Due Today!' : daysUntil(appeal.deadlineDate) > 0 ? `${daysUntil(appeal.deadlineDate)} days left` : `${Math.abs(daysUntil(appeal.deadlineDate)!)} days overdue`}
+                        </Text>
+                      )}
                     </View>
-                  )}
+                  </View>
                 </TouchableOpacity>
-              );
-            })
+
+                {expandedId === appeal.id && (
+                  <View style={styles.appealDetails}>
+                    <View style={styles.detailRow}><Text style={styles.detailLabel}>Claim #:</Text><Text style={styles.detailValue}>{appeal.claimNumber || '—'}</Text></View>
+                    <View style={styles.detailRow}><Text style={styles.detailLabel}>Denial Date:</Text><Text style={styles.detailValue}>{fmtDate(appeal.denialDate)}</Text></View>
+                    <View style={styles.detailRow}><Text style={styles.detailLabel}>Deadline:</Text><Text style={styles.detailValue}>{fmtDate(appeal.deadlineDate)}</Text></View>
+                    <View style={styles.detailRow}><Text style={styles.detailLabel}>Submitted:</Text><Text style={styles.detailValue}>{fmtDate(appeal.submittedDate)}</Text></View>
+                    <View style={styles.detailRow}><Text style={styles.detailLabel}>Notes:</Text><Text style={styles.detailValue}>{appeal.notes || '—'}</Text></View>
+                    <View style={styles.detailRow}><Text style={styles.detailLabel}>Created:</Text><Text style={styles.detailValue}>{fmtDate(appeal.createdAt)}</Text></View>
+                    <View style={styles.detailRow}><Text style={styles.detailLabel}>Last Updated:</Text><Text style={styles.detailValue}>{fmtDate(appeal.updatedAt)}</Text></View>
+
+                    <View style={styles.appealActions}>
+                      <TouchableOpacity style={styles.actionBtn} onPress={() => openModal(appeal)}>
+                        <Text style={styles.actionBtnText}>Edit</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity style={[styles.actionBtn, styles.actionBtnDestructive]} onPress={() => handleDelete(appeal.id)}>
+                        <Text style={styles.actionBtnText}>Delete</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                )}
+              </View>
+            ))
           )}
         </View>
+
         <View style={{ height: 40 }} />
       </ScrollView>
 
-      {/* Add/Edit Modal */}
-      <Modal visible={modalVisible} animationType="slide" transparent onRequestClose={closeModal}>
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalBackdrop}>
-          <TouchableOpacity style={styles.modalDismiss} onPress={closeModal} />
-          <View style={styles.modal}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{editId ? 'Edit Appeal' : 'Log Appeal'}</Text>
-              <TouchableOpacity onPress={closeModal} style={styles.modalClose}>
-                <Text style={styles.modalCloseText}>✕</Text>
+      {/* Toast */}
+      {toast && (
+        <View style={styles.toastContainer}>
+          <Text style={styles.toastText}>{toast}</Text>
+        </View>
+      )}
+
+      {/* Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={closeModal}
+      >
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>{editId ? 'Edit Appeal' : 'Add New Appeal'}</Text>
+
+            <Text style={styles.formLabel}>Appeal Name</Text>
+            <TextInput
+              style={styles.formInput}
+              value={form.title}
+              onChangeText={t => setForm({ ...form, title: t })}
+              placeholder="e.g., ABA Therapy Denial"
+            />
+
+            <Text style={styles.formLabel}>Insurer</Text>
+            <TextInput
+              style={styles.formInput}
+              value={form.insurer}
+              onChangeText={t => setForm({ ...form, insurer: t })}
+              placeholder="e.g., Blue Cross Blue Shield"
+            />
+
+            <Text style={styles.formLabel}>Service Type</Text>
+            <TextInput
+              style={styles.formInput}
+              value={form.serviceType}
+              onChangeText={t => setForm({ ...form, serviceType: t })}
+              placeholder="e.g., Speech Therapy"
+            />
+
+            <Text style={styles.formLabel}>Claim Number</Text>
+            <TextInput
+              style={styles.formInput}
+              value={form.claimNumber}
+              onChangeText={t => setForm({ ...form, claimNumber: t })}
+              placeholder="e.g., 1234567890"
+            />
+
+            <Text style={styles.formLabel}>Denial Date</Text>
+            <TextInput
+              style={styles.formInput}
+              value={form.denialDate}
+              onChangeText={t => setForm({ ...form, denialDate: t })}
+              placeholder="YYYY-MM-DD"
+            />
+
+            <Text style={styles.formLabel}>Deadline Date</Text>
+            <TextInput
+              style={styles.formInput}
+              value={form.deadlineDate}
+              onChangeText={t => setForm({ ...form, deadlineDate: t })}
+              placeholder="YYYY-MM-DD"
+            />
+
+            <Text style={styles.formLabel}>Submitted Date</Text>
+            <TextInput
+              style={styles.formInput}
+              value={form.submittedDate}
+              onChangeText={t => setForm({ ...form, submittedDate: t })}
+              placeholder="YYYY-MM-DD"
+            />
+
+            <Text style={styles.formLabel}>Status</Text>
+            <View style={styles.statusPicker}>
+              {Object.entries(STATUS_META).map(([key, meta]) => (
+                <TouchableOpacity
+                  key={key}
+                  style={[styles.statusPickerBtn, form.status === key && { backgroundColor: meta.bg }]}
+                  onPress={() => setForm({ ...form, status: key as AppealStatus })}
+                >
+                  <Text style={[styles.statusPickerBtnText, form.status === key && { color: meta.color }]}>
+                    {meta.icon} {meta.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <Text style={styles.formLabel}>Notes</Text>
+            <TextInput
+              style={[styles.formInput, { minHeight: 80, textAlignVertical: 'top' }]}
+              value={form.notes}
+              onChangeText={t => setForm({ ...form, notes: t })}
+              placeholder="Add any relevant notes here..."
+              multiline
+            />
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={styles.modalBtn} onPress={closeModal}>
+                <Text style={styles.modalBtnText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.modalBtn, styles.modalBtnPrimary]} onPress={handleSave}>
+                <Text style={styles.modalBtnText}>{editId ? 'Save Changes' : 'Add Appeal'}</Text>
               </TouchableOpacity>
             </View>
-            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-              {[
-                { key: 'title',         label: 'Appeal Name *',    placeholder: 'e.g. ABA Therapy Denial — March 2025', keyboard: 'default' },
-                { key: 'insurer',       label: 'Insurance Company', placeholder: 'e.g. Blue Cross Blue Shield',          keyboard: 'default' },
-                { key: 'serviceType',   label: 'Service Type',      placeholder: 'e.g. ABA Therapy, OT, Speech',         keyboard: 'default' },
-                { key: 'claimNumber',   label: 'Claim Number',      placeholder: 'e.g. CLM-2025-001234',                 keyboard: 'default' },
-                { key: 'denialDate',    label: 'Denial Date',       placeholder: 'YYYY-MM-DD',                           keyboard: 'default' },
-                { key: 'deadlineDate',  label: 'Appeal Deadline',   placeholder: 'YYYY-MM-DD',                           keyboard: 'default' },
-                { key: 'submittedDate', label: 'Date Submitted',    placeholder: 'YYYY-MM-DD',                           keyboard: 'default' },
-              ].map(field => (
-                <View key={field.key} style={styles.formGroup}>
-                  <Text style={styles.formLabel}>{field.label}</Text>
-                  <TextInput
-                    style={styles.formInput}
-                    placeholder={field.placeholder}
-                    placeholderTextColor={COLORS.textLight}
-                    value={(form as any)[field.key]}
-                    onChangeText={v => setForm(f => ({ ...f, [field.key]: v }))}
-                    keyboardType={field.keyboard as any}
-                    autoCapitalize={field.key === 'claimNumber' ? 'characters' : 'words'}
-                  />
-                </View>
-              ))}
-
-              {/* Status */}
-              <View style={styles.formGroup}>
-                <Text style={styles.formLabel}>Status</Text>
-                <View style={styles.statusGrid}>
-                  {(Object.keys(STATUS_META) as AppealStatus[]).map(s => {
-                    const sm = STATUS_META[s];
-                    const sel = form.status === s;
-                    return (
-                      <TouchableOpacity
-                        key={s}
-                        style={[styles.statusChip, sel && { backgroundColor: sm.bg, borderColor: sm.color }]}
-                        onPress={() => setForm(f => ({ ...f, status: s }))}
-                      >
-                        <Text style={[styles.statusChipText, sel && { color: sm.color, fontWeight: '700' }]}>
-                          {sm.icon} {sm.label}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-              </View>
-
-              {/* Notes */}
-              <View style={styles.formGroup}>
-                <Text style={styles.formLabel}>Notes</Text>
-                <TextInput
-                  style={[styles.formInput, styles.formTextarea]}
-                  placeholder="Call notes, names, what was said..."
-                  placeholderTextColor={COLORS.textLight}
-                  value={form.notes}
-                  onChangeText={v => setForm(f => ({ ...f, notes: v }))}
-                  multiline
-                  numberOfLines={4}
-                  textAlignVertical="top"
-                />
-              </View>
-
-              <View style={styles.modalFooter}>
-                <TouchableOpacity style={styles.cancelBtn} onPress={closeModal}>
-                  <Text style={styles.cancelBtnText}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
-                  <Text style={styles.saveBtnText}>Save Appeal</Text>
-                </TouchableOpacity>
-              </View>
-            </ScrollView>
           </View>
         </KeyboardAvoidingView>
       </Modal>
-
-      {toast ? (
-        <View style={styles.toast}>
-          <Text style={styles.toastText}>{toast}</Text>
-        </View>
-      ) : null}
     </View>
   );
 }
 
-// ── Root export ───────────────────────────────────────────────────────────────
 export default function AppealTrackerScreen() {
-  const { isPremium } = useIsPremium();
+  const { isPremium, isLoading } = useIsPremium();
+
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text style={styles.loadingText}>Loading...</Text>
+      </View>
+    );
+  }
+
   return isPremium ? <FullTracker /> : <PremiumGateView />;
 }
 
-// ── Styles ────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bg },
-
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: SPACING.lg,
-    paddingTop: 0,
-    paddingBottom: SPACING.md,
+  container: {
+    flex: 1,
     backgroundColor: COLORS.white,
-    borderBottomWidth: 1, borderBottomColor: COLORS.border,
   },
-  backBtn: { padding: SPACING.xs, minWidth: 60 },
-  backText: { fontSize: FONT_SIZES.sm, fontWeight: '600', color: COLORS.purple },
-  headerTitle: { fontSize: FONT_SIZES.base, fontWeight: '700', color: COLORS.text },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: SPACING.md,
+    paddingBottom: SPACING.sm,
+    backgroundColor: COLORS.white,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.lightGray,
+  },
+  backBtn: {
+    padding: SPACING.xs,
+  },
+  backText: {
+    fontSize: FONT_SIZES.md,
+    color: COLORS.primary,
+  },
+  headerTitle: {
+    fontSize: FONT_SIZES.lg,
+    fontWeight: 'bold',
+    color: COLORS.text,
+  },
   addHeaderBtn: {
-    backgroundColor: COLORS.purple, borderRadius: RADIUS.pill,
-    paddingHorizontal: SPACING.md, paddingVertical: 6,
+    padding: SPACING.xs,
+    backgroundColor: COLORS.primary,
+    borderRadius: RADIUS.sm,
   },
-  addHeaderBtnText: { fontSize: FONT_SIZES.xs, fontWeight: '700', color: COLORS.white },
-  rainbow: { height: 4, backgroundColor: COLORS.purple },
-
-  // Gate
-  gateHero: {
-    backgroundColor: COLORS.lavender, padding: SPACING.xl,
-    alignItems: 'center', borderBottomWidth: 1, borderBottomColor: COLORS.border,
+  addHeaderBtnText: {
+    color: COLORS.white,
+    fontSize: FONT_SIZES.md,
+    fontWeight: 'bold',
   },
-  gateHeroIcon: {
-    width: 64, height: 64, borderRadius: 18,
-    backgroundColor: COLORS.purple, alignItems: 'center', justifyContent: 'center',
-    marginBottom: SPACING.md, ...SHADOWS.md,
+  rainbow: {
+    height: 3,
+    width: '100%',
+    backgroundColor: COLORS.primary,
+    // A nice rainbow gradient for premium features
+    // TODO: Replace with LinearGradient from expo-linear-gradient
+    // background: 'linear-gradient(to right, #6200EE, #03DAC6, #FF4081, #FFC107)',
   },
-  gateHeroIconText: { fontSize: 30 },
-  gatePremiumBadge: {
-    backgroundColor: '#FFF6D8', borderRadius: RADIUS.pill,
-    paddingHorizontal: SPACING.md, paddingVertical: 4, marginBottom: SPACING.sm,
-  },
-  gatePremiumBadgeText: { fontSize: 11, fontWeight: '700', color: '#7A6020' },
-  gateHeroTitle: { fontSize: FONT_SIZES.xxl, fontWeight: '800', color: COLORS.text, marginBottom: SPACING.sm },
-  gateHeroSub: { fontSize: FONT_SIZES.sm, color: COLORS.textMid, textAlign: 'center', lineHeight: 21, maxWidth: 300 },
-
-  gateFeatures: { padding: SPACING.xl },
-  gateFeaturesTitle: { fontSize: FONT_SIZES.sm, fontWeight: '700', color: COLORS.text, marginBottom: SPACING.lg },
-  gateFeatureRow: {
-    flexDirection: 'row', alignItems: 'flex-start', gap: SPACING.md,
-    marginBottom: SPACING.lg,
-  },
-  gateFeatureIcon: {
-    width: 40, height: 40, borderRadius: 12,
-    backgroundColor: COLORS.lavender, alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-  },
-  gateFeatureIconText: { fontSize: 20 },
-  gateFeatureBody: { flex: 1 },
-  gateFeatureTitle: { fontSize: FONT_SIZES.sm, fontWeight: '700', color: COLORS.text, marginBottom: 3 },
-  gateFeatureDesc: { fontSize: FONT_SIZES.xs, color: COLORS.textMid, lineHeight: 18 },
-
-  gateStatCard: {
-    marginHorizontal: SPACING.xl, marginBottom: SPACING.xl,
-    backgroundColor: COLORS.purple, borderRadius: RADIUS.md,
-    padding: SPACING.xl, alignItems: 'center', ...SHADOWS.lg,
-  },
-  gateStatNumber: { fontSize: 40, fontWeight: '900', color: COLORS.white, letterSpacing: -1 },
-  gateStatLabel: { fontSize: FONT_SIZES.sm, color: 'rgba(255,255,255,0.85)', textAlign: 'center', lineHeight: 20, marginTop: 4 },
-  gateStatSource: { fontSize: 10, color: 'rgba(255,255,255,0.55)', marginTop: SPACING.sm },
-
-  gateCTA: { paddingHorizontal: SPACING.xl, alignItems: 'center' },
-  gateUpgradeBtn: {
-    backgroundColor: COLORS.purple, borderRadius: RADIUS.pill,
-    paddingVertical: SPACING.lg, paddingHorizontal: SPACING.xxxl,
-    width: '100%', alignItems: 'center', ...SHADOWS.lg,
-  },
-  gateUpgradeBtnText: { fontSize: FONT_SIZES.md, fontWeight: '700', color: COLORS.white },
-  gateUpgradeNote: { fontSize: FONT_SIZES.xs, color: COLORS.textLight, marginTop: SPACING.md, textAlign: 'center' },
-
-  // Stats
   statsRow: {
-    flexDirection: 'row', gap: SPACING.sm,
-    paddingHorizontal: SPACING.lg, paddingTop: SPACING.lg,
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    padding: SPACING.md,
+    backgroundColor: COLORS.lightGray,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.gray,
   },
   statCard: {
-    flex: 1, backgroundColor: COLORS.white,
-    borderRadius: RADIUS.sm, borderWidth: 1.5, borderColor: COLORS.border,
-    padding: SPACING.md, alignItems: 'center', ...SHADOWS.sm,
+    alignItems: 'center',
   },
-  statValue: { fontSize: 22, fontWeight: '800' },
-  statLabel: { fontSize: 10, fontWeight: '600', color: COLORS.textLight, marginTop: 2 },
-
-  // Filter
-  filterScroll: { maxHeight: 46 },
-  filterRow: { flexDirection: 'row', gap: SPACING.sm, paddingHorizontal: SPACING.lg, paddingVertical: SPACING.sm, alignItems: 'center' },
-  filterChip: {
-    paddingHorizontal: SPACING.md, paddingVertical: 5,
-    borderRadius: RADIUS.pill, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.bg,
+  statNumber: {
+    fontSize: FONT_SIZES.xl,
+    fontWeight: 'bold',
+    color: COLORS.text,
   },
-  filterChipActive: { backgroundColor: COLORS.text, borderColor: COLORS.text },
-  filterChipText: { fontSize: 12, fontWeight: '600', color: COLORS.textMid },
-  filterChipTextActive: { color: COLORS.white },
-
-  // Content
-  content: { paddingHorizontal: SPACING.lg, paddingTop: SPACING.lg },
-
-  // Empty state
-  emptyState: { alignItems: 'center', paddingVertical: SPACING.xxxl },
-  emptyIcon: { fontSize: 36, opacity: 0.4, marginBottom: SPACING.md },
-  emptyTitle: { fontSize: FONT_SIZES.base, fontWeight: '700', color: COLORS.text, marginBottom: SPACING.xs },
-  emptySub: { fontSize: FONT_SIZES.sm, color: COLORS.textMid, textAlign: 'center', lineHeight: 20, maxWidth: 260 },
-
-  // Appeal card
-  appealCard: {
-    backgroundColor: COLORS.white, borderRadius: RADIUS.md,
-    borderWidth: 1.5, borderColor: COLORS.border,
-    padding: SPACING.lg, marginBottom: SPACING.md, ...SHADOWS.sm,
+  statLabel: {
+    fontSize: FONT_SIZES.sm,
+    color: COLORS.gray,
   },
-  appealCardUrgent: { borderColor: '#ffcfca', borderLeftWidth: 4, borderLeftColor: '#c0392b' },
-  appealCardTop: { flexDirection: 'row', gap: SPACING.sm, marginBottom: SPACING.sm },
-  statusBadge: {
-    paddingHorizontal: SPACING.sm, paddingVertical: 3,
-    borderRadius: RADIUS.pill, alignSelf: 'flex-start',
-  },
-  statusBadgeText: { fontSize: 11, fontWeight: '700' },
-  urgentBadge: {
-    backgroundColor: '#ffe0e0', paddingHorizontal: SPACING.sm,
-    paddingVertical: 3, borderRadius: RADIUS.pill,
-  },
-  urgentBadgeText: { fontSize: 11, fontWeight: '700', color: '#c0392b' },
-  appealTitle: { fontSize: FONT_SIZES.sm, fontWeight: '700', color: COLORS.text, marginBottom: 3 },
-  appealInsurer: { fontSize: FONT_SIZES.xs, color: COLORS.textMid },
-  appealService: { fontSize: FONT_SIZES.xs, color: COLORS.textLight },
-  appealDates: { flexDirection: 'row', gap: SPACING.lg, marginTop: SPACING.sm, flexWrap: 'wrap' },
-  appealDateText: { fontSize: 11, color: COLORS.textLight, fontWeight: '500' },
-  appealDetail: {
-    borderTopWidth: 1, borderTopColor: COLORS.border,
-    marginTop: SPACING.md, paddingTop: SPACING.md, gap: SPACING.sm,
-  },
-  detailRow: { fontSize: FONT_SIZES.xs, color: COLORS.textMid },
-  detailNotes: {
-    fontSize: FONT_SIZES.xs, color: COLORS.textMid, lineHeight: 18,
-    backgroundColor: COLORS.bg, borderRadius: RADIUS.xs, padding: SPACING.sm,
-    borderWidth: 1, borderColor: COLORS.border,
-  },
-  detailBtnRow: { flexDirection: 'row', gap: SPACING.sm },
-  detailBtn: {
-    flex: 1, paddingVertical: SPACING.sm, borderRadius: RADIUS.pill,
-    borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.white, alignItems: 'center',
-  },
-  detailBtnDanger: { borderColor: COLORS.errorBorder },
-  detailBtnText: { fontSize: FONT_SIZES.xs, fontWeight: '600', color: COLORS.textMid },
-
-  // Modal
-  modalBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.45)' },
-  modalDismiss: { flex: 1 },
-  modal: {
-    backgroundColor: COLORS.white,
-    borderTopLeftRadius: RADIUS.lg, borderTopRightRadius: RADIUS.lg,
-    paddingHorizontal: SPACING.xl,
-    paddingBottom: Platform.OS === 'ios' ? 34 : SPACING.xl,
-    maxHeight: '90%',
-  },
-  modalHeader: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingVertical: SPACING.lg, borderBottomWidth: 1, borderBottomColor: COLORS.border,
-    marginBottom: SPACING.lg,
-  },
-  modalTitle: { fontSize: FONT_SIZES.lg, fontWeight: '700', color: COLORS.text },
-  modalClose: {
-    width: 30, height: 30, borderRadius: 15,
-    backgroundColor: COLORS.bg, alignItems: 'center', justifyContent: 'center',
-  },
-  modalCloseText: { fontSize: 14, color: COLORS.textMid },
-
-  formGroup: { marginBottom: SPACING.lg },
-  formLabel: { fontSize: FONT_SIZES.xs, fontWeight: '700', color: COLORS.textMid, marginBottom: 6 },
-  formInput: {
-    borderWidth: 1.5, borderColor: COLORS.border, borderRadius: RADIUS.sm,
+  filterScroll: {
     paddingHorizontal: SPACING.md,
-    paddingVertical: Platform.OS === 'ios' ? 12 : 9,
-    fontSize: FONT_SIZES.sm, color: COLORS.text, backgroundColor: COLORS.white,
+    paddingVertical: SPACING.sm,
+    backgroundColor: COLORS.white,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.lightGray,
   },
-  formTextarea: { minHeight: 90, textAlignVertical: 'top' },
-
-  statusGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm },
-  statusChip: {
-    paddingHorizontal: SPACING.md, paddingVertical: 7,
-    borderRadius: RADIUS.pill, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.bg,
+  filterBtn: {
+    paddingVertical: SPACING.xs,
+    paddingHorizontal: SPACING.sm,
+    borderRadius: RADIUS.md,
+    marginRight: SPACING.sm,
+    backgroundColor: COLORS.lightGray,
   },
-  statusChipText: { fontSize: 12, fontWeight: '500', color: COLORS.textMid },
-
-  modalFooter: { flexDirection: 'row', gap: SPACING.md, marginTop: SPACING.lg, marginBottom: SPACING.md },
-  cancelBtn: {
-    paddingVertical: SPACING.md, paddingHorizontal: SPACING.xl,
-    borderRadius: RADIUS.pill, borderWidth: 1.5, borderColor: COLORS.border,
+  filterBtnActive: {
+    backgroundColor: COLORS.primary,
   },
-  cancelBtnText: { fontSize: FONT_SIZES.sm, fontWeight: '600', color: COLORS.textMid },
-  saveBtn: {
-    flex: 1, paddingVertical: SPACING.md, borderRadius: RADIUS.pill,
-    backgroundColor: COLORS.purple, alignItems: 'center', ...SHADOWS.md,
+  filterBtnText: {
+    color: COLORS.text,
+    fontSize: FONT_SIZES.sm,
   },
-  saveBtnText: { fontSize: FONT_SIZES.sm, fontWeight: '700', color: COLORS.white },
-
-  toast: {
-    position: 'absolute', bottom: 90, alignSelf: 'center',
-    backgroundColor: COLORS.text, paddingHorizontal: SPACING.xl,
-    paddingVertical: SPACING.sm, borderRadius: RADIUS.pill, ...SHADOWS.md,
+  filterBtnTextActive: {
+    color: COLORS.white,
+    fontWeight: 'bold',
   },
-  toastText: { color: COLORS.white, fontSize: FONT_SIZES.xs, fontWeight: '600' },
-});
+  appealList: {
+    padding: SPACING.md,
+  },
+  appealCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: RADIUS.md,
+    ...SHADOWS.sm,
+    marginBottom: SPACING.md,
+    overflow: 'hidden',
+  },
+  appealSummary: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: SPACING.md,
+  },
+  appealSummaryLeft: {
+    flex: 1,
+    marginRight: SPACING.sm,
+  },
+  appealTitle: {
+    fontSize: FONT_SIZES.md,
+    fontWeight: 'bold',
+    color: COLORS.text,
+  },
+  appealMeta: {
+    fontSize: FONT_SIZES.sm,
+    color: COLORS.gray,
+    marginTop: SPACING.xs / 2,
+  },
+  appealSummaryRight: {
+    alignItems: 'flex-end',
+  },
+  statusBadge: {
+    paddingVertical: SPACING.xs / 2,
+    paddingHorizontal: SPACING.sm,
+    borderRadius: RADIUS.sm,
+  },
+  statusBadgeText: {
+    fontSize: FONT_SIZES.sm,
+    fontWeight: 'bold',
+  },
+  deadlineText: {
+    fontSize: FONT_SIZES.sm,
+    color: COLORS.error,
+    marginTop: SPACING.xs / 2,
+    fontWeight: 'bold',
+  },
+  appealDetails: {
+    padding: SPACING.md,
+    paddingTop: 0,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.lightGray,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    marginBottom: SPACING.xs,
+  },
+  detailLabel: {
+    fontWeight: 'bold',
+    marginRight: SPACING.xs,
+    color: COLORS.text,
+  },
+  detailValue: {
+    color: COLORS.text,
+    flex: 1,
+  },
+  appealActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: SPACING.md,
+  },
+  actionBtn: {
+    paddingVertical: SPACING.xs,
+    paddingHorizontal: SPACING.md,
+    borderRadius: RADIUS.sm,
+    marginLeft: SPACING.sm,
+    backgroundColor: COLORS.lightGray,
+  },
+  actionBtnText: {
+    color: COLORS.primary,
+    fontWeight: 'bold',
+  },
+  actionBtnDestructive: {
+    backgroundColor: COLORS.errorLight,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: COLORS.white,
+  },
+  loadingText: {
+    fontSize: FONT_SIZES.lg,
+    color: COLORS.gray,
+  },
+  // Premium Gate Styles
+  gateHero: {
+    padding: SPACING.md,
+    alignItems: 'center',
+    backgroundColor: COLORS.primary,
+    borderBottomLeftRadius: RADIUS.lg,
+    borderBottomRightRadius: RADIUS.lg,
+    marginBottom: SPACING.md,
+  },
+  gateHeroIcon: {
+    backgroundColor: COLORS.white,
+    borderRadius: RADIUS.full,
+    width: 80,
+    height: 80,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: SPACING.sm,
+  },
+  gateHeroIconText: {
+    fontSize: 48,
+  },
+  gatePremiumBadge: {
+    backgroundColor: COLORS.gold,
+    paddingVertical: SPACING.xs / 2,
+    paddingHorizontal: SPACING.sm,
+    borderRadius: RADIUS.sm,
+    marginBottom: SPACING.sm,
+  },
+  gatePremiumBadgeText: {
+    color: COLORS.white,
+    fontWeight: 'bold',
+    fontSize: FONT_SIZES.sm,
+  },
+  gateHeroTitle: {
+    fontSize: FONT_SIZES.xl,
+    fontWeight: 'bold',
+    color: COLORS.white,
+    marginBottom: SPACING.xs,
+  },
+  gateHeroSub: {
+    color: COLORS.white,
+    fontSize: FONT_SIZES.md,
+    textAlign: 'center',
+    lineHeight: FONT_SIZES.md * 1.4,
+  },
+  gateFeatures: {
+    padding: SPACING.md,
+  },
+  gateFeaturesTitle: {
+    fontSize: FONT_SIZES.lg,
+    fontWeight: 'bold',
+    color: COLORS.text,
+    marginBottom: SPACING.md,
+  },
+  gateFeatureRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: SPACING.md,
+  },
+  gateFeatureIcon: {
+    marginRight: SPACING.sm,
+    fontSize: FONT_SIZES.lg,
+  },
+  gateFeatureIconText: {
+    fontSize: FONT_SIZES.lg,
+  },
+  gateFeatureBody: {
+    flex: 1,
+  },
+  gateFeatureTitle: {
+    fontSize: FONT_SIZES.md,
+    fontWeight: 'bold',
+    color: COLORS.text,
+    marginBottom: SPACING.xs / 2,
+  },
+  gateFeatureDesc: {
+    fontSize: FONT_SIZES.sm,
+    color: COLORS.gray,
+  },
+  gateStatCard: {
+    backgroundColor: COLORS.lightBlue,
+    padding: SPACING.md,
+    borderRadius: RADIUS.md,
+    marginHorizontal: SPACING.md,
+    marginBottom: SPACING.md,
+    alignItems: 'center',
+  },
+  gateStatNumber: {
+    fontSize: FONT_SIZES.xl,
+    fontWeight: 'bold',
+    color: COLORS.blue,
+  },
+  gateStatLabel: {
+    fontSize: FONT_SIZES.md,
+    color: COLORS.blue,
+    textAlign: 'center',
+    marginTop: SPACING.xs,
+  },
+  gateStatSource: {
+    fontSize: FONT_SIZES.sm,
+    color: COLORS.blue,
+    opacity: 0.7,
+    marginTop: SPACING.sm,
+  },
+  gateCTA: {
+    padding: SPACING.md,
+    alignItems: 'center',
+  },
+  gateUpgradeBtn: {
+    backgroundColor: COLORS.accent,
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.lg,
+    borderRadius: RADIUS.md,
+    ...SHADOWS.md,
+  },
+  gateUpgradeBtnText: {
+    color: COLORS.white,
+    fontSize: FONT_SIZES.lg,
+    fontWeight: 'bold',
+  },
+  gateUpgradeNote: {
+    fontSize: FONT_SIZES.sm,
+    color: COLORS.gray,
+    textAlign: 'center',
+    marginTop: SPACING.sm,
+  },
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalContent: {
+    backgroundColor: COLORS.white,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.md,
+    width: '90%',
+    maxHeight: '90%',
+    ...SHADOWS.lg,
+  },
+  modalTitle: {
+    fontSize: FONT_SIZES.lg,
+    fontWeight: 'bold',
+    marginBottom: SPACING.md,
+    textAlign: 'center',
+    color: COLORS.text,
+  },
+  formLabel: {
+    fontSize: FONT_SIZES.sm,
+    color: COLORS.gray,
+    marginBottom: SPACING.xs / 2,
+    marginTop: SPACING.sm,
+  },
+  formInput: {
+    borderWidth: 1,
+    borderColor: COLORS.lightGray,
+    borderRadius: RADIUS.sm,
+    padding: SPACING.sm,
+    fontSize: FONT_SIZES.md,
+    color: COLORS.text,
+  },
+  statusPicker: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: SPACING.xs,
+    marginBottom: SPACING.sm,
+  },
+  statusPickerBtn: {
+    paddingVertical: SPACING.xs,
+    paddingHorizontal: SPACING.sm,
+    borderRadius: RADIUS.md,
+    marginRight: SPACING.sm,
+    marginBottom: SPACING.sm,
+    backgroundColor: COLORS.lightGray,
+  },
+  statusPickerBtnText: {
+    fontSize: FONT_SIZES.sm,
+    color: COLORS.text,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: SPACING.md,
+  },
+  modalBtn: {
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.md,
+    borderRadius: RADIUS.md,
+    marginLeft: SPACING.sm,
+    backgroundColor: COLORS.lightGray,
+  },
+  modalBtnText: {
+    fontSize: FONT_SIZES.md,
+    color: COLORS.text,
+    fontWeight: 'bold',
+  },
+  modalBtnPrimary: {
+    backgroundColor: COLORS.primary,
+  },
+}));

@@ -7,6 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useActiveChild } from '../../services/childManager';
+import { useChildChanged } from '../../hooks/useChildChanged';
 
 const COLORS = {
   bg: '#F5F4FB', card: '#FFFFFF', navy: '#1a1f5e', purple: '#7c6fd4',
@@ -65,13 +66,18 @@ export default function MedicaidApprovedScreen() {
   const { key: childKey } = useActiveChild();
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
 
+  const loadCompletedSteps = useCallback(async () => {
+    const val = await AsyncStorage.getItem(STORAGE_KEY);
+    if (val) setCompletedSteps(JSON.parse(val));
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
-      AsyncStorage.getItem(STORAGE_KEY).then((val) => {
-        if (val) setCompletedSteps(JSON.parse(val));
-      });
-    }, [])
+      loadCompletedSteps();
+    }, [loadCompletedSteps])
   );
+
+  useChildChanged(() => { loadCompletedSteps(); });
 
   const toggleStep = async (num: number) => {
     const updated = completedSteps.includes(num)
@@ -229,82 +235,74 @@ const styles = StyleSheet.create({
   },
   progressRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: SPACING.sm },
   progressLabel: { fontSize: 13, fontWeight: '700', color: COLORS.navy },
-  progressPct: { fontSize: 13, fontWeight: '700', color: COLORS.purple },
-  progressBar: { height: 8, backgroundColor: '#ede9fc', borderRadius: 4, marginBottom: SPACING.xs },
-  progressFill: { height: 8, backgroundColor: COLORS.teal, borderRadius: 4 },
-  progressSub: { fontSize: 11, color: COLORS.textMid },
+  progressBar: { height: 6, backgroundColor: COLORS.border, borderRadius: 3, overflow: 'hidden' },
+  progressFill: { height: '100%', backgroundColor: COLORS.teal, borderRadius: 3 },
+  progressPct: { fontSize: 13, fontWeight: '700', color: COLORS.teal },
+  progressSub: { fontSize: 12, color: COLORS.textMid, marginTop: SPACING.sm },
   stepCard: {
-    backgroundColor: COLORS.card, borderRadius: 14, padding: SPACING.lg,
+    backgroundColor: COLORS.card, borderRadius: 12, padding: SPACING.lg,
     marginBottom: SPACING.md, borderWidth: 1, borderColor: COLORS.border,
   },
-  stepCardDone: { borderColor: COLORS.teal, backgroundColor: '#f8fffd' },
-  stepHeader: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: SPACING.md, gap: SPACING.sm },
+  stepCardDone: { borderColor: COLORS.teal, backgroundColor: COLORS.tealLt },
+  stepHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: SPACING.sm },
   stepNum: {
-    width: 28, height: 28, borderRadius: 14, backgroundColor: COLORS.purpleLt,
-    alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+    width: 28, height: 28, borderRadius: 14, backgroundColor: COLORS.purple,
+    justifyContent: 'center', alignItems: 'center', marginRight: SPACING.sm,
   },
   stepNumDone: { backgroundColor: COLORS.teal },
-  stepNumText: { fontSize: 12, fontWeight: '700', color: COLORS.purpleDk },
-  stepTitleBlock: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: SPACING.xs },
-  stepIcon: { fontSize: 18 },
-  stepTitle: { fontSize: 15, fontWeight: '700', color: COLORS.navy, flex: 1 },
-  stepTitleDone: { color: COLORS.textMid },
+  stepNumText: { fontSize: 14, fontWeight: '700', color: COLORS.white },
+  stepTitleBlock: { flex: 1, flexDirection: 'row', alignItems: 'center' },
+  stepIcon: { fontSize: 18, marginRight: SPACING.xs },
+  stepTitle: { fontSize: 16, fontWeight: '700', color: COLORS.navy, flexShrink: 1 },
+  stepTitleDone: { color: COLORS.teal },
   checkBtn: {
-    paddingHorizontal: SPACING.md, paddingVertical: SPACING.xs,
-    borderRadius: 20, borderWidth: 1.5, borderColor: COLORS.border,
+    backgroundColor: COLORS.purpleLt, paddingVertical: SPACING.xs, paddingHorizontal: SPACING.sm,
+    borderRadius: 12, marginLeft: SPACING.sm,
   },
-  checkBtnDone: { backgroundColor: COLORS.teal, borderColor: COLORS.teal },
-  checkBtnText: { fontSize: 11, fontWeight: '600', color: COLORS.textMid },
+  checkBtnDone: { backgroundColor: COLORS.teal, borderColor: COLORS.teal, borderWidth: 1 },
+  checkBtnText: { fontSize: 13, fontWeight: '600', color: COLORS.purpleDk },
   checkBtnTextDone: { color: COLORS.white },
-  stepDesc: { fontSize: 13, color: COLORS.textMid, lineHeight: 20, marginBottom: SPACING.md },
-  actionList: { marginBottom: SPACING.md },
-  actionRow: { flexDirection: 'row', gap: SPACING.xs, marginBottom: SPACING.xs },
-  actionBullet: { fontSize: 13, color: COLORS.purple, fontWeight: '700', marginTop: 1 },
-  actionText: { fontSize: 13, color: COLORS.navy, flex: 1, lineHeight: 18 },
-  tipBox: {
-    backgroundColor: '#fffbeb', borderRadius: 8, padding: SPACING.md,
-    borderLeftWidth: 3, borderLeftColor: '#f59e0b', marginBottom: SPACING.sm,
-  },
-  tipText: { fontSize: 12, color: '#92400e', lineHeight: 18 },
+  stepDesc: { fontSize: 14, color: COLORS.textMid, marginBottom: SPACING.sm },
+  actionList: { marginBottom: SPACING.sm },
+  actionRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: SPACING.xs },
+  actionBullet: { fontSize: 14, color: COLORS.textMid, marginRight: SPACING.xs },
+  actionText: { fontSize: 14, color: COLORS.textMid, flex: 1 },
+  tipBox: { backgroundColor: COLORS.purpleLt, borderRadius: 8, padding: SPACING.sm, marginTop: SPACING.sm },
+  tipText: { fontSize: 13, color: COLORS.purpleDk, fontStyle: 'italic' },
   linkBtn: {
-    backgroundColor: COLORS.purpleLt, borderRadius: 8, padding: SPACING.md,
-    alignItems: 'center', marginTop: SPACING.xs,
+    backgroundColor: COLORS.purple, paddingVertical: SPACING.sm, paddingHorizontal: SPACING.md,
+    borderRadius: 8, marginTop: SPACING.md, alignItems: 'center',
   },
-  linkBtnText: { fontSize: 13, fontWeight: '700', color: COLORS.purpleDk },
+  linkBtnText: { fontSize: 15, fontWeight: '600', color: COLORS.white },
   waiverCard: {
-    backgroundColor: '#fff8e1', borderRadius: 14, padding: SPACING.xl,
-    borderWidth: 1, borderColor: '#ffe082', marginTop: SPACING.sm,
+    backgroundColor: COLORS.card, borderRadius: 12, padding: SPACING.lg,
+    borderWidth: 1, borderColor: COLORS.border, alignItems: 'center',
   },
-  waiverTitle: { fontSize: 15, fontWeight: '800', color: '#e65100', marginBottom: SPACING.sm },
-  waiverBody: { fontSize: 13, color: '#bf360c', lineHeight: 20, marginBottom: SPACING.md },
+  waiverTitle: { fontSize: 18, fontWeight: '700', color: COLORS.navy, marginBottom: SPACING.sm },
+  waiverBody: { fontSize: 14, color: COLORS.textMid, textAlign: 'center', marginBottom: SPACING.md },
   waiverBtn: {
-    backgroundColor: '#e65100', borderRadius: 10, padding: SPACING.md, alignItems: 'center',
+    backgroundColor: COLORS.orange, paddingVertical: SPACING.sm, paddingHorizontal: SPACING.md,
+    borderRadius: 8, alignItems: 'center',
   },
-  waiverBtnText: { fontSize: 13, fontWeight: '700', color: COLORS.white },
-  // Celebration modal styles
+  waiverBtnText: { fontSize: 15, fontWeight: '600', color: COLORS.white },
   modalOverlay: {
-    flex: 1, backgroundColor: 'rgba(0,0,0,0.55)',
-    justifyContent: 'center', alignItems: 'center', paddingHorizontal: SPACING.xl,
+    flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center',
   },
   modalCard: {
-    backgroundColor: COLORS.card, borderRadius: 20, padding: SPACING.xxl,
-    width: '100%', alignItems: 'center', shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.18, shadowRadius: 12, elevation: 8,
+    backgroundColor: COLORS.white, borderRadius: 16, padding: SPACING.xl, margin: SPACING.lg,
+    alignItems: 'center', width: '90%', maxWidth: 400,
   },
-  modalEmoji: { fontSize: 52, marginBottom: SPACING.md },
-  modalTitle: { fontSize: 24, fontWeight: '800', color: COLORS.navy, marginBottom: SPACING.sm, textAlign: 'center' },
-  modalSub: { fontSize: 14, color: COLORS.textMid, textAlign: 'center', lineHeight: 21, marginBottom: SPACING.lg },
-  modalDivider: { height: 1, backgroundColor: COLORS.border, width: '100%', marginBottom: SPACING.lg },
-  modalNextLabel: {
-    fontSize: 11, fontWeight: '700', color: COLORS.purple, letterSpacing: 1,
-    marginBottom: SPACING.sm, textAlign: 'center',
-  },
-  modalNextText: { fontSize: 13, color: COLORS.textMid, textAlign: 'center', lineHeight: 20, marginBottom: SPACING.xl },
+  modalEmoji: { fontSize: 48, marginBottom: SPACING.sm },
+  modalTitle: { fontSize: 24, fontWeight: '800', color: COLORS.green, marginBottom: SPACING.sm },
+  modalSub: { fontSize: 15, color: COLORS.textMid, textAlign: 'center', lineHeight: 22, marginBottom: SPACING.lg },
+  modalDivider: { width: '100%', height: 1, backgroundColor: COLORS.border, marginVertical: SPACING.lg },
+  modalNextLabel: { fontSize: 12, fontWeight: '700', color: COLORS.textLight, marginBottom: SPACING.xs },
+  modalNextText: { fontSize: 14, color: COLORS.textMid, textAlign: 'center', lineHeight: 20, marginBottom: SPACING.lg },
   modalWaiverBtn: {
-    backgroundColor: COLORS.purple, borderRadius: 50, paddingVertical: SPACING.md,
-    paddingHorizontal: SPACING.xxl, alignItems: 'center', width: '100%', marginBottom: SPACING.md,
+    backgroundColor: COLORS.purple, paddingVertical: SPACING.sm, paddingHorizontal: SPACING.md,
+    borderRadius: 8, alignItems: 'center', width: '100%', marginBottom: SPACING.sm,
   },
-  modalWaiverBtnText: { fontSize: 15, fontWeight: '700', color: COLORS.white },
-  modalDismiss: { paddingVertical: SPACING.sm, alignItems: 'center' },
-  modalDismissText: { fontSize: 13, color: COLORS.textLight, fontWeight: '600' },
+  modalWaiverBtnText: { fontSize: 16, fontWeight: '600', color: COLORS.white },
+  modalDismiss: { paddingVertical: SPACING.xs },
+  modalDismissText: { fontSize: 14, color: COLORS.textMid, fontWeight: '500' },
 });

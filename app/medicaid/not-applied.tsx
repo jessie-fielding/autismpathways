@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { useChildChanged } from '../../hooks/useChildChanged';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet, Linking,
 } from 'react-native';
@@ -101,13 +102,19 @@ export default function MedicaidNotAppliedScreen() {
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const [eligibilityExpanded, setEligibilityExpanded] = useState(false);
 
+  const loadData = useCallback(async () => {
+    AsyncStorage.getItem(STORAGE_KEY).then((val) => {
+      if (val) setCompletedSteps(JSON.parse(val));
+    });
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
-      AsyncStorage.getItem(STORAGE_KEY).then((val) => {
-        if (val) setCompletedSteps(JSON.parse(val));
-      });
-    }, [])
+      loadData();
+    }, [loadData])
   );
+
+  useChildChanged(() => { loadData(); });
 
   const toggleStep = async (num: number) => {
     const updated = completedSteps.includes(num)
@@ -238,139 +245,348 @@ export default function MedicaidNotAppliedScreen() {
 
               {step.tip && (
                 <View style={styles.tipBox}>
-                  <Text style={styles.tipText}>💡 {step.tip}</Text>
+                  <Text style={styles.tipLabel}>💡 Tip:</Text>
+                  <Text style={styles.tipText}>{step.tip}</Text>
                 </View>
               )}
 
               {step.link && (
-                <TouchableOpacity
-                  style={styles.linkBtn}
-                  onPress={() => router.push(step.link!.route as any)}
-                >
+                <TouchableOpacity style={styles.linkBtn} onPress={() => router.push(step.link.route)}>
                   <Text style={styles.linkBtnText}>{step.link.label} →</Text>
                 </TouchableOpacity>
               )}
             </View>
           );
         })}
-
-        {/* HELP CALLOUT */}
-        <View style={styles.helpCard}>
-          <Text style={styles.helpTitle}>🤝 Need Help Applying?</Text>
-          <Text style={styles.helpBody}>Disability Rights organizations in every state offer free help with Medicaid applications and appeals. They are legally required to assist you at no cost.</Text>
-          <TouchableOpacity style={styles.helpBtn} onPress={() => Linking.openURL('https://www.ndrn.org/find-your-agency/')}>
-            <Text style={styles.helpBtnText}>Find Your Disability Rights Org →</Text>
-          </TouchableOpacity>
-        </View>
       </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bg },
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.bg,
+  },
+  scrollContent: {
+    paddingHorizontal: SPACING.lg,
+    paddingBottom: SPACING.xxl * 2,
+  },
   header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: SPACING.lg, paddingBottom: SPACING.md,
-    backgroundColor: COLORS.bg, borderBottomWidth: 1, borderBottomColor: COLORS.border,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: SPACING.md,
+    paddingBottom: SPACING.md,
+    backgroundColor: COLORS.card,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
   },
-  backBtn: { paddingVertical: SPACING.xs },
-  backText: { fontSize: 14, color: COLORS.purple, fontWeight: '600' },
-  headerTitle: { fontSize: 16, fontWeight: '700', color: COLORS.navy },
-  scrollContent: { padding: SPACING.lg, paddingBottom: 40 },
+  backBtn: {
+    padding: SPACING.xs,
+  },
+  backText: {
+    color: COLORS.purple,
+    fontSize: 16,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: COLORS.navy,
+  },
   hero: {
-    backgroundColor: COLORS.purpleLt, borderRadius: 16, padding: SPACING.xl,
-    alignItems: 'center', marginBottom: SPACING.lg, borderWidth: 1, borderColor: '#c5b8f0',
+    backgroundColor: COLORS.purpleLt,
+    borderRadius: SPACING.md,
+    padding: SPACING.lg,
+    alignItems: 'center',
+    marginVertical: SPACING.lg,
   },
-  heroEmoji: { fontSize: 40, marginBottom: SPACING.sm },
-  heroTitle: { fontSize: 22, fontWeight: '800', color: COLORS.purpleDk, marginBottom: SPACING.sm },
-  heroSub: { fontSize: 14, color: COLORS.textMid, textAlign: 'center', lineHeight: 20 },
+  heroEmoji: {
+    fontSize: 48,
+    marginBottom: SPACING.sm,
+  },
+  heroTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: COLORS.purpleDk,
+    marginBottom: SPACING.sm,
+    textAlign: 'center',
+  },
+  heroSub: {
+    fontSize: 16,
+    color: COLORS.textMid,
+    textAlign: 'center',
+    lineHeight: 22,
+  },
   eligibilityCard: {
-    backgroundColor: COLORS.card, borderRadius: 12, padding: SPACING.lg,
-    marginBottom: SPACING.md, borderWidth: 1, borderColor: COLORS.border,
+    backgroundColor: COLORS.card,
+    borderRadius: SPACING.md,
+    padding: SPACING.lg,
+    marginBottom: SPACING.lg,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
-  eligibilityHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  eligibilityTitle: { fontSize: 14, fontWeight: '700', color: COLORS.navy },
-  eligibilityChevron: { fontSize: 12, color: COLORS.textMid },
-  eligibilityBody: { marginTop: SPACING.md },
-  eligibilityRow: { flexDirection: 'row', gap: SPACING.md, marginBottom: SPACING.md, alignItems: 'flex-start' },
-  eligibilityIcon: { fontSize: 20 },
-  eligibilityText: { flex: 1 },
-  eligibilityLabel: { fontSize: 13, fontWeight: '700', color: COLORS.navy, marginBottom: 2 },
-  eligibilityDetail: { fontSize: 12, color: COLORS.textMid, lineHeight: 16 },
+  eligibilityHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  eligibilityTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: COLORS.navy,
+  },
+  eligibilityChevron: {
+    fontSize: 18,
+    color: COLORS.textLight,
+  },
+  eligibilityBody: {
+    marginTop: SPACING.lg,
+    paddingTop: SPACING.lg,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+  },
+  eligibilityRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: SPACING.md,
+  },
+  eligibilityIcon: {
+    fontSize: 20,
+    marginRight: SPACING.sm,
+  },
+  eligibilityText: {
+    flex: 1,
+  },
+  eligibilityLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: COLORS.navy,
+  },
+  eligibilityDetail: {
+    fontSize: 14,
+    color: COLORS.textMid,
+    marginTop: SPACING.xs,
+  },
   eligibilityNote: {
-    fontSize: 12, color: COLORS.purple, lineHeight: 18,
-    backgroundColor: COLORS.purpleLt, borderRadius: 8, padding: SPACING.md, marginTop: SPACING.sm,
+    fontSize: 14,
+    color: COLORS.textMid,
+    fontStyle: 'italic',
+    marginTop: SPACING.md,
+    paddingTop: SPACING.md,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
   },
   progressCard: {
-    backgroundColor: COLORS.card, borderRadius: 12, padding: SPACING.lg,
-    marginBottom: SPACING.lg, borderWidth: 1, borderColor: COLORS.border,
+    backgroundColor: COLORS.card,
+    borderRadius: SPACING.md,
+    padding: SPACING.lg,
+    marginBottom: SPACING.lg,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
-  progressRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: SPACING.sm },
-  progressLabel: { fontSize: 13, fontWeight: '700', color: COLORS.navy },
-  progressPct: { fontSize: 13, fontWeight: '700', color: COLORS.purple },
-  progressBar: { height: 8, backgroundColor: '#ede9fc', borderRadius: 4, marginBottom: SPACING.xs },
-  progressFill: { height: 8, backgroundColor: COLORS.purple, borderRadius: 4 },
-  progressSub: { fontSize: 11, color: COLORS.textMid },
+  progressRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: SPACING.sm,
+  },
+  progressLabel: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: COLORS.navy,
+  },
+  progressPct: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: COLORS.purple,
+  },
+  progressBar: {
+    height: 8,
+    backgroundColor: COLORS.bg,
+    borderRadius: 4,
+    overflow: 'hidden',
+    marginBottom: SPACING.sm,
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: COLORS.teal,
+    borderRadius: 4,
+  },
+  progressSub: {
+    fontSize: 14,
+    color: COLORS.textMid,
+  },
   stepCard: {
-    backgroundColor: COLORS.card, borderRadius: 14, padding: SPACING.lg,
-    marginBottom: SPACING.md, borderWidth: 1, borderColor: COLORS.border,
+    backgroundColor: COLORS.card,
+    borderRadius: SPACING.md,
+    padding: SPACING.lg,
+    marginBottom: SPACING.md,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
-  stepCardDone: { borderColor: COLORS.teal, backgroundColor: '#f8fffd' },
-  stepHeader: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: SPACING.md, gap: SPACING.sm },
+  stepCardDone: {
+    borderColor: COLORS.teal,
+    backgroundColor: COLORS.tealLt,
+  },
+  stepHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: SPACING.md,
+  },
   stepNum: {
-    width: 28, height: 28, borderRadius: 14, backgroundColor: COLORS.purpleLt,
-    alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: COLORS.purple,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: SPACING.md,
   },
-  stepNumDone: { backgroundColor: COLORS.teal },
-  stepNumText: { fontSize: 12, fontWeight: '700', color: COLORS.purpleDk },
-  stepTitleBlock: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: SPACING.xs },
-  stepIcon: { fontSize: 18 },
-  stepTitle: { fontSize: 15, fontWeight: '700', color: COLORS.navy, flex: 1 },
-  stepTitleDone: { color: COLORS.textMid },
+  stepNumDone: {
+    backgroundColor: COLORS.teal,
+  },
+  stepNumText: {
+    color: COLORS.white,
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  stepTitleBlock: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  stepIcon: {
+    fontSize: 20,
+    marginRight: SPACING.sm,
+  },
+  stepTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: COLORS.navy,
+  },
+  stepTitleDone: {
+    color: COLORS.teal,
+    textDecorationLine: 'line-through',
+  },
   checkBtn: {
-    paddingHorizontal: SPACING.md, paddingVertical: SPACING.xs,
-    borderRadius: 20, borderWidth: 1.5, borderColor: COLORS.border,
+    backgroundColor: COLORS.purpleLt,
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.md,
+    borderRadius: SPACING.md,
   },
-  checkBtnDone: { backgroundColor: COLORS.teal, borderColor: COLORS.teal },
-  checkBtnText: { fontSize: 11, fontWeight: '600', color: COLORS.textMid },
-  checkBtnTextDone: { color: COLORS.white },
-  stepDesc: { fontSize: 13, color: COLORS.textMid, lineHeight: 20, marginBottom: SPACING.md },
-  docList: { marginBottom: SPACING.md },
-  docRow: { flexDirection: 'row', gap: SPACING.xs, marginBottom: SPACING.xs, alignItems: 'flex-start' },
-  docBullet: { fontSize: 12 },
-  docText: { fontSize: 13, color: COLORS.navy, flex: 1, lineHeight: 18 },
-  actionList: { marginBottom: SPACING.md },
-  actionRow: { flexDirection: 'row', gap: SPACING.xs, marginBottom: SPACING.xs },
-  actionBullet: { fontSize: 13, color: COLORS.purple, fontWeight: '700', marginTop: 1 },
-  actionText: { fontSize: 13, color: COLORS.navy, flex: 1, lineHeight: 18 },
-  optionList: { marginBottom: SPACING.md, gap: SPACING.sm },
+  checkBtnDone: {
+    backgroundColor: COLORS.teal,
+  },
+  checkBtnText: {
+    color: COLORS.purpleDk,
+    fontWeight: 'bold',
+  },
+  checkBtnTextDone: {
+    color: COLORS.white,
+  },
+  stepDesc: {
+    fontSize: 16,
+    color: COLORS.textMid,
+    lineHeight: 22,
+    marginBottom: SPACING.md,
+  },
+  docList: {
+    marginBottom: SPACING.md,
+  },
+  docRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: SPACING.xs,
+  },
+  docBullet: {
+    fontSize: 16,
+    marginRight: SPACING.sm,
+  },
+  docText: {
+    flex: 1,
+    fontSize: 16,
+    color: COLORS.textMid,
+  },
+  actionList: {
+    marginBottom: SPACING.md,
+  },
+  actionRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: SPACING.xs,
+  },
+  actionBullet: {
+    fontSize: 16,
+    marginRight: SPACING.sm,
+    color: COLORS.purple,
+  },
+  actionText: {
+    flex: 1,
+    fontSize: 16,
+    color: COLORS.textMid,
+  },
+  optionList: {
+    marginBottom: SPACING.md,
+  },
   optionRow: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.purpleLt,
-    borderRadius: 10, padding: SPACING.md, gap: SPACING.md,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: COLORS.bg,
+    padding: SPACING.md,
+    borderRadius: SPACING.md,
+    marginBottom: SPACING.sm,
   },
-  optionLeft: { flex: 1 },
-  optionLabel: { fontSize: 13, fontWeight: '700', color: COLORS.purpleDk },
-  optionDesc: { fontSize: 11, color: COLORS.textMid },
-  optionArrow: { fontSize: 16, color: COLORS.purple },
+  optionLeft: {
+    flex: 1,
+    marginRight: SPACING.md,
+  },
+  optionLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: COLORS.navy,
+  },
+  optionDesc: {
+    fontSize: 14,
+    color: COLORS.textMid,
+    marginTop: SPACING.xs,
+  },
+  optionArrow: {
+    fontSize: 20,
+    color: COLORS.purple,
+  },
   tipBox: {
-    backgroundColor: '#fffbeb', borderRadius: 8, padding: SPACING.md,
-    borderLeftWidth: 3, borderLeftColor: '#f59e0b', marginBottom: SPACING.sm,
+    backgroundColor: COLORS.orangeLt,
+    borderRadius: SPACING.md,
+    padding: SPACING.md,
+    marginBottom: SPACING.md,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
   },
-  tipText: { fontSize: 12, color: '#92400e', lineHeight: 18 },
+  tipLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: COLORS.orange,
+    marginRight: SPACING.sm,
+  },
+  tipText: {
+    flex: 1,
+    fontSize: 16,
+    color: COLORS.orange,
+    lineHeight: 22,
+  },
   linkBtn: {
-    backgroundColor: COLORS.purpleLt, borderRadius: 8, padding: SPACING.md,
-    alignItems: 'center', marginTop: SPACING.xs,
+    backgroundColor: COLORS.purple,
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.lg,
+    borderRadius: SPACING.md,
+    alignItems: 'center',
+    marginTop: SPACING.md,
   },
-  linkBtnText: { fontSize: 13, fontWeight: '700', color: COLORS.purpleDk },
-  helpCard: {
-    backgroundColor: '#e8f5e9', borderRadius: 14, padding: SPACING.xl,
-    borderWidth: 1, borderColor: '#c8e6c9', marginTop: SPACING.sm,
+  linkBtnText: {
+    color: COLORS.white,
+    fontSize: 16,
+    fontWeight: 'bold',
   },
-  helpTitle: { fontSize: 15, fontWeight: '800', color: '#1b5e20', marginBottom: SPACING.sm },
-  helpBody: { fontSize: 13, color: '#2e7d32', lineHeight: 20, marginBottom: SPACING.md },
-  helpBtn: {
-    backgroundColor: '#2e7d32', borderRadius: 10, padding: SPACING.md, alignItems: 'center',
-  },
-  helpBtnText: { fontSize: 13, fontWeight: '700', color: COLORS.white },
 });

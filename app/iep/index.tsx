@@ -17,6 +17,7 @@ import {
 import { useFocusEffect, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, FONT_SIZES, RADIUS, SHADOWS, SPACING } from '../../lib/theme';
+import { useChildChanged } from '../../hooks/useChildChanged';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface IEPGoal {
@@ -220,7 +221,7 @@ function ScriptCard({ item }: { item: typeof PUSHBACK_SCRIPTS[0] }) {
         <View style={cs.scriptBody}>
           <View style={cs.scriptBox}>
             <Text style={cs.scriptBoxLabel}>YOUR RESPONSE</Text>
-            <Text style={cs.scriptBoxText}>"{item.script}"</Text>
+            <Text style={cs.scriptBoxText}>\"{item.script}\"</Text>
             <TouchableOpacity onPress={() => { Clipboard.setString(item.script); Alert.alert('Copied!', 'Script copied to clipboard.'); }}>
               <Text style={cs.scriptCopy}>📋 Copy</Text>
             </TouchableOpacity>
@@ -232,265 +233,176 @@ function ScriptCard({ item }: { item: typeof PUSHBACK_SCRIPTS[0] }) {
   );
 }
 
-// ─── Main component ───────────────────────────────────────────────────────────
+function TermCard({ item }: { item: typeof RIGHTS_TERMS[0] }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <View style={cs.termCard}>
+      <TouchableOpacity style={cs.termHeader} onPress={() => setOpen(o => !o)} activeOpacity={0.7}>
+        <Text style={cs.termTitle}>{item.term}</Text>
+        <Text style={cs.termArrow}>{open ? '↑' : '›'}</Text>
+      </TouchableOpacity>
+      {open && (
+        <View style={cs.termBody}>
+          <Text style={cs.termDef}>{item.def}</Text>
+          {item.tip && <Text style={cs.termTip}>{item.tip}</Text>}
+        </View>
+      )}
+    </View>
+  );
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 export default function IEPScreen() {
   const router = useRouter();
-  const scrollRef = useRef<ScrollView>(null);
-  const { key: childKey } = useActiveChild();
+  const { activeChild } = useActiveChild();
+  const [activeTab, setActiveTab] = useState('prep');
 
-  const [activeTab, setActiveTab] = useState<'rights' | 'prep' | 'goals' | 'meetings' | 'flagged'>('rights');
-  const [checkedItems, setCheckedItems] = useState<Set<number>>(new Set());
-
-  // Setup
-  const [setup, setSetup] = useState<IEPSetup>({ grade: '', status: 'annual', district: '' });
-  const [showSetup, setShowSetup] = useState(false);
-  const [draftSetup, setDraftSetup] = useState<IEPSetup>({ grade: '', status: 'annual', district: '' });
-
-  // Goals
   const [goals, setGoals] = useState<IEPGoal[]>([]);
-  const [showGoalModal, setShowGoalModal] = useState(false);
-  const [editGoalId, setEditGoalId] = useState<string | null>(null);
-  const [goalArea, setGoalArea] = useState('Communication');
-  const [goalText, setGoalText] = useState('');
-  const [goalBaseline, setGoalBaseline] = useState('');
-  const [goalTarget, setGoalTarget] = useState('');
-  const [goalProgress, setGoalProgress] = useState(0);
-  const [goalYear, setGoalYear] = useState('');
-  const [goalNotes, setGoalNotes] = useState('');
-  const [showArchived, setShowArchived] = useState(false);
-
-  // Meetings
   const [meetings, setMeetings] = useState<IEPMeeting[]>([]);
-  const [showMeetingModal, setShowMeetingModal] = useState(false);
-  const [expandedMeeting, setExpandedMeeting] = useState<string | null>(null);
-  const [mDate, setMDate] = useState('');
-  const [mType, setMType] = useState('Annual Review');
-  const [mAttendees, setMAttendees] = useState('');
-  const [mDiscussed, setMDiscussed] = useState('');
-  const [mDecisions, setMDecisions] = useState('');
-  const [mActions, setMActions] = useState('');
-  const [mDocs, setMDocs] = useState('');
-  const [mNextDate, setMNextDate] = useState('');
-  const [mFeeling, setMFeeling] = useState('neutral');
-
-  // Flagged obs
+  const [setup, setSetup] = useState<IEPSetup>({ grade: '', status: '', district: '' });
   const [flagged, setFlagged] = useState<FlaggedObs[]>([]);
 
-  // ── Load ──
-  useFocusEffect(useCallback(() => {
-    async function load() {
-      try {
-        const [rawSetup, rawGoals, rawMeetings, rawFlagged, rawChecked] = await Promise.all([
-          AsyncStorage.getItem('ap_iep_setup'),
-          AsyncStorage.getItem('ap_iep_goals'),
-          AsyncStorage.getItem('ap_iep_meetings'),
-          AsyncStorage.getItem('ap_iep_flagged_obs'),
-          AsyncStorage.getItem('ap_iep_checklist'),
-        ]);
-        if (rawSetup) setSetup(JSON.parse(rawSetup));
-        if (rawGoals) setGoals(JSON.parse(rawGoals));
-        if (rawMeetings) setMeetings(JSON.parse(rawMeetings));
-        if (rawFlagged) setFlagged(JSON.parse(rawFlagged));
-        if (rawChecked) setCheckedItems(new Set(JSON.parse(rawChecked)));
-      } catch { /* ignore */ }
-    }
-    load();
-  }, []));
+  const [showSetup, setShowSetup] = useState(false);
+  const [draftSetup, setDraftSetup] = useState<IEPSetup>({ grade: '', status: '', district: '' });
 
-  // ── Checklist ──
-  async function toggleCheck(i: number) {
-    const next = new Set(checkedItems);
-    next.has(i) ? next.delete(i) : next.add(i);
-    setCheckedItems(next);
-    await AsyncStorage.setItem('ap_iep_checklist', JSON.stringify([...next]));
-    // Sync progress count to child-scoped key so Dashboard tracker updates
-    await AsyncStorage.setItem(childKey('ap_iep_progress'), String(next.size));
-  }
+  const [showGoalModal, setShowGoalModal] = useState(false);
+  const [editingGoal, setEditingGoal] = useState<IEPGoal | null>(null);
+  const [draftGoal, setDraftGoal] = useState<Partial<IEPGoal>>({});
 
-  // ── Setup ──
-  function openSetup() { setDraftSetup({ ...setup }); setShowSetup(true); }
-  async function saveSetup() {
-    setSetup({ ...draftSetup });
-    await AsyncStorage.setItem('ap_iep_setup', JSON.stringify(draftSetup));
+  const [showMeetingModal, setShowMeetingModal] = useState(false);
+  const [editingMeeting, setEditingMeeting] = useState<IEPMeeting | null>(null);
+  const [draftMeeting, setDraftMeeting] = useState<Partial<IEPMeeting>>({});
+
+  const [showArchived, setShowArchived] = useState(false);
+  const [expandedMeeting, setExpandedMeeting] = useState<string | null>(null);
+
+  const loadData = async () => {
+    if (!activeChild) return;
+    const keyPrefix = `iep_${activeChild.id}_`;
+    const goals = JSON.parse(await AsyncStorage.getItem(keyPrefix + 'goals') || '[]');
+    const meetings = JSON.parse(await AsyncStorage.getItem(keyPrefix + 'meetings') || '[]');
+    const setup = JSON.parse(await AsyncStorage.getItem(keyPrefix + 'setup') || 'null');
+    const flagged = JSON.parse(await AsyncStorage.getItem('flaggedObservations') || '[]').filter((f: any) => f.childId === activeChild.id);
+    setGoals(goals.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+    setMeetings(meetings.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+    setSetup(setup || { grade: '', status: '', district: '' });
+    setFlagged(flagged);
+  };
+
+  useFocusEffect(useCallback(() => { loadData(); }, [activeChild]));
+  useChildChanged(() => { loadData(); });
+
+  const saveGoals = async (newGoals: IEPGoal[]) => {
+    if (!activeChild) return;
+    await AsyncStorage.setItem(`iep_${activeChild.id}_goals`, JSON.stringify(newGoals));
+    setGoals(newGoals.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+  };
+
+  const saveMeetings = async (newMeetings: IEPMeeting[]) => {
+    if (!activeChild) return;
+    await AsyncStorage.setItem(`iep_${activeChild.id}_meetings`, JSON.stringify(newMeetings));
+    setMeetings(newMeetings.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+  };
+
+  const saveSetup = async () => {
+    if (!activeChild) return;
+    await AsyncStorage.setItem(`iep_${activeChild.id}_setup`, JSON.stringify(draftSetup));
+    setSetup(draftSetup);
     setShowSetup(false);
-  }
+  };
 
-  // ── Goals ──
-  function openAddGoal() {
-    setEditGoalId(null); setGoalArea('Communication'); setGoalText('');
-    setGoalBaseline(''); setGoalTarget(''); setGoalProgress(0);
-    setGoalYear(''); setGoalNotes(''); setShowGoalModal(true);
-  }
-  function openEditGoal(g: IEPGoal) {
-    setEditGoalId(g.id); setGoalArea(g.area); setGoalText(g.text);
-    setGoalBaseline(g.baseline); setGoalTarget(g.target); setGoalProgress(g.progress);
-    setGoalYear(g.year); setGoalNotes(g.notes); setShowGoalModal(true);
-  }
-  async function saveGoal() {
-    if (!goalText.trim()) { Alert.alert('Goal description is required.'); return; }
-    const newGoal: IEPGoal = {
-      id: editGoalId || uid(), area: goalArea, text: goalText.trim(),
-      baseline: goalBaseline.trim(), target: goalTarget.trim(),
-      progress: goalProgress, year: goalYear.trim(), notes: goalNotes.trim(),
-      archived: false, createdAt: editGoalId ? '' : new Date().toISOString(),
-    };
-    const next = editGoalId
-      ? goals.map(g => g.id === editGoalId ? { ...g, ...newGoal } : g)
-      : [...goals, newGoal];
-    setGoals(next);
-    await AsyncStorage.setItem('ap_iep_goals', JSON.stringify(next));
+  const clearFlags = async () => {
+    if (!activeChild) return;
+    Alert.alert(
+      'Clear Flagged Observations?',
+      'This will remove all flagged items from this screen. This is usually done after an IEP meeting.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Clear Flags', style: 'destructive', onPress: async () => {
+          const allFlagged = JSON.parse(await AsyncStorage.getItem('flaggedObservations') || '[]');
+          const remaining = allFlagged.filter((f: any) => f.childId !== activeChild.id);
+          await AsyncStorage.setItem('flaggedObservations', JSON.stringify(remaining));
+          setFlagged([]);
+        }},
+      ]
+    );
+  };
+
+  const openAddGoal = () => { setEditingGoal(null); setDraftGoal({ progress: 0, archived: false, year: new Date().getFullYear().toString() }); setShowGoalModal(true); };
+  const openEditGoal = (goal: IEPGoal) => { setEditingGoal(goal); setDraftGoal(goal); setShowGoalModal(true); };
+  const saveGoal = () => {
+    const now = new Date().toISOString();
+    if (editingGoal) {
+      const updatedGoals = goals.map(g => g.id === editingGoal.id ? { ...g, ...draftGoal } : g);
+      saveGoals(updatedGoals);
+    } else {
+      const newGoal = { ...draftGoal, id: uid(), createdAt: now } as IEPGoal;
+      saveGoals([...goals, newGoal]);
+    }
     setShowGoalModal(false);
-  }
-  async function archiveGoal(id: string) {
-    const next = goals.map(g => g.id === id ? { ...g, archived: !g.archived } : g);
-    setGoals(next); await AsyncStorage.setItem('ap_iep_goals', JSON.stringify(next));
-  }
-  async function deleteGoal(id: string) {
-    Alert.alert('Delete goal?', 'This cannot be undone.', [
+  };
+  const deleteGoal = (id: string) => {
+    Alert.alert('Delete Goal?', 'This cannot be undone.', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: async () => {
-        const next = goals.filter(g => g.id !== id);
-        setGoals(next); await AsyncStorage.setItem('ap_iep_goals', JSON.stringify(next));
-      }},
+      { text: 'Delete', style: 'destructive', onPress: () => saveGoals(goals.filter(g => g.id !== id)) },
     ]);
-  }
+  };
+  const archiveGoal = (id: string) => {
+    const updated = goals.map(g => g.id === id ? { ...g, archived: !g.archived } : g);
+    saveGoals(updated);
+  };
 
-  // ── Meetings ──
-  function openAddMeeting() {
-    const today = new Date().toISOString().split('T')[0];
-    setMDate(today); setMType('Annual Review'); setMAttendees('');
-    setMDiscussed(''); setMDecisions(''); setMActions('');
-    setMDocs(''); setMNextDate(''); setMFeeling('neutral');
-    setShowMeetingModal(true);
-  }
-  async function saveMeeting() {
-    if (!mDate) { Alert.alert('Please enter a meeting date.'); return; }
-    const m: IEPMeeting = {
-      id: uid(), date: mDate, type: mType, attendees: mAttendees,
-      discussed: mDiscussed, decisions: mDecisions, actions: mActions,
-      docs: mDocs, nextDate: mNextDate, feeling: mFeeling,
-      savedAt: new Date().toISOString(),
-    };
-    const next = [m, ...meetings];
-    setMeetings(next);
-    await AsyncStorage.setItem('ap_iep_meetings', JSON.stringify(next));
+  const openAddMeeting = () => { setEditingMeeting(null); setDraftMeeting({ date: new Date().toISOString().split('T')[0] }); setShowMeetingModal(true); };
+  const saveMeeting = () => {
+    const now = new Date().toISOString();
+    if (editingMeeting) {
+      const updatedMeetings = meetings.map(m => m.id === editingMeeting.id ? { ...m, ...draftMeeting } : m);
+      saveMeetings(updatedMeetings);
+    } else {
+      const newMeeting = { ...draftMeeting, id: uid(), savedAt: now } as IEPMeeting;
+      saveMeetings([...meetings, newMeeting]);
+    }
     setShowMeetingModal(false);
-  }
-
-  // ── Clear flags ──
-  async function clearFlags() {
-    Alert.alert('Clear all flags?', 'This will remove all flagged observations from this view.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Clear', style: 'destructive', onPress: async () => {
-        setFlagged([]); await AsyncStorage.removeItem('ap_iep_flagged_obs');
-      }},
-    ]);
-  }
-
-  // ── Grade label ──
-  const gradeLabel = setup.grade
-    ? GRADE_OPTIONS.find(g => g.value === setup.grade)?.label ?? setup.grade
-    : null;
+  };
 
   const activeGoals = goals.filter(g => !g.archived);
   const archivedGoals = goals.filter(g => g.archived);
 
-  // ─────────────────────────────────────────────────────────────────────────────
+  const s = cs; // alias for styles
+
   return (
     <View style={s.container}>
-      {/* Header */}
       <View style={s.header}>
-        <TouchableOpacity onPress={() => router.push('/(tabs)/dashboard')} style={s.backBtn}>
-          <Text style={s.backText}>← Dashboard</Text>
-        </TouchableOpacity>
-        <Text style={s.headerTitle}>Autism <Text style={s.headerPurple}>Pathways</Text></Text>
-        <View style={{ width: 90 }} />
-      </View>
-
-      {/* Dark purple hero banner */}
-      <View style={s.banner}>
-        <Text style={s.bannerEyebrow}>IEP PATHWAY</Text>
-        <Text style={s.bannerTitle}>Your child's <Text style={s.bannerAccent}>IEP journey</Text></Text>
-        <Text style={s.bannerSub}>From first evaluation to graduation — rights, prep scripts, goal tracking, and meeting logs all in one place.</Text>
-        <TouchableOpacity style={s.gradeBtn} onPress={openSetup}>
-          <Text style={s.gradeBtnText}>
-            {gradeLabel ? `📚 ${gradeLabel}` : '📚 Set grade level'}
-          </Text>
+        <Text style={s.headerTitle}>IEP Pathway</Text>
+        <TouchableOpacity style={s.setupBtn} onPress={() => { setDraftSetup(setup); setShowSetup(true); }}>
+          <Text style={s.setupBtnText}>⚙️ Setup</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Tab bar */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.tabBar} contentContainerStyle={s.tabBarContent}>
-        {(['rights', 'prep', 'goals', 'meetings', 'flagged'] as const).map(tab => {
-          const labels: Record<string, string> = { rights: '⚖️ Rights', prep: '📋 Prep', goals: '🎯 Goals', meetings: '📝 Meetings', flagged: '📌 From Obs' };
-          return (
-            <TouchableOpacity
-              key={tab}
-              style={[s.tabBtn, activeTab === tab && s.tabBtnActive]}
-              onPress={() => { setActiveTab(tab); scrollRef.current?.scrollTo({ y: 0, animated: true }); }}
-            >
-              <Text style={[s.tabBtnText, activeTab === tab && s.tabBtnTextActive]}>{labels[tab]}</Text>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
+      <View style={s.tabBar}>
+        <TouchableOpacity style={[s.tab, activeTab === 'prep' && s.tabActive]} onPress={() => setActiveTab('prep')}><Text style={[s.tabText, activeTab === 'prep' && s.tabTextActive]}>Prep</Text></TouchableOpacity>
+        <TouchableOpacity style={[s.tab, activeTab === 'goals' && s.tabActive]} onPress={() => setActiveTab('goals')}><Text style={[s.tabText, activeTab === 'goals' && s.tabTextActive]}>Goals</Text></TouchableOpacity>
+        <TouchableOpacity style={[s.tab, activeTab === 'meetings' && s.tabActive]} onPress={() => setActiveTab('meetings')}><Text style={[s.tabText, activeTab === 'meetings' && s.tabTextActive]}>Meetings</Text></TouchableOpacity>
+        <TouchableOpacity style={[s.tab, activeTab === 'flagged' && s.tabActive]} onPress={() => setActiveTab('flagged')}><Text style={[s.tabText, activeTab === 'flagged' && s.tabTextActive]}>From Obs</Text></TouchableOpacity>
+      </View>
 
-      {/* Tab content */}
-      <ScrollView ref={scrollRef} style={s.scroll} contentContainerStyle={s.scrollContent} showsVerticalScrollIndicator={false}>
-
-        {/* ── RIGHTS TAB ── */}
-        {activeTab === 'rights' && (
-          <View>
-            <Callout type="green" label="✅ Your federal rights under IDEA" text="The Individuals with Disabilities Education Act (IDEA) guarantees your child the right to a free, appropriate public education. These rights apply in every state." />
-
-            <Text style={s.sectionLabel}>KEY TERMS EXPLAINED</Text>
-            <View style={s.card}>
-              {RIGHTS_TERMS.map((item, i) => (
-                <View key={item.term} style={[s.rightsItem, i < RIGHTS_TERMS.length - 1 && s.rightsItemBorder]}>
-                  <Text style={s.rightsTerm}>{item.term}</Text>
-                  <Text style={s.rightsDef}>{item.def}</Text>
-                  {item.tip && <Text style={s.rightsTip}>{item.tip}</Text>}
-                </View>
-              ))}
-            </View>
-
-            <Text style={s.sectionLabel}>IF THE SCHOOL SAYS NO</Text>
-            <View style={s.card}>
-              <Callout type="amber" label="⚠️ You always have options" text="A school denial is not final. You have the right to disagree, request mediation, or file a due process complaint." />
-              {SCHOOL_SAYS_NO.map((item, i) => (
-                <View key={item.term} style={[s.rightsItem, i < SCHOOL_SAYS_NO.length - 1 && s.rightsItemBorder]}>
-                  <Text style={s.rightsTerm}>{item.term}</Text>
-                  <Text style={s.rightsDef}>{item.def}</Text>
-                </View>
-              ))}
-            </View>
-
-            <Callout type="blue" label="📍 State-specific resources" text='Each state has a Parent Training and Information (PTI) center that provides free advocacy support. Search "PTI center [your state]" to find yours.' />
-          </View>
-        )}
-
+      <ScrollView style={s.contentScroll} showsVerticalScrollIndicator={false}>
         {/* ── PREP TAB ── */}
         {activeTab === 'prep' && (
           <View>
-            <Text style={s.sectionLabel}>BEFORE THE MEETING — CHECKLIST</Text>
-            <View style={s.card}>
-              {PREP_CHECKLIST.map((item, i) => {
-                const checked = checkedItems.has(i);
-                return (
-                  <TouchableOpacity key={item} style={[s.checkRow, i < PREP_CHECKLIST.length - 1 && s.checkRowBorder]} onPress={() => toggleCheck(i)}>
-                    <View style={[s.checkbox, checked && s.checkboxChecked]}>
-                      {checked && <Text style={{ color: '#fff', fontSize: 10, fontWeight: '700' }}>✓</Text>}
-                    </View>
-                    <Text style={[s.checkText, checked && s.checkTextDone]}>{item}</Text>
-                  </TouchableOpacity>
-                );
-              })}
+            <Text style={s.sectionLabel}>MEETING PREP CHECKLIST</Text>
+            <View style={s.checklist}>
+              {PREP_CHECKLIST.map((item, i) => <Text key={i} style={s.checklistItem}>- {item}</Text>)}
             </View>
 
             <Text style={s.sectionLabel}>PUSHBACK SCRIPTS</Text>
-            {PUSHBACK_SCRIPTS.map(item => <ScriptCard key={item.title} item={item} />)}
+            {PUSHBACK_SCRIPTS.map((item, i) => <ScriptCard key={i} item={item} />)}
 
-            <Callout type="green" label="✅ Always remember" text="You are an equal member of the IEP team. You have the right to bring a support person, record the meeting (check your state's law), and request any document in writing." />
+            <Text style={s.sectionLabel}>KNOW YOUR RIGHTS</Text>
+            {RIGHTS_TERMS.map((item, i) => <TermCard key={i} item={item} />)}
+
+            <Text style={s.sectionLabel}>IF THE SCHOOL SAYS NO</Text>
+            {SCHOOL_SAYS_NO.map((item, i) => <TermCard key={i} item={item} />)}
           </View>
         )}
 
@@ -498,7 +410,7 @@ export default function IEPScreen() {
         {activeTab === 'goals' && (
           <View>
             <TouchableOpacity style={s.addBtn} onPress={openAddGoal}>
-              <Text style={s.addBtnText}>+ Add IEP Goal</Text>
+              <Text style={s.addBtnText}>+ Add New Goal</Text>
             </TouchableOpacity>
 
             <Text style={s.sectionLabel}>ACTIVE GOALS</Text>
@@ -702,41 +614,36 @@ export default function IEPScreen() {
           <Pressable style={{ flex: 1 }} onPress={() => setShowGoalModal(false)} />
           <View style={s.modalCard}>
             <View style={s.modalTitleRow}>
-              <Text style={s.modalTitle}>{editGoalId ? 'Edit IEP Goal' : 'Add IEP Goal'}</Text>
+              <Text style={s.modalTitle}>{editingGoal ? 'Edit' : 'Add'} IEP Goal</Text>
               <TouchableOpacity onPress={() => setShowGoalModal(false)}><Text style={s.modalClose}>✕</Text></TouchableOpacity>
             </View>
-            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-              <Text style={s.formLabel}>Goal area</Text>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <Text style={s.formLabel}>Goal Area</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: SPACING.md }}>
-                {GOAL_AREAS.map(a => (
-                  <TouchableOpacity key={a} style={[s.gradeChip, goalArea === a && s.gradeChipActive]} onPress={() => setGoalArea(a)}>
-                    <Text style={[s.gradeChipText, goalArea === a && s.gradeChipTextActive]}>{a}</Text>
+                {GOAL_AREAS.map(g => (
+                  <TouchableOpacity key={g} style={[s.gradeChip, draftGoal.area === g && s.gradeChipActive]} onPress={() => setDraftGoal(d => ({ ...d, area: g }))}>
+                    <Text style={[s.gradeChipText, draftGoal.area === g && s.gradeChipTextActive]}>{g}</Text>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
-              <Text style={s.formLabel}>Goal description</Text>
-              <TextInput style={[s.input, s.textarea]} value={goalText} onChangeText={setGoalText} placeholder="e.g. By June 2025, Emma will initiate a conversation with a peer 3 out of 5 opportunities across 3 consecutive sessions." placeholderTextColor={COLORS.textLight} multiline numberOfLines={3} />
-              <Text style={s.formLabel}>Baseline (where they started)</Text>
-              <TextInput style={s.input} value={goalBaseline} onChangeText={setGoalBaseline} placeholder="e.g. Currently initiates 0/5 opportunities" placeholderTextColor={COLORS.textLight} />
-              <Text style={s.formLabel}>Target (the goal)</Text>
-              <TextInput style={s.input} value={goalTarget} onChangeText={setGoalTarget} placeholder="e.g. 3/5 opportunities across 3 sessions" placeholderTextColor={COLORS.textLight} />
-              <Text style={s.formLabel}>Current progress: {goalProgress}%</Text>
-              <View style={s.sliderRow}>
-                {[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map(v => (
-                  <TouchableOpacity key={v} style={[s.sliderChip, goalProgress === v && s.sliderChipActive]} onPress={() => setGoalProgress(v)}>
-                    <Text style={[s.sliderChipText, goalProgress === v && s.sliderChipTextActive]}>{v}%</Text>
-                  </TouchableOpacity>
-                ))}
+              <Text style={s.formLabel}>Goal Text</Text>
+              <TextInput style={[s.input, { height: 100 }]} value={draftGoal.text} onChangeText={v => setDraftGoal(d => ({ ...d, text: v }))} placeholder="e.g. Will read a 3rd grade passage and answer 4/5 comprehension questions." multiline placeholderTextColor={COLORS.textLight} />
+              <Text style={s.formLabel}>Baseline</Text>
+              <TextInput style={s.input} value={draftGoal.baseline} onChangeText={v => setDraftGoal(d => ({ ...d, baseline: v }))} placeholder="e.g. Currently reads at a 1st grade level." placeholderTextColor={COLORS.textLight} />
+              <Text style={s.formLabel}>Target</Text>
+              <TextInput style={s.input} value={draftGoal.target} onChangeText={v => setDraftGoal(d => ({ ...d, target: v }))} placeholder="e.g. Read at a 3rd grade level by end of year." placeholderTextColor={COLORS.textLight} />
+              <Text style={s.formLabel}>Progress</Text>
+              <View style={s.progressRow}>
+                <Text style={s.progressText}>{draftGoal.progress || 0}%</Text>
+                <TouchableOpacity style={s.progressBtn} onPress={() => setDraftGoal(d => ({ ...d, progress: Math.max(0, (d.progress || 0) - 10) }))}><Text style={s.progressBtnText}>-</Text></TouchableOpacity>
+                <TouchableOpacity style={s.progressBtn} onPress={() => setDraftGoal(d => ({ ...d, progress: Math.min(100, (d.progress || 0) + 10) }))}><Text style={s.progressBtnText}>+</Text></TouchableOpacity>
               </View>
-              <Text style={s.formLabel}>School year</Text>
-              <TextInput style={s.input} value={goalYear} onChangeText={setGoalYear} placeholder="e.g. 2024-2025" placeholderTextColor={COLORS.textLight} />
-              <Text style={s.formLabel}>Notes</Text>
-              <TextInput style={[s.input, s.textarea]} value={goalNotes} onChangeText={setGoalNotes} placeholder="Any additional notes on progress or concerns..." placeholderTextColor={COLORS.textLight} multiline numberOfLines={2} />
+              <Text style={s.formLabel}>School Year</Text>
+              <TextInput style={s.input} value={draftGoal.year} onChangeText={v => setDraftGoal(d => ({ ...d, year: v }))} placeholder="e.g. 2023-2024" placeholderTextColor={COLORS.textLight} />
+              <Text style={s.formLabel}>Notes (optional)</Text>
+              <TextInput style={[s.input, { height: 80 }]} value={draftGoal.notes} onChangeText={v => setDraftGoal(d => ({ ...d, notes: v }))} placeholder="e.g. As measured by teacher-administered reading assessments." multiline placeholderTextColor={COLORS.textLight} />
               <TouchableOpacity style={s.primaryBtn} onPress={saveGoal}>
                 <Text style={s.primaryBtnText}>Save Goal</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={s.secondaryBtn} onPress={() => setShowGoalModal(false)}>
-                <Text style={s.secondaryBtnText}>Cancel</Text>
               </TouchableOpacity>
             </ScrollView>
           </View>
@@ -749,44 +656,37 @@ export default function IEPScreen() {
           <Pressable style={{ flex: 1 }} onPress={() => setShowMeetingModal(false)} />
           <View style={s.modalCard}>
             <View style={s.modalTitleRow}>
-              <Text style={s.modalTitle}>Log IEP Meeting</Text>
+              <Text style={s.modalTitle}>{editingMeeting ? 'Edit' : 'Log'} IEP Meeting</Text>
               <TouchableOpacity onPress={() => setShowMeetingModal(false)}><Text style={s.modalClose}>✕</Text></TouchableOpacity>
             </View>
-            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-              <Text style={s.formLabel}>Meeting date</Text>
-              <TextInput style={s.input} value={mDate} onChangeText={setMDate} placeholder="YYYY-MM-DD" placeholderTextColor={COLORS.textLight} />
-              <Text style={s.formLabel}>Meeting type</Text>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <Text style={s.formLabel}>Meeting Date</Text>
+              <TextInput style={s.input} value={draftMeeting.date} onChangeText={v => setDraftMeeting(d => ({ ...d, date: v }))} placeholder="YYYY-MM-DD" placeholderTextColor={COLORS.textLight} />
+              <Text style={s.formLabel}>Meeting Type</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: SPACING.md }}>
                 {MEETING_TYPES.map(t => (
-                  <TouchableOpacity key={t} style={[s.gradeChip, mType === t && s.gradeChipActive]} onPress={() => setMType(t)}>
-                    <Text style={[s.gradeChipText, mType === t && s.gradeChipTextActive]}>{t}</Text>
+                  <TouchableOpacity key={t} style={[s.gradeChip, draftMeeting.type === t && s.gradeChipActive]} onPress={() => setDraftMeeting(d => ({ ...d, type: t }))}>
+                    <Text style={[s.gradeChipText, draftMeeting.type === t && s.gradeChipTextActive]}>{t}</Text>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
-              <Text style={s.formLabel}>Attendees (comma separated)</Text>
-              <TextInput style={s.input} value={mAttendees} onChangeText={setMAttendees} placeholder="e.g. Ms. Johnson (teacher), Dr. Smith (psych), Parent" placeholderTextColor={COLORS.textLight} />
-              <Text style={s.formLabel}>What was discussed</Text>
-              <TextInput style={[s.input, s.textarea]} value={mDiscussed} onChangeText={setMDiscussed} placeholder="Key topics, goal reviews, placement discussions..." placeholderTextColor={COLORS.textLight} multiline numberOfLines={3} />
-              <Text style={s.formLabel}>Decisions made</Text>
-              <TextInput style={[s.input, s.textarea]} value={mDecisions} onChangeText={setMDecisions} placeholder="What was agreed to, changed, or approved..." placeholderTextColor={COLORS.textLight} multiline numberOfLines={3} />
-              <Text style={s.formLabel}>Action items</Text>
-              <TextInput style={[s.input, s.textarea]} value={mActions} onChangeText={setMActions} placeholder={'Each on a new line, e.g.\nSchool to provide OT eval by March 1 (Ms. Johnson)\nParent to send updated therapy records by Feb 15'} placeholderTextColor={COLORS.textLight} multiline numberOfLines={3} />
-              <Text style={s.formLabel}>Documents signed</Text>
-              <TextInput style={s.input} value={mDocs} onChangeText={setMDocs} placeholder="e.g. IEP consent, PWN received" placeholderTextColor={COLORS.textLight} />
-              <Text style={s.formLabel}>Next meeting date (if scheduled)</Text>
-              <TextInput style={s.input} value={mNextDate} onChangeText={setMNextDate} placeholder="YYYY-MM-DD" placeholderTextColor={COLORS.textLight} />
-              <Text style={s.formLabel}>Overall feeling about this meeting</Text>
+              <Text style={s.formLabel}>Attendees (comma-separated)</Text>
+              <TextInput style={s.input} value={draftMeeting.attendees} onChangeText={v => setDraftMeeting(d => ({ ...d, attendees: v }))} placeholder="e.g. Mom, Dad, Ms. Smith, Dr. Jones" placeholderTextColor={COLORS.textLight} />
+              <Text style={s.formLabel}>What was discussed?</Text>
+              <TextInput style={[s.input, { height: 100 }]} value={draftMeeting.discussed} onChangeText={v => setDraftMeeting(d => ({ ...d, discussed: v }))} multiline placeholderTextColor={COLORS.textLight} />
+              <Text style={s.formLabel}>Decisions made?</Text>
+              <TextInput style={[s.input, { height: 100 }]} value={draftMeeting.decisions} onChangeText={v => setDraftMeeting(d => ({ ...d, decisions: v }))} multiline placeholderTextColor={COLORS.textLight} />
+              <Text style={s.formLabel}>Action items (one per line)</Text>
+              <TextInput style={[s.input, { height: 100 }]} value={draftMeeting.actions} onChangeText={v => setDraftMeeting(d => ({ ...d, actions: v }))} multiline placeholderTextColor={COLORS.textLight} />
+              <Text style={s.formLabel}>How did you feel about this meeting?</Text>
               {MEETING_FEELINGS.map(f => (
-                <TouchableOpacity key={f.value} style={[s.radioRow, mFeeling === f.value && s.radioRowActive]} onPress={() => setMFeeling(f.value)}>
-                  <View style={[s.radioCircle, mFeeling === f.value && s.radioCircleActive]} />
+                <TouchableOpacity key={f.value} style={[s.radioRow, draftMeeting.feeling === f.value && s.radioRowActive]} onPress={() => setDraftMeeting(d => ({ ...d, feeling: f.value }))}>
+                  <View style={[s.radioCircle, draftMeeting.feeling === f.value && s.radioCircleActive]} />
                   <Text style={s.radioText}>{f.label}</Text>
                 </TouchableOpacity>
               ))}
-              <TouchableOpacity style={[s.primaryBtn, { marginTop: SPACING.lg }]} onPress={saveMeeting}>
-                <Text style={s.primaryBtnText}>Save Meeting Log</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={s.secondaryBtn} onPress={() => setShowMeetingModal(false)}>
-                <Text style={s.secondaryBtnText}>Cancel</Text>
+              <TouchableOpacity style={s.primaryBtn} onPress={saveMeeting}>
+                <Text style={s.primaryBtnText}>Save Meeting</Text>
               </TouchableOpacity>
             </ScrollView>
           </View>
@@ -796,162 +696,115 @@ export default function IEPScreen() {
   );
 }
 
-// ─── Callout styles (module-level safe — no StyleSheet references) ─────────────
 const cs = StyleSheet.create({
-  callout: {
-    borderRadius: RADIUS.sm, borderWidth: 1,
-    padding: SPACING.md, marginBottom: SPACING.md,
-  },
-  calloutLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 4 },
-  calloutText: { fontSize: FONT_SIZES.sm, lineHeight: 19 },
-  scriptCard: {
-    backgroundColor: COLORS.white, borderRadius: RADIUS.md,
-    borderWidth: 1, borderColor: COLORS.border,
-    marginBottom: SPACING.sm, overflow: 'hidden', ...SHADOWS.sm,
-  },
-  scriptHeader: { flexDirection: 'row', alignItems: 'center', padding: SPACING.md, gap: SPACING.sm },
-  scriptIconBox: { width: 32, height: 32, borderRadius: 8, backgroundColor: COLORS.lavender, justifyContent: 'center', alignItems: 'center' },
-  scriptTitle: { flex: 1, fontSize: FONT_SIZES.sm, fontWeight: '700', color: COLORS.text },
-  scriptArrow: { fontSize: 16, color: COLORS.textLight, fontWeight: '700' },
-  scriptBody: { padding: SPACING.md, borderTopWidth: 1, borderTopColor: COLORS.border },
-  scriptBox: { backgroundColor: '#eff6ff', borderRadius: RADIUS.sm, borderWidth: 1, borderColor: '#bfdbfe', padding: SPACING.md, marginBottom: SPACING.sm },
-  scriptBoxLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 0.8, color: '#2563eb', marginBottom: 4 },
-  scriptBoxText: { fontSize: FONT_SIZES.sm, color: COLORS.text, lineHeight: 20, fontStyle: 'italic' },
-  scriptCopy: { fontSize: 11, fontWeight: '600', color: '#2563eb', marginTop: SPACING.sm },
-});
-
-// ─── Main styles ──────────────────────────────────────────────────────────────
-const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bg },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: SPACING.lg, paddingTop: 56, paddingBottom: SPACING.md,
-    backgroundColor: COLORS.bg, borderBottomWidth: 1, borderBottomColor: COLORS.border,
-  },
-  backBtn: { width: 90 },
-  backText: { fontSize: FONT_SIZES.sm, color: COLORS.purple, fontWeight: '600' },
-  headerTitle: { fontSize: FONT_SIZES.lg, fontWeight: '700', color: COLORS.text },
-  headerPurple: { color: COLORS.purple },
-
-  // Banner
-  banner: { backgroundColor: '#1a1f5e', padding: SPACING.lg, paddingBottom: SPACING.xl },
-  bannerEyebrow: { fontSize: 10, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', color: 'rgba(255,255,255,0.6)', marginBottom: 4 },
-  bannerTitle: { fontSize: 22, fontWeight: '800', color: '#fff', lineHeight: 28, marginBottom: 6 },
-  bannerAccent: { color: '#a89ee8' },
-  bannerSub: { fontSize: FONT_SIZES.sm, color: 'rgba(255,255,255,0.7)', lineHeight: 20 },
-  gradeBtn: { marginTop: SPACING.md, alignSelf: 'flex-start', backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: RADIUS.pill, paddingVertical: 6, paddingHorizontal: 14 },
-  gradeBtnText: { fontSize: 12, fontWeight: '600', color: 'rgba(255,255,255,0.9)' },
-
-  // Tabs
-  tabBar: { backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.border, maxHeight: 44 },
-  tabBarContent: { paddingHorizontal: SPACING.sm },
-  tabBtn: { paddingHorizontal: 14, paddingVertical: 12, borderBottomWidth: 2, borderBottomColor: 'transparent' },
-  tabBtnActive: { borderBottomColor: COLORS.purple },
-  tabBtnText: { fontSize: 12, fontWeight: '600', color: COLORS.textLight, whiteSpace: 'nowrap' } as any,
-  tabBtnTextActive: { color: COLORS.purpleDark },
-
-  scroll: { flex: 1 },
-  scrollContent: { padding: SPACING.md },
-
-  sectionLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', color: COLORS.textLight, marginBottom: SPACING.sm, marginTop: SPACING.sm },
-
-  card: { backgroundColor: COLORS.white, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.border, marginBottom: SPACING.md, overflow: 'hidden', ...SHADOWS.sm },
-
-  // Rights
-  rightsItem: { paddingVertical: SPACING.md, paddingHorizontal: SPACING.md },
-  rightsItemBorder: { borderBottomWidth: 1, borderBottomColor: COLORS.border },
-  rightsTerm: { fontSize: FONT_SIZES.sm, fontWeight: '700', color: COLORS.text, marginBottom: 3 },
-  rightsDef: { fontSize: 12.5, color: COLORS.textMid, lineHeight: 19 },
-  rightsTip: { fontSize: 12, color: COLORS.purpleDark, fontWeight: '600', marginTop: 4 },
-
+  container: { flex: 1, backgroundColor: '#f8f9fa' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: SPACING.md, backgroundColor: 'white', borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  headerTitle: { fontSize: FONT_SIZES.lg, fontWeight: 'bold' },
+  setupBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.light, paddingVertical: SPACING.sm, paddingHorizontal: SPACING.md, borderRadius: RADIUS.md },
+  setupBtnText: { color: COLORS.text, fontWeight: '500' },
+  tabBar: { flexDirection: 'row', backgroundColor: 'white', ...SHADOWS.sm },
+  tab: { flex: 1, padding: SPACING.md, alignItems: 'center', borderBottomWidth: 2, borderBottomColor: 'transparent' },
+  tabActive: { borderBottomColor: COLORS.primary },
+  tabText: { color: COLORS.text, fontWeight: '500' },
+  tabTextActive: { color: COLORS.primary },
+  contentScroll: { flex: 1, padding: SPACING.md },
+  sectionLabel: { fontSize: FONT_SIZES.sm, fontWeight: 'bold', color: COLORS.text, marginTop: SPACING.lg, marginBottom: SPACING.sm, letterSpacing: 0.5 },
+  addBtn: { backgroundColor: COLORS.primary, padding: SPACING.md, borderRadius: RADIUS.md, alignItems: 'center', marginBottom: SPACING.md, ...SHADOWS.sm },
+  addBtnText: { color: 'white', fontWeight: 'bold', fontSize: FONT_SIZES.md },
+  emptyState: { alignItems: 'center', paddingVertical: SPACING.xl, backgroundColor: 'white', borderRadius: RADIUS.lg, marginVertical: SPACING.md },
+  emptyIcon: { fontSize: 48, marginBottom: SPACING.md },
+  emptyTitle: { fontSize: FONT_SIZES.lg, fontWeight: 'bold', marginBottom: SPACING.sm },
+  emptySub: { color: COLORS.text, textAlign: 'center', maxWidth: '80%' },
+  goObsBtn: { marginTop: SPACING.lg, padding: SPACING.md },
+  goObsBtnText: { color: COLORS.primary, fontWeight: 'bold' },
   // Checklist
-  checkRow: { flexDirection: 'row', alignItems: 'flex-start', paddingVertical: SPACING.sm, paddingHorizontal: SPACING.md, gap: SPACING.sm },
-  checkRowBorder: { borderBottomWidth: 1, borderBottomColor: COLORS.border },
-  checkbox: { width: 18, height: 18, borderRadius: 4, borderWidth: 2, borderColor: COLORS.border, justifyContent: 'center', alignItems: 'center', marginTop: 1, flexShrink: 0 },
-  checkboxChecked: { backgroundColor: '#3BBFA3', borderColor: '#3BBFA3' },
-  checkText: { fontSize: FONT_SIZES.sm, color: COLORS.text, lineHeight: 20, flex: 1 },
-  checkTextDone: { textDecorationLine: 'line-through', color: COLORS.textLight },
-
-  // Goals
-  addBtn: { borderWidth: 1.5, borderStyle: 'dashed', borderColor: COLORS.border, borderRadius: RADIUS.md, padding: SPACING.md, alignItems: 'center', marginBottom: SPACING.md, backgroundColor: COLORS.lavender },
-  addBtnText: { fontSize: FONT_SIZES.sm, fontWeight: '600', color: COLORS.purpleDark },
-  goalCard: { backgroundColor: COLORS.white, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.border, padding: SPACING.md, marginBottom: SPACING.sm, ...SHADOWS.sm },
-  goalCardArchived: { opacity: 0.6, borderStyle: 'dashed' },
-  goalArea: { fontSize: 10, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', color: COLORS.purple, marginBottom: 4 },
-  goalText: { fontSize: FONT_SIZES.sm, fontWeight: '600', color: COLORS.text, lineHeight: 19, marginBottom: SPACING.sm },
-  goalProgressWrap: { marginBottom: 4 },
-  goalProgressBar: { height: 6, backgroundColor: COLORS.border, borderRadius: 3, overflow: 'hidden' },
-  goalProgressFill: { height: '100%', borderRadius: 3, backgroundColor: COLORS.purple },
-  goalMeta: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
-  goalMetaText: { fontSize: 11, color: COLORS.textLight },
-  goalSubText: { fontSize: 11, color: COLORS.textMid, marginTop: 2, lineHeight: 16 },
-  goalActions: { flexDirection: 'row', gap: SPACING.sm, marginTop: SPACING.sm },
-  goalBtn: { flex: 1, paddingVertical: 7, borderRadius: RADIUS.sm, borderWidth: 1, borderColor: COLORS.border, alignItems: 'center' },
-  goalBtnText: { fontSize: 11, fontWeight: '600', color: COLORS.textMid },
-  goalBtnSecondary: { borderColor: COLORS.purple },
-  goalBtnDanger: { borderColor: '#e8a09a' },
-  archiveToggle: { paddingVertical: SPACING.sm, marginBottom: SPACING.sm },
-  archiveToggleText: { fontSize: FONT_SIZES.sm, fontWeight: '600', color: COLORS.purple },
-
-  // Meetings
-  meetingCard: { backgroundColor: COLORS.white, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.border, marginBottom: SPACING.sm, overflow: 'hidden', ...SHADOWS.sm },
-  meetingHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: SPACING.md, backgroundColor: COLORS.lavender },
-  meetingDate: { fontSize: FONT_SIZES.sm, fontWeight: '700', color: COLORS.text },
-  meetingType: { fontSize: 11, fontWeight: '600', color: COLORS.purple, marginTop: 2 },
-  meetingFeeling: { fontSize: 20 },
-  meetingBody: { padding: SPACING.md },
+  checklist: { backgroundColor: 'white', padding: SPACING.md, borderRadius: RADIUS.lg, ...SHADOWS.sm },
+  checklistItem: { fontSize: FONT_SIZES.md, marginBottom: SPACING.sm, color: COLORS.text },
+  // Script Cards
+  scriptCard: { backgroundColor: 'white', borderRadius: RADIUS.lg, marginBottom: SPACING.md, ...SHADOWS.sm, overflow: 'hidden' },
+  scriptHeader: { flexDirection: 'row', alignItems: 'center', padding: SPACING.md },
+  scriptIconBox: { width: 36, height: 36, borderRadius: RADIUS.md, backgroundColor: COLORS.light, alignItems: 'center', justifyContent: 'center', marginRight: SPACING.md },
+  scriptTitle: { flex: 1, fontSize: FONT_SIZES.md, fontWeight: 'bold', color: COLORS.text },
+  scriptArrow: { fontSize: 20, color: COLORS.textLight },
+  scriptBody: { padding: SPACING.md, paddingTop: 0 },
+  scriptBox: { backgroundColor: COLORS.light, padding: SPACING.md, borderRadius: RADIUS.md },
+  scriptBoxLabel: { fontSize: FONT_SIZES.xs, fontWeight: 'bold', color: COLORS.text, letterSpacing: 0.5, marginBottom: SPACING.sm },
+  scriptBoxText: { fontSize: FONT_SIZES.md, color: COLORS.text, fontStyle: 'italic', lineHeight: 22 },
+  scriptCopy: { color: COLORS.primary, fontWeight: 'bold', marginTop: SPACING.md, textAlign: 'right' },
+  callout: { marginTop: SPACING.md, padding: SPACING.md, borderRadius: RADIUS.md, borderWidth: 1 },
+  calloutLabel: { fontWeight: 'bold', marginBottom: SPACING.sm },
+  calloutText: { lineHeight: 20 },
+  // Term Cards
+  termCard: { backgroundColor: 'white', borderRadius: RADIUS.lg, marginBottom: SPACING.sm, ...SHADOWS.sm, overflow: 'hidden' },
+  termHeader: { flexDirection: 'row', alignItems: 'center', padding: SPACING.md },
+  termTitle: { flex: 1, fontSize: FONT_SIZES.md, fontWeight: 'bold', color: COLORS.text },
+  termArrow: { fontSize: 20, color: COLORS.textLight },
+  termBody: { padding: SPACING.md, paddingTop: 0 },
+  termDef: { fontSize: FONT_SIZES.md, color: COLORS.text, lineHeight: 22 },
+  termTip: { fontSize: FONT_SIZES.md, color: COLORS.text, marginTop: SPACING.md, backgroundColor: '#fff8e0', padding: SPACING.sm, borderRadius: RADIUS.sm },
+  // Goal Cards
+  goalCard: { backgroundColor: 'white', padding: SPACING.md, borderRadius: RADIUS.lg, marginBottom: SPACING.md, ...SHADOWS.sm },
+  goalCardArchived: { opacity: 0.6, backgroundColor: '#eee' },
+  goalArea: { fontSize: FONT_SIZES.xs, fontWeight: 'bold', color: COLORS.text, letterSpacing: 0.5, marginBottom: SPACING.sm },
+  goalText: { fontSize: FONT_SIZES.md, color: COLORS.text, marginBottom: SPACING.md, lineHeight: 22 },
+  goalProgressWrap: { height: 8, backgroundColor: COLORS.light, borderRadius: 4, overflow: 'hidden', marginBottom: SPACING.sm },
+  goalProgressBar: { height: '100%', backgroundColor: COLORS.light },
+  goalProgressFill: { height: '100%', backgroundColor: COLORS.primary },
+  goalMeta: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: SPACING.md },
+  goalMetaText: { fontSize: FONT_SIZES.sm, color: COLORS.textLight },
+  goalSubText: { fontSize: FONT_SIZES.sm, color: COLORS.text, marginBottom: 2 },
+  goalActions: { flexDirection: 'row', borderTopWidth: 1, borderTopColor: COLORS.border, marginTop: SPACING.md, paddingTop: SPACING.md },
+  goalBtn: { paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm, borderRadius: RADIUS.sm, backgroundColor: COLORS.light, marginRight: SPACING.sm },
+  goalBtnSecondary: { backgroundColor: '#e0e0e0' },
+  goalBtnDanger: { backgroundColor: '#fbe9e7' },
+  goalBtnText: { fontWeight: 'bold', color: COLORS.text },
+  archiveToggle: { padding: SPACING.md, alignItems: 'center' },
+  archiveToggleText: { color: COLORS.primary, fontWeight: 'bold' },
+  // Meeting Cards
+  meetingCard: { backgroundColor: 'white', padding: SPACING.md, borderRadius: RADIUS.lg, marginBottom: SPACING.md, ...SHADOWS.sm, overflow: 'hidden' },
+  meetingHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: SPACING.md },
+  meetingDate: { fontSize: FONT_SIZES.md, fontWeight: 'bold' },
+  meetingType: { fontSize: FONT_SIZES.sm, color: COLORS.textLight },
+  meetingFeeling: { fontSize: 24 },
+  meetingBody: { padding: SPACING.md, paddingTop: 0, borderTopWidth: 1, borderTopColor: COLORS.border },
   meetingSection: { marginBottom: SPACING.md },
-  meetingSectionTitle: { fontSize: 10, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', color: COLORS.textLight, marginBottom: 4 },
-  meetingContent: { fontSize: FONT_SIZES.sm, color: COLORS.text, lineHeight: 19, flex: 1 },
-  attendeeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 4 },
-  attendeeChip: { backgroundColor: COLORS.lavender, borderRadius: RADIUS.pill, paddingHorizontal: 8, paddingVertical: 3 },
-  attendeeChipText: { fontSize: 11, fontWeight: '600', color: COLORS.purpleDark },
-  actionItem: { flexDirection: 'row', gap: SPACING.sm, paddingVertical: 4, borderBottomWidth: 1, borderBottomColor: COLORS.border },
-  actionBullet: { fontSize: FONT_SIZES.sm, color: COLORS.textMid, marginTop: 1 },
-
-  // Flagged obs
-  flaggedCard: { backgroundColor: '#e3f7f1', borderRadius: RADIUS.sm, borderWidth: 1, borderColor: '#a0d8cc', padding: SPACING.md, marginBottom: SPACING.sm },
-  flaggedDate: { fontSize: 11, fontWeight: '600', color: '#0F6E56', marginBottom: 3 },
-  flaggedText: { fontSize: 12.5, color: COLORS.text, lineHeight: 19 },
-  tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 5 },
-  tag: { backgroundColor: 'rgba(59,191,163,0.2)', borderRadius: RADIUS.pill, paddingHorizontal: 6, paddingVertical: 2 },
-  tagText: { fontSize: 10, fontWeight: '600', color: '#0F6E56' },
-  clearFlagsBtn: { borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.pill, padding: SPACING.md, alignItems: 'center', marginBottom: SPACING.sm },
-  clearFlagsBtnText: { fontSize: FONT_SIZES.sm, fontWeight: '600', color: COLORS.textMid },
-  goObsBtn: { borderWidth: 1, borderColor: COLORS.purple, borderRadius: RADIUS.pill, padding: SPACING.md, alignItems: 'center', marginBottom: SPACING.sm },
-  goObsBtnText: { fontSize: FONT_SIZES.sm, fontWeight: '600', color: COLORS.purple },
-
-  // Empty state
-  emptyState: { alignItems: 'center', paddingVertical: SPACING.xxl },
-  emptyIcon: { fontSize: 36, marginBottom: SPACING.sm, opacity: 0.4 },
-  emptyTitle: { fontSize: FONT_SIZES.base, fontWeight: '700', color: COLORS.text, marginBottom: 4 },
-  emptySub: { fontSize: FONT_SIZES.sm, color: COLORS.textMid, textAlign: 'center', lineHeight: 19 },
-
-  // Modals
-  modalOverlay: { flex: 1, justifyContent: 'flex-end' },
-  modalCard: { backgroundColor: COLORS.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: SPACING.lg, maxHeight: '88%' },
+  meetingSectionTitle: { fontSize: FONT_SIZES.xs, fontWeight: 'bold', color: COLORS.text, letterSpacing: 0.5, marginBottom: SPACING.sm },
+  meetingContent: { fontSize: FONT_SIZES.md, color: COLORS.text, lineHeight: 22 },
+  attendeeRow: { flexDirection: 'row', flexWrap: 'wrap' },
+  attendeeChip: { backgroundColor: COLORS.light, paddingHorizontal: SPACING.sm, paddingVertical: 4, borderRadius: RADIUS.sm, marginRight: SPACING.sm, marginBottom: SPACING.sm },
+  attendeeChipText: { fontSize: FONT_SIZES.sm },
+  actionItem: { flexDirection: 'row', alignItems: 'flex-start' },
+  actionBullet: { marginRight: SPACING.sm, fontSize: FONT_SIZES.md, color: COLORS.text },
+  // Flagged Cards
+  flaggedCard: { backgroundColor: 'white', padding: SPACING.md, borderRadius: RADIUS.lg, marginBottom: SPACING.md, ...SHADOWS.sm },
+  flaggedDate: { fontSize: FONT_SIZES.sm, color: COLORS.textLight, marginBottom: SPACING.sm },
+  flaggedText: { fontSize: FONT_SIZES.md, color: COLORS.text, lineHeight: 22 },
+  tagsRow: { flexDirection: 'row', flexWrap: 'wrap', marginTop: SPACING.md },
+  tag: { backgroundColor: COLORS.secondary, paddingHorizontal: SPACING.sm, paddingVertical: 4, borderRadius: RADIUS.sm, marginRight: SPACING.sm, marginBottom: SPACING.sm },
+  tagText: { color: 'white', fontSize: FONT_SIZES.sm },
+  clearFlagsBtn: { backgroundColor: '#ffebee', padding: SPACING.md, borderRadius: RADIUS.md, alignItems: 'center', marginTop: SPACING.md },
+  clearFlagsBtnText: { color: '#c62828', fontWeight: 'bold' },
+  // Modal Styles
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  modalCard: { backgroundColor: 'white', borderTopLeftRadius: RADIUS.lg, borderTopRightRadius: RADIUS.lg, padding: SPACING.lg, maxHeight: '85%', ...SHADOWS.lg },
   modalTitleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: SPACING.lg },
-  modalTitle: { fontSize: FONT_SIZES.lg, fontWeight: '800', color: COLORS.text },
-  modalClose: { fontSize: 18, color: COLORS.textLight },
-  formLabel: { fontSize: 12, fontWeight: '600', color: COLORS.text, marginBottom: 5 },
-  input: { borderWidth: 1.5, borderColor: COLORS.border, borderRadius: RADIUS.sm, padding: SPACING.md, fontSize: FONT_SIZES.sm, color: COLORS.text, backgroundColor: COLORS.white, marginBottom: SPACING.md },
-  textarea: { minHeight: 80, textAlignVertical: 'top' },
-  gradeChip: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: COLORS.border, marginRight: SPACING.sm, backgroundColor: COLORS.white },
-  gradeChipActive: { backgroundColor: COLORS.purple, borderColor: COLORS.purple },
-  gradeChipText: { fontSize: 12, fontWeight: '600', color: COLORS.textMid },
-  gradeChipTextActive: { color: COLORS.white },
-  radioRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, paddingVertical: SPACING.sm, paddingHorizontal: SPACING.sm, borderRadius: RADIUS.sm, marginBottom: 4 },
-  radioRowActive: { backgroundColor: COLORS.lavender },
-  radioCircle: { width: 16, height: 16, borderRadius: 8, borderWidth: 2, borderColor: COLORS.border },
-  radioCircleActive: { borderColor: COLORS.purple, backgroundColor: COLORS.purple },
-  radioText: { fontSize: FONT_SIZES.sm, color: COLORS.text },
-  sliderRow: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.xs, marginBottom: SPACING.md },
-  sliderChip: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.white },
-  sliderChipActive: { backgroundColor: COLORS.purple, borderColor: COLORS.purple },
-  sliderChipText: { fontSize: 11, fontWeight: '600', color: COLORS.textMid },
-  sliderChipTextActive: { color: COLORS.white },
-  primaryBtn: { backgroundColor: COLORS.purple, borderRadius: RADIUS.pill, paddingVertical: SPACING.lg, alignItems: 'center', marginTop: SPACING.md, ...SHADOWS.sm },
-  primaryBtnText: { color: COLORS.white, fontWeight: '700', fontSize: FONT_SIZES.md },
-  secondaryBtn: { borderWidth: 1.5, borderColor: COLORS.border, borderRadius: RADIUS.pill, paddingVertical: SPACING.md, alignItems: 'center', marginTop: SPACING.sm },
-  secondaryBtnText: { fontSize: FONT_SIZES.sm, fontWeight: '600', color: COLORS.textMid },
+  modalTitle: { fontSize: FONT_SIZES.lg, fontWeight: 'bold' },
+  modalClose: { fontSize: 20, color: COLORS.textLight },
+  formLabel: { fontSize: FONT_SIZES.sm, fontWeight: 'bold', color: COLORS.text, marginBottom: SPACING.sm },
+  input: { backgroundColor: COLORS.light, padding: SPACING.md, borderRadius: RADIUS.md, fontSize: FONT_SIZES.md, marginBottom: SPACING.md },
+  primaryBtn: { backgroundColor: COLORS.primary, padding: SPACING.lg, borderRadius: RADIUS.md, alignItems: 'center', marginTop: SPACING.md },
+  primaryBtnText: { color: 'white', fontWeight: 'bold', fontSize: FONT_SIZES.md },
+  gradeChip: { paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm, borderRadius: RADIUS.pill, backgroundColor: COLORS.light, marginRight: SPACING.sm },
+  gradeChipActive: { backgroundColor: COLORS.primary },
+  gradeChipText: { fontWeight: '500' },
+  gradeChipTextActive: { color: 'white' },
+  radioRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: SPACING.md, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  radioRowActive: { backgroundColor: '#eff6ff' },
+  radioCircle: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: COLORS.border, marginRight: SPACING.md },
+  radioCircleActive: { borderColor: COLORS.primary, backgroundColor: COLORS.primary },
+  radioText: { fontSize: FONT_SIZES.md },
+  progressRow: { flexDirection: 'row', alignItems: 'center', marginBottom: SPACING.md },
+  progressText: { fontSize: FONT_SIZES.lg, fontWeight: 'bold', marginRight: SPACING.lg },
+  progressBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: COLORS.light, alignItems: 'center', justifyContent: 'center', marginHorizontal: SPACING.sm },
+  progressBtnText: { fontSize: 24, fontWeight: 'bold', color: COLORS.primary },
 });

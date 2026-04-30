@@ -18,6 +18,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, SPACING, RADIUS, FONT_SIZES, SHADOWS } from '../../lib/theme';
+import { useChildChanged } from '../../hooks/useChildChanged';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const STORE_KEY = 'ap_journal_entries';
@@ -98,6 +99,8 @@ export default function SafeSpaceScreen() {
   useFocusEffect(useCallback(() => {
     loadEntries();
   }, []));
+
+  useChildChanged(() => { loadEntries(); });
 
   // ── Storage ────────────────────────────────────────────────────────────────
   const loadEntries = async () => {
@@ -302,185 +305,7 @@ export default function SafeSpaceScreen() {
             })}
           </View>
         )}
-        <View style={{ height: 40 }} />
       </ScrollView>
-    </View>
-  );
-
-  // ── Render: Editor ─────────────────────────────────────────────────────────
-  const renderEditor = () => (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
-        <TouchableOpacity onPress={confirmDiscard} style={styles.backBtn}>
-          <Text style={styles.backText}>← Cancel</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{currentId ? 'Edit Entry' : 'New Entry'}</Text>
-        <TouchableOpacity style={styles.saveHeaderBtn} onPress={saveEntry}>
-          <Text style={styles.saveHeaderBtnText}>Save</Text>
-        </TouchableOpacity>
-      </View>
-      <View style={styles.rainbow} />
-
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-        contentContainerStyle={styles.editorScroll}
-      >
-        {/* Date */}
-        <Text style={styles.editorDate}>
-          📅 <Text style={styles.editorDatePurple}>
-            {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-          </Text>
-          {'  ·  '}
-          <Text style={styles.editorPrivate}>🔒 Private</Text>
-        </Text>
-
-        {/* Title */}
-        <TextInput
-          style={styles.editorTitle}
-          placeholder="Entry title..."
-          placeholderTextColor="#c4b8f0"
-          value={title}
-          onChangeText={setTitle}
-          multiline={false}
-          returnKeyType="next"
-        />
-
-        {/* Body */}
-        <TextInput
-          style={styles.editorBody}
-          placeholder="Write anything — this is just for you..."
-          placeholderTextColor="#c4b8f0"
-          value={body}
-          onChangeText={setBody}
-          multiline
-          textAlignVertical="top"
-          scrollEnabled={false}
-        />
-
-        {/* Word count */}
-        <Text style={styles.wordCount}>{wordCount(body)} words</Text>
-
-        {/* Mood chips */}
-        <View style={styles.moodSection}>
-          <Text style={styles.moodLabel}>How are you feeling?</Text>
-          <View style={styles.moodRow}>
-            {MOODS.map(m => {
-              const selected = mood === m.key;
-              return (
-                <TouchableOpacity
-                  key={m.key}
-                  style={[
-                    styles.moodChip,
-                    selected && { backgroundColor: m.bg, borderColor: m.color },
-                  ]}
-                  onPress={() => setMood(selected ? null : m.key)}
-                >
-                  <Text style={styles.moodChipEmoji}>{m.emoji}</Text>
-                  <Text style={[styles.moodChipLabel, selected && { color: m.color, fontWeight: '700' }]}>
-                    {m.label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </View>
-
-        {/* Writing prompts */}
-        <View style={styles.promptSection}>
-          <Text style={styles.promptLabel}>Need a nudge?</Text>
-          <View style={styles.promptChips}>
-            {PROMPTS.map((p, i) => (
-              <TouchableOpacity key={i} style={styles.promptChip} onPress={() => usePrompt(p)}>
-                <Text style={styles.promptChipText}>{p}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        <View style={{ height: 40 }} />
-      </ScrollView>
-    </KeyboardAvoidingView>
-  );
-
-  // ── Render: Read ───────────────────────────────────────────────────────────
-  const renderRead = () => {
-    const entry = entries.find(e => e.id === currentId);
-    if (!entry) { goList(); return null; }
-    const m = getMood(entry.mood);
-
-    return (
-      <View style={{ flex: 1 }}>
-        <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
-          <TouchableOpacity onPress={goList} style={styles.backBtn}>
-            <Text style={styles.backText}>← My Journal</Text>
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Entry</Text>
-          <View style={{ width: 60 }} />
-        </View>
-        <View style={styles.rainbow} />
-
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.readScroll}>
-          {/* Reading header */}
-          <View style={styles.readingHeader}>
-            <Text style={styles.readingDate}>{fmtDateFull(entry.createdAt)}</Text>
-            <Text style={styles.readingTitle}>{entry.title || 'Untitled'}</Text>
-            {m ? (
-              <View style={[styles.moodTag, { backgroundColor: m.bg, marginTop: SPACING.sm }]}>
-                <Text style={[styles.moodTagText, { color: m.color }]}>{m.emoji} {m.label}</Text>
-              </View>
-            ) : null}
-          </View>
-
-          <View style={styles.readingDivider} />
-
-          {/* Body */}
-          <Text style={styles.readingBody}>{entry.body}</Text>
-
-          {/* Coming soon: share anonymously */}
-          <View style={styles.shareSection}>
-            <View style={styles.shareSectionHeader}>
-              <Text style={styles.shareSectionTitle}>Share with the community</Text>
-              <View style={styles.comingSoonBadge}>
-                <Text style={styles.comingSoonText}>Coming Soon</Text>
-              </View>
-            </View>
-            <Text style={styles.shareSectionSub}>
-              When the community forum launches, you'll be able to share entries anonymously so other parents know they're not alone. Your name is never shown.
-            </Text>
-          </View>
-
-          {/* Actions */}
-          <View style={styles.entryActions}>
-            <TouchableOpacity
-              style={styles.entryActionBtn}
-              onPress={() => openEditEntry(entry)}
-            >
-              <Text style={styles.entryActionBtnText}>✏️ Edit</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.entryActionBtn, styles.entryActionBtnDanger]}
-              onPress={() => deleteEntry(entry.id)}
-            >
-              <Text style={[styles.entryActionBtnText, { color: COLORS.errorText }]}>🗑️ Delete</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={{ height: 40 }} />
-        </ScrollView>
-      </View>
-    );
-  };
-
-  // ── Main render ────────────────────────────────────────────────────────────
-  return (
-    <View style={styles.container}>
-      {view === 'list'   && renderList()}
-      {view === 'editor' && renderEditor()}
-      {view === 'read'   && renderRead()}
 
       {/* Toast */}
       {toast ? (
@@ -490,110 +315,302 @@ export default function SafeSpaceScreen() {
       ) : null}
     </View>
   );
+
+  // ── Render: Editor ─────────────────────────────────────────────────────────
+  const renderEditor = () => (
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={{ flex: 1 }}
+    >
+      <View style={{ flex: 1 }}>
+        {/* Header */}
+        <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
+          <TouchableOpacity onPress={confirmDiscard} style={styles.backBtn}>
+            <Text style={styles.backText}>← Discard</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>{currentId ? 'Edit Entry' : 'New Entry'}</Text>
+          <TouchableOpacity onPress={saveEntry} style={styles.saveBtn}>
+            <Text style={styles.saveBtnText}>Save</Text>
+          </TouchableOpacity>
+        </View>
+        <View style={styles.rainbow} />
+
+        <ScrollView style={styles.editorScroll} showsVerticalScrollIndicator={false}>
+          <Text style={styles.editorDate}>
+            {currentId ? 'Last updated' : 'Created'}: <Text style={styles.editorDatePurple}>{fmtDateFull(new Date().toISOString())}</Text>
+          </Text>
+          <TextInput
+            style={styles.editorTitle}
+            placeholder="Title (optional)"
+            placeholderTextColor={COLORS.textLight}
+            value={title}
+            onChangeText={setTitle}
+          />
+          <TextInput
+            style={styles.editorBody}
+            placeholder="What's on your mind?"
+            placeholderTextColor={COLORS.textLight}
+            multiline
+            textAlignVertical="top"
+            value={body}
+            onChangeText={setBody}
+          />
+          <Text style={styles.wordCount}>{wordCount(body)} words</Text>
+
+          {/* Mood section */}
+          <View style={styles.moodSection}>
+            <Text style={styles.moodLabel}>How are you feeling?</Text>
+            <View style={styles.moodRow}>
+              {MOODS.map(m => (
+                <TouchableOpacity
+                  key={m.key}
+                  style={[styles.moodChip, mood === m.key && { borderColor: m.color, backgroundColor: m.bg }]}
+                  onPress={() => setMood(mood === m.key ? null : m.key)}
+                >
+                  <Text style={styles.moodChipEmoji}>{m.emoji}</Text>
+                  <Text style={[styles.moodChipLabel, mood === m.key && { color: m.color, fontWeight: '600' }]}>{m.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          {/* Prompt section */}
+          <View style={styles.promptSection}>
+            <Text style={styles.promptLabel}>Need a prompt?</Text>
+            <View style={styles.promptChips}>
+              {PROMPTS.map(p => (
+                <TouchableOpacity
+                  key={p}
+                  style={styles.promptChip}
+                  onPress={() => usePrompt(p)}
+                >
+                  <Text style={styles.promptChipText}>{p}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          <View style={{ height: insets.bottom + SPACING.xl }} />
+        </ScrollView>
+
+        {/* Toast */}
+        {toast ? (
+          <View style={styles.toast}>
+            <Text style={styles.toastText}>{toast}</Text>
+          </View>
+        ) : null}
+      </View>
+    </KeyboardAvoidingView>
+  );
+
+  // ── Render: Read ───────────────────────────────────────────────────────────
+  const renderRead = () => {
+    const entry = entries.find(e => e.id === currentId);
+    if (!entry) return null; // Should not happen
+    const m = getMood(entry.mood);
+
+    return (
+      <View style={{ flex: 1 }}>
+        {/* Header */}
+        <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
+          <TouchableOpacity onPress={goList} style={styles.backBtn}>
+            <Text style={styles.backText}>← Back</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Read Entry</Text>
+          <View style={{ width: 60 }} />
+        </View>
+        <View style={styles.rainbow} />
+
+        <ScrollView style={styles.readScroll} showsVerticalScrollIndicator={false}>
+          <View style={styles.readingHeader}>
+            <Text style={styles.readingDate}>{fmtDateFull(entry.createdAt)}</Text>
+            <Text style={styles.readingTitle}>{entry.title}</Text>
+          </View>
+
+          {m ? (
+            <View style={[styles.moodSection, { backgroundColor: m.bg, borderColor: m.color }]}>
+              <Text style={[styles.moodLabel, { color: m.color }]}>Mood</Text>
+              <View style={styles.moodRow}>
+                <View style={[styles.moodChip, { borderColor: m.color, backgroundColor: m.bg }]}>
+                  <Text style={styles.moodChipEmoji}>{m.emoji}</Text>
+                  <Text style={[styles.moodChipLabel, { color: m.color, fontWeight: '600' }]}>{m.label}</Text>
+                </View>
+              </View>
+            </View>
+          ) : null}
+
+          <View style={styles.readingDivider} />
+
+          <Text style={styles.readingBody}>{entry.body}</Text>
+
+          {/* Share section (coming soon) */}
+          <View style={styles.shareSection}>
+            <View style={styles.shareSectionHeader}>
+              <Text style={styles.shareSectionTitle}>Share this entry</Text>
+              <View style={styles.comingSoonBadge}>
+                <Text style={styles.comingSoonText}>Coming Soon</Text>
+              </View>
+            </View>
+            <Text style={styles.shareSectionSub}>Soon you'll be able to share entries with trusted family members or caregivers.</Text>
+          </View>
+
+          {/* Entry actions */}
+          <View style={styles.entryActions}>
+            <TouchableOpacity style={styles.entryActionBtn} onPress={() => openEditEntry(entry)}>
+              <Text style={styles.entryActionBtnText}>Edit</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.entryActionBtn, styles.entryActionBtnDanger]} onPress={() => deleteEntry(entry.id)}>
+              <Text style={[styles.entryActionBtnText, { color: COLORS.error }]}>Delete</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={{ height: insets.bottom + SPACING.xl }} />
+        </ScrollView>
+
+        {/* Toast */}
+        {toast ? (
+          <View style={styles.toast}>
+            <Text style={styles.toastText}>{toast}</Text>
+          </View>
+        ) : null}
+      </View>
+    );
+  };
+
+  // ── Render: Main ───────────────────────────────────────────────────────────
+  return (
+    <View style={styles.container}>
+      {view === 'list' && renderList()}
+      {view === 'editor' && renderEditor()}
+      {view === 'read' && renderRead()}
+    </View>
+  );
 }
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bg },
-
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.white,
+  },
   // Header
   header: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: SPACING.lg,
-    paddingTop: 0,
     paddingBottom: SPACING.md,
     backgroundColor: COLORS.white,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    zIndex: 1,
   },
-  backBtn: { padding: SPACING.xs, minWidth: 60 },
+  headerTitle: { fontSize: FONT_SIZES.lg, fontWeight: '800', color: COLORS.text },
+  backBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingVertical: 5,
+    paddingRight: 10,
+  },
   backText: { fontSize: FONT_SIZES.sm, fontWeight: '600', color: COLORS.purple },
-  headerTitle: { fontSize: FONT_SIZES.base, fontWeight: '700', color: COLORS.text },
-  saveHeaderBtn: {
-    backgroundColor: COLORS.purple,
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: 6,
-    borderRadius: RADIUS.pill,
+  saveBtn: {
+    paddingVertical: 5,
+    paddingLeft: 10,
   },
-  saveHeaderBtnText: { fontSize: FONT_SIZES.xs, fontWeight: '700', color: COLORS.white },
-
-  rainbow: { height: 4, backgroundColor: COLORS.purple },
-
+  saveBtnText: { fontSize: FONT_SIZES.sm, fontWeight: '600', color: COLORS.purple },
+  rainbow: {
+    height: 2,
+    width: '100%',
+    backgroundColor: COLORS.purple,
+    marginBottom: SPACING.md,
+  },
   // Banner
   banner: {
     backgroundColor: COLORS.lavender,
-    paddingVertical: SPACING.xl,
-    paddingHorizontal: SPACING.xl,
-    alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderRadius: RADIUS.md,
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+    marginHorizontal: SPACING.lg,
+    padding: SPACING.lg,
+    marginBottom: SPACING.xl,
   },
   bannerIcon: {
-    width: 60, height: 60,
-    backgroundColor: COLORS.purpleLight,
-    borderRadius: 16,
-    alignItems: 'center',
+    width: 48,
+    height: 48,
+    borderRadius: RADIUS.md,
+    backgroundColor: COLORS.white,
     justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: SPACING.sm,
-    ...SHADOWS.md,
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
   },
-  bannerIconText: { fontSize: 28 },
-  bannerEyebrow: { fontSize: 10, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', color: COLORS.purple, marginBottom: 4 },
-  bannerTitle: { fontSize: FONT_SIZES.xxl, fontWeight: '800', color: COLORS.text, letterSpacing: -0.5, marginBottom: SPACING.xs },
+  bannerIconText: { fontSize: 24 },
+  bannerEyebrow: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.8, color: COLORS.textLight, marginBottom: 3 },
+  bannerTitle: { fontSize: FONT_SIZES.xl, fontWeight: '800', color: COLORS.text, lineHeight: 28, marginBottom: SPACING.xs },
   bannerTitlePurple: { color: COLORS.purple },
-  bannerSub: { fontSize: FONT_SIZES.xs, color: COLORS.textMid, textAlign: 'center', lineHeight: 20, maxWidth: 300 },
-  privacyBadge: { marginTop: SPACING.sm },
-  privacyBadgeText: { fontSize: 11, color: COLORS.textLight, fontWeight: '500' },
-
+  bannerSub: { fontSize: FONT_SIZES.sm, color: COLORS.textMid, lineHeight: 22, marginBottom: SPACING.md },
+  privacyBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: COLORS.purpleLight,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 2,
+    borderRadius: RADIUS.pill,
+  },
+  privacyBadgeText: { fontSize: 10, fontWeight: '700', color: COLORS.white },
   // Section heading
   sectionHeading: {
-    paddingHorizontal: SPACING.lg,
-    paddingTop: SPACING.lg,
-    paddingBottom: SPACING.sm,
-  },
-  sectionHeadingText: { fontSize: 11, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', color: COLORS.textLight },
-
-  // New entry button
-  newEntryBtn: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginHorizontal: SPACING.lg,
     marginBottom: SPACING.md,
-    paddingVertical: SPACING.lg,
-    borderRadius: RADIUS.md,
-    borderWidth: 2,
-    borderStyle: 'dashed',
-    borderColor: COLORS.purpleLight,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
-  newEntryBtnText: { fontSize: FONT_SIZES.sm, fontWeight: '700', color: COLORS.purple },
-
+  sectionHeadingText: { fontSize: FONT_SIZES.md, fontWeight: '700', color: COLORS.text },
+  // New entry button
+  newEntryBtn: {
+    backgroundColor: COLORS.purple,
+    marginHorizontal: SPACING.lg,
+    paddingVertical: SPACING.md,
+    borderRadius: RADIUS.pill,
+    alignItems: 'center',
+    marginBottom: SPACING.xl,
+  },
+  newEntryBtnText: { fontSize: FONT_SIZES.md, fontWeight: '600', color: COLORS.white },
   // Empty state
-  emptyState: { alignItems: 'center', paddingVertical: SPACING.xxxl, paddingHorizontal: SPACING.xl },
-  emptyIcon: { fontSize: 40, opacity: 0.4, marginBottom: SPACING.md },
-  emptyTitle: { fontSize: FONT_SIZES.lg, fontWeight: '700', color: COLORS.text, marginBottom: SPACING.xs },
-  emptySub: { fontSize: FONT_SIZES.sm, color: COLORS.textMid, textAlign: 'center', lineHeight: 20, maxWidth: 280 },
-
-  // Entry list
-  entriesList: { paddingHorizontal: SPACING.lg },
+  emptyState: {
+    marginHorizontal: SPACING.lg,
+    padding: SPACING.lg,
+    borderRadius: RADIUS.md,
+    backgroundColor: COLORS.lavender,
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+    alignItems: 'center',
+    marginBottom: SPACING.xl,
+  },
+  emptyIcon: { fontSize: 48, marginBottom: SPACING.sm },
+  emptyTitle: { fontSize: FONT_SIZES.lg, fontWeight: '800', color: COLORS.text, marginBottom: SPACING.xs },
+  emptySub: { fontSize: FONT_SIZES.sm, color: COLORS.textMid, lineHeight: 22, textAlign: 'center' },
+  // Entries list
+  entriesList: {
+    marginHorizontal: SPACING.lg,
+    marginBottom: SPACING.xl,
+  },
   entryCard: {
     backgroundColor: COLORS.white,
     borderRadius: RADIUS.md,
     borderWidth: 1.5,
     borderColor: COLORS.border,
-    padding: SPACING.lg,
+    padding: SPACING.md,
     marginBottom: SPACING.md,
     ...SHADOWS.sm,
   },
-  ecTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 },
-  ecTitle: { flex: 1, fontSize: 15, fontWeight: '600', color: COLORS.text, lineHeight: 21, paddingRight: SPACING.sm },
+  ecTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: SPACING.xs },
+  ecTitle: { fontSize: FONT_SIZES.md, fontWeight: '700', color: COLORS.text, flex: 1, paddingRight: SPACING.sm },
   ecLock: { fontSize: 12, color: COLORS.border },
   ecDate: { fontSize: 11, color: COLORS.textLight, fontWeight: '500', marginBottom: 6 },
   ecPreview: { fontSize: FONT_SIZES.xs, color: COLORS.textMid, lineHeight: 18 },
   ecFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: SPACING.md },
   ecRead: { fontSize: 12, fontWeight: '600', color: COLORS.purple },
-
   // Mood tag
   moodTag: {
     alignSelf: 'flex-start',
@@ -602,7 +619,6 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.pill,
   },
   moodTagText: { fontSize: 11, fontWeight: '600' },
-
   // Editor
   editorScroll: { paddingHorizontal: SPACING.lg, paddingTop: SPACING.lg },
   editorDate: { fontSize: 12, color: COLORS.textLight, fontWeight: '500', marginBottom: SPACING.lg },
@@ -624,7 +640,6 @@ const styles = StyleSheet.create({
     minHeight: 200,
   },
   wordCount: { fontSize: 11, color: COLORS.textLight, textAlign: 'right', marginTop: SPACING.sm, marginBottom: SPACING.xl },
-
   // Mood section
   moodSection: {
     backgroundColor: COLORS.lavender,
@@ -649,7 +664,6 @@ const styles = StyleSheet.create({
   },
   moodChipEmoji: { fontSize: 14 },
   moodChipLabel: { fontSize: 12, fontWeight: '500', color: COLORS.textMid },
-
   // Prompt section
   promptSection: {
     backgroundColor: COLORS.bg,
@@ -670,7 +684,6 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
   },
   promptChipText: { fontSize: 12, fontWeight: '500', color: COLORS.textMid },
-
   // Read view
   readScroll: { paddingHorizontal: SPACING.lg, paddingTop: SPACING.lg },
   readingHeader: { marginBottom: SPACING.lg },
@@ -678,7 +691,6 @@ const styles = StyleSheet.create({
   readingTitle: { fontSize: FONT_SIZES.xxl, fontWeight: '800', color: COLORS.text, lineHeight: 30 },
   readingDivider: { height: 2, backgroundColor: COLORS.border, marginVertical: SPACING.lg },
   readingBody: { fontSize: FONT_SIZES.md, color: COLORS.text, lineHeight: 26, marginBottom: SPACING.xl },
-
   // Share section (coming soon)
   shareSection: {
     backgroundColor: COLORS.lavender,
@@ -698,7 +710,6 @@ const styles = StyleSheet.create({
   },
   comingSoonText: { fontSize: 10, fontWeight: '700', color: COLORS.white },
   shareSectionSub: { fontSize: FONT_SIZES.xs, color: COLORS.textMid, lineHeight: 18 },
-
   // Entry actions
   entryActions: { flexDirection: 'row', gap: SPACING.md, marginBottom: SPACING.lg },
   entryActionBtn: {
@@ -712,7 +723,6 @@ const styles = StyleSheet.create({
   },
   entryActionBtnDanger: { borderColor: COLORS.errorBorder },
   entryActionBtnText: { fontSize: FONT_SIZES.sm, fontWeight: '600', color: COLORS.textMid },
-
   // Toast
   toast: {
     position: 'absolute',

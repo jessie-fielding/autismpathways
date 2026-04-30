@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, SPACING, RADIUS, FONT_SIZES, SHADOWS } from '../../lib/theme';
 import { useIsPremium } from '../../hooks/useIsPremium';
+import { useChildChanged } from '../../hooks/useChildChanged';
 
 // ── Freemium limits ────────────────────────────────────────────────────────────
 const FREE_AUDIENCES   = 2;  // first N audience types unlocked
@@ -143,130 +144,125 @@ const TP_CONTENT: Record<string, AudienceData> = {
   insurance: {
     icon: '📋', color: '#4BBFAD',
     title: 'Talking to Insurance',
-    subtitle: 'Getting coverage for therapies and evaluations',
+    subtitle: 'Getting coverage for therapies and services',
     points: [
       {
-        script: "I'm calling to verify coverage for autism-related services for [CHILD], including ABA therapy, speech therapy, and occupational therapy. Can you confirm what's covered under our plan and what the prior authorization requirements are?",
+        script: "I'm calling to verify [CHILD]'s benefits for autism-related therapies, specifically ABA, speech, and occupational therapy. Can you confirm coverage details, including deductibles, co-pays, and out-of-pocket maximums?",
         pushbacks: [
-          { objection: '"ABA therapy requires a prior authorization."', response: "I understand. Can you walk me through the exact prior authorization process — what documentation is required, who submits it, and what the typical timeline is? I want to make sure we don't have any delays in starting services." },
+          { objection: '"Autism is not a covered diagnosis."', response: "My state has an autism insurance mandate. Can you confirm that you are in compliance with [STATE]'s autism insurance laws? I'd like to speak with a supervisor if you're unable to confirm this." },
+          { objection: '"We only cover in-network providers."', response: "Can you provide me with a list of in-network providers for ABA, speech, and occupational therapy in my area? If there are no in-network providers available, what is the process for obtaining an out-of-network exception?" },
         ],
       },
       {
-        script: "I'm appealing the denial of [CHILD]'s [SERVICE] claim. The denial states [REASON], but [CHILD] has a documented diagnosis of [DIAG] and this service is medically necessary as determined by their treating provider.",
-        pushbacks: [
-          { objection: '"The service isn\'t covered under your plan."', response: "Under the Mental Health Parity and Addiction Equity Act, autism-related behavioral health services must be covered comparably to medical services. I'd like to understand specifically why this service is being excluded and receive that in writing." },
-        ],
-      },
-      {
-        script: "I'd like to request a peer-to-peer review between [CHILD]'s treating provider and your medical director. The treating provider can speak directly to the medical necessity of this service.",
+        script: "I'm requesting a copy of [CHILD]'s Explanation of Benefits (EOB) for recent therapy sessions. I want to ensure that claims are being processed correctly and that benefits are being applied as expected.",
         pushbacks: [],
       },
       {
-        script: "I'm requesting the specific clinical criteria your plan used to deny this claim. I have the right to this information and I need it to prepare my appeal.",
+        script: "I'm appealing a denial for [CHILD]'s therapy services. I believe this denial was made in error and I have documentation to support the medical necessity of these services. Can you guide me through the appeals process?",
         pushbacks: [
-          { objection: '"That information is proprietary."', response: "Under the ACA and ERISA, I have the right to the specific clinical criteria used to make coverage decisions. Please provide this in writing within the required timeframe or I will file a complaint with the state insurance commissioner." },
+          { objection: '"You need to submit a written appeal."', response: "I understand. Can you tell me exactly what documentation is required for a written appeal and where I need to send it? Is there a specific form I need to use?" },
         ],
       },
       {
-        script: "I want to confirm: what is the deadline for filing an internal appeal, and what is the process for requesting an external independent review if the internal appeal is denied?",
+        script: "I'm requesting a single case agreement for an out-of-network provider. This provider offers specialized services that are not available in-network, and I believe it's medically necessary for [CHILD].",
         pushbacks: [],
       },
       {
-        script: "I'm requesting a case manager to be assigned to [CHILD]'s case. Given the complexity of [CHILD]'s needs, I'd like a single point of contact who can help coordinate authorizations and resolve issues quickly.",
+        script: "What are the requirements for prior authorization for [CHILD]'s ABA therapy? I want to make sure we have all the necessary documentation in place to avoid any delays or denials.",
+        pushbacks: [],
+      },
+      {
+        script: "I'm requesting a peer-to-peer review for a denied service. I'd like [CHILD]'s treating physician to speak directly with your medical reviewer to discuss the medical necessity of the service.",
         pushbacks: [],
       },
     ],
     followup: [
-      { title: "Appeal confirmation", timing: "Same day as appeal submission", script: "I'm calling to confirm receipt of my appeal for [CHILD]'s [SERVICE] claim. Can you give me a confirmation number and the expected timeline for a decision?" },
-      { title: "Status check", timing: "10 days after appeal", script: "I'm following up on the appeal I submitted for [CHILD]'s [SERVICE] claim. The reference number is [NUMBER]. Can you tell me the current status and expected decision date?" },
-      { title: "External review request", timing: "If internal appeal denied", script: "My internal appeal has been denied. I'm requesting an external independent review. Can you provide me with the process and timeline for submitting that request?" },
+      { title: "Follow-up on benefits verification", timing: "Within 24 hours", script: "Hi, I'm following up on my call yesterday regarding [CHILD]'s autism benefits. Can you confirm the information you provided and send me a written summary of benefits?" },
+      { title: "Follow-up on appeal", timing: "2 weeks after appeal submission", script: "Hi, I'm following up on the appeal I submitted for [CHILD]'s therapy services two weeks ago. Can you provide an update on the status of the appeal and the expected timeline for a decision?" },
+      { title: "Escalation to State Department of Insurance", timing: "If insurance is non-compliant", script: "I'd like to file a complaint with the State Department of Insurance regarding my insurance company's denial of [CHILD]'s autism services. I believe they are not complying with state mandates." },
     ],
   },
 
-  pediatrician: {
-    icon: '👩‍⚕️', color: '#E8A0C8',
-    title: 'Talking to Your Pediatrician',
-    subtitle: 'Getting referrals, screenings, and documentation',
+  therapist: {
+    icon: '🧠', color: '#F76C6C',
+    title: 'Talking to Your Therapist',
+    subtitle: 'Maximizing the effectiveness of therapy sessions',
     points: [
       {
-        script: "I'm concerned about [CHILD]'s development and I'd like to discuss a referral for a comprehensive autism evaluation. I've been tracking specific behaviors and I'd like to share my observations with you today.",
+        script: "I'd like to discuss [CHILD]'s therapy goals. I want to make sure they are aligned with our family's priorities and that we're seeing measurable progress in key areas.",
         pushbacks: [
-          { objection: '"Let\'s wait and see — [CHILD] is still young."', response: "I understand the instinct to wait, but early intervention has the strongest evidence base for autism. If we wait and [CHILD] does have autism, we're losing critical intervention time. Can we at least do a formal developmental screening today and discuss next steps?" },
-          { objection: '"I don\'t see any red flags."', response: "I appreciate that. But I'm seeing things at home and in other settings that concern me. Can I share my written observations? I'd also like to request a formal M-CHAT or similar screening tool to make sure we're not missing anything." },
+          { objection: '"We're already working on these goals."', response: "I understand, but I'd like to review them in detail. Can you explain how each goal is being addressed in sessions and what progress you're observing?" },
         ],
       },
       {
-        script: "I'd like [CHILD] to have a developmental screening at every well visit going forward. Can you document today's screening results in [CHILD]'s chart so we have a baseline?",
+        script: "What strategies can we implement at home to support [CHILD]'s progress in therapy? I want to ensure consistency between sessions and our home environment.",
         pushbacks: [],
       },
       {
-        script: "I need a referral letter for [CHILD]'s evaluation. The evaluator has asked for documentation of our concerns and any prior screenings. Can you prepare that for me?",
-        pushbacks: [
-          { objection: '"We don\'t typically write referral letters."', response: "I understand it's not always standard, but many evaluation centers and schools require documentation from the primary care provider. Even a brief note summarizing our discussions and any screening results would be very helpful. Can you do that?" },
-        ],
-      },
-      {
-        script: "I'd like to discuss whether [CHILD] should be referred to a developmental pediatrician or neuropsychologist in addition to the standard evaluation. I want to make sure we're getting the most comprehensive picture possible.",
+        script: "I'm concerned about [CHILD]'s motivation in therapy. Are there ways we can make sessions more engaging or incorporate [CHILD]'s interests to improve participation?",
         pushbacks: [],
       },
       {
-        script: "Can you help me understand what documentation I'll need to access school services and Medicaid waiver programs? I want to make sure [CHILD]'s medical records are complete and support those applications.",
+        script: "I'd like to understand the rationale behind the therapy techniques you're using. Can you explain how these methods are supported by research and how they're tailored to [CHILD]'s specific needs?",
+        pushbacks: [],
+      },
+      {
+        script: "Can we schedule a regular check-in to discuss [CHILD]'s progress and adjust therapy goals as needed? I want to ensure we're continuously optimizing the therapy plan.",
+        pushbacks: [],
+      },
+      {
+        script: "I'm noticing some challenging behaviors at home. Can we discuss how these might be related to [CHILD]'s therapy and what strategies we can use to address them?",
         pushbacks: [],
       },
     ],
     followup: [
-      { title: "Referral follow-up", timing: "3 days after appointment", script: "Hi, I'm following up on the referral we discussed for [CHILD]. Can you confirm it's been submitted and give me the name of the specialist or evaluation center you referred us to?" },
-      { title: "Records request", timing: "Before evaluation appointment", script: "I have an evaluation scheduled for [CHILD] and the evaluator has requested medical records. Can you send [CHILD]'s developmental screening results, growth charts, and any relevant visit notes to [EVALUATOR] at [FAX/EMAIL]?" },
+      { title: "Therapy progress check-in", timing: "Monthly", script: "Hi, I'm checking in on [CHILD]'s therapy progress. Can we schedule a brief call to discuss how things are going and if any adjustments are needed to the therapy plan?" },
+      { title: "Behavior strategy discussion", timing: "As needed", script: "I'd like to discuss some recent challenging behaviors we're seeing at home with [CHILD]. Can we talk about potential strategies to address these in therapy and at home?" },
     ],
   },
 
-  waiver: {
-    icon: '🗺️', color: '#5BA4E0',
-    title: 'Talking to Waiver / Medicaid Staff',
-    subtitle: 'Navigating waitlists, eligibility, and services',
+  family: {
+    icon: '🏡', color: '#6C7FF7',
+    title: 'Talking to Family & Friends',
+    subtitle: 'Building a supportive network',
     points: [
       {
-        script: "I'd like to add [CHILD] to the [STATE] Medicaid waiver waitlist. Can you walk me through the application process and confirm what documentation I need to submit today?",
+        script: "[CHILD] has recently been diagnosed with autism. We're still learning a lot, but we wanted to share this with you so you can better understand [CHILD]'s needs and how to best support them.",
         pushbacks: [
-          { objection: '"The waitlist is very long — it could be years."', response: "I understand, and that's exactly why I want to get [CHILD] on the list today. Every day we wait is another day further back. Can we start the application now?" },
+          { objection: '"But [CHILD] seems so normal!"', response: "Autism is a spectrum, and it presents differently in everyone. [CHILD]'s autism might not be immediately obvious, but it impacts how they experience the world and interact with others. We're learning to understand their unique perspective." },
+          { objection: '"All kids do that."', response: "While some behaviors might seem typical, for [CHILD], these behaviors are part of a larger pattern that impacts their daily life and development. It's not just a phase; it's how their brain is wired." },
+          { objection: '"Have you tried [unsolicited advice]?"', response: "We appreciate your suggestions, and we're working closely with professionals who are guiding us. Right now, the most helpful thing you can do is to learn about autism and how it affects [CHILD] specifically." },
         ],
       },
       {
-        script: "I'm calling to confirm [CHILD]'s position on the waiver waitlist and verify that our contact information is current. I want to make sure we don't miss any notifications.",
+        script: "We're trying to create a consistent and predictable environment for [CHILD]. It would be really helpful if you could follow these routines when you're with them.",
         pushbacks: [],
       },
       {
-        script: "I'd like to understand what services [CHILD] would be eligible for once they reach the top of the waitlist. Can you walk me through the typical service package and how needs are assessed?",
+        script: "[CHILD] communicates differently. Sometimes they might not make eye contact or respond verbally, but they are still listening and understanding. Here are some ways you can interact with them.",
         pushbacks: [],
       },
       {
-        script: "Are there any bridge services or interim programs [CHILD] could access while waiting for the waiver? I want to make sure we're not leaving any support on the table during the wait.",
-        pushbacks: [
-          { objection: '"There\'s nothing available until the waiver slot opens."', response: "I've heard that some families access state plan Medicaid services, early intervention programs, or school-based services in the interim. Can you help me understand what [CHILD] might qualify for right now?" },
-        ],
+        script: "We're focusing on [specific skill] with [CHILD] right now. If you could reinforce this when you're together, it would be a huge help.",
+        pushbacks: [],
       },
       {
-        script: "I'm requesting a copy of [CHILD]'s waitlist application and current status in writing. I want to have documentation of when we applied and where we are in the process.",
+        script: "[CHILD] has some sensory sensitivities. Loud noises or certain textures can be overwhelming for them. We'll try to avoid those situations, and it would be great if you could too.",
+        pushbacks: [],
+      },
+      {
+        script: "We might need to leave social gatherings early if [CHILD] gets overwhelmed. Please understand that we're doing what's best for them, and it's not a reflection on you or your event.",
         pushbacks: [],
       },
     ],
     followup: [
-      { title: "Application confirmation", timing: "Same day as application", script: "I'm calling to confirm that [CHILD]'s waiver application was received and processed today. Can you give me a confirmation number and the date [CHILD] was added to the waitlist?" },
-      { title: "Annual check-in", timing: "Every 12 months", script: "Hi, I'm calling to do our annual check-in on [CHILD]'s waiver waitlist status. Can you confirm [CHILD] is still active on the list, verify our contact information, and give me an updated estimate of wait time?" },
-      { title: "Status escalation", timing: "If no movement after 2 years", script: "I'd like to speak with a supervisor about [CHILD]'s waiver application. We've been on the waitlist for [X] years and I'd like to understand if there's anything we can do to move the process forward or if there are any priority categories [CHILD] might qualify for." },
+      { title: "Share resources", timing: "Ongoing", script: "Here are some resources about autism that we've found helpful. We'd love for you to take a look when you have a moment." },
+      { title: "Discuss specific behaviors", timing: "As needed", script: "I wanted to chat about [specific behavior] that [CHILD] exhibited when we were together. Can we talk about how to best respond to that in the future?" },
     ],
   },
 };
 
-const AUDIENCES = [
-  { key: 'diagnostician', icon: '🔬', label: 'Diagnostician' },
-  { key: 'school',        icon: '🏫', label: 'School / IEP' },
-  { key: 'insurance',     icon: '📋', label: 'Insurance' },
-  { key: 'pediatrician',  icon: '👩‍⚕️', label: 'Pediatrician' },
-  { key: 'waiver',        icon: '🗺️',  label: 'Waiver' },
-];
-
-// ── Component ─────────────────────────────────────────────────────────────────
+// ── Main component ────────────────────────────────────────────────────────────
 export default function TalkingPointsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -281,6 +277,8 @@ export default function TalkingPointsScreen() {
     loadProfile();
   }, []));
 
+  useChildChanged(() => { loadProfile(); });
+
   const loadProfile = async () => {
     try {
       const raw = await AsyncStorage.getItem('ap_profile');
@@ -288,207 +286,134 @@ export default function TalkingPointsScreen() {
     } catch {}
   };
 
-  const personalize = (script: string) => {
-    const child = profile.childName || 'my child';
-    const age   = profile.childAge  ? `${profile.childAge}-year-old` : '';
-    const diag  = profile.diagnosis || 'autism';
-    return script
-      .replace(/\[CHILD\]/g, child)
-      .replace(/\[AGE\]/g,   age)
-      .replace(/\[DIAG\]/g,  diag);
+  const currentAudience = TP_CONTENT[selectedAudience];
+
+  const getScript = (script: string) => {
+    let s = script;
+    if (profile.childName) s = s.replace(/\b\[CHILD\]\b/g, profile.childName);
+    if (profile.childAge) s = s.replace(/\b\[AGE\]\b/g, profile.childAge);
+    if (profile.diagnosis) s = s.replace(/\b\[DIAGNOSIS\]\b/g, profile.diagnosis);
+    return s;
   };
 
-  const copyToClipboard = async (text: string, idx: number) => {
+  const copyToClipboard = (text: string, idx: number) => {
+    Clipboard.setString(text);
+    setCopiedIdx(idx);
+    setTimeout(() => setCopiedIdx(null), 2000);
+    Alert.alert('Copied!', 'The text has been copied to your clipboard.');
+  };
+
+  const shareScript = async (text: string) => {
     try {
-      if (Platform.OS === 'ios' || Platform.OS === 'android') {
-        Clipboard.setString(text);
-      }
-      setCopiedIdx(idx);
-      setTimeout(() => setCopiedIdx(null), 2000);
-    } catch {}
+      await Share.share({
+        message: text,
+      });
+    } catch (error: any) {
+      Alert.alert('Error', 'Failed to share script: ' + error.message);
+    }
   };
 
-  const shareAll = async () => {
-    const data  = TP_CONTENT[selectedAudience];
-    const limit = isPremium ? data.points.length : FREE_SCRIPTS;
-    const lines = [
-      `${data.title} — Talking Points`,
-      '',
-      ...data.points.slice(0, limit).map((p, i) => `${i + 1}. ${personalize(p.script)}`),
-      '',
-      '--- Follow-Up Scripts ---',
-      ...data.followup.map((s, i) => `${i + 1}. ${s.title}: ${personalize(s.script)}`),
-      '',
-      'Generated by Autism Pathways',
-    ];
-    try {
-      await Share.share({ message: lines.join('\n') });
-    } catch {}
-  };
-
-  const data = TP_CONTENT[selectedAudience];
-  const audienceIdx = AUDIENCES.findIndex(a => a.key === selectedAudience);
-  const audienceLocked = !isPremium && audienceIdx >= FREE_AUDIENCES;
+  const renderPremiumGate = () => (
+    <View style={styles.premiumGateCard}>
+      <Text style={styles.premiumGateIcon}>✨</Text>
+      <Text style={styles.premiumGateTitle}>Unlock All Talking Points</Text>
+      <Text style={styles.premiumGateSub}>
+        Go Premium to access all 5 audience types, unlimited scripts, pushback responses, and follow-up plans.
+      </Text>
+      <TouchableOpacity style={styles.premiumGateBtn} onPress={() => router.push('/(app)/premium/')}>
+        <Text style={styles.premiumGateBtnText}>Go Premium</Text>
+      </TouchableOpacity>
+    </View>
+  );
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Text style={styles.backText}>← Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Talking Points</Text>
-        <TouchableOpacity onPress={shareAll} style={styles.shareBtn}>
-          <Text style={styles.shareBtnText}>Share</Text>
-        </TouchableOpacity>
-      </View>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollViewContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <Text style={styles.header}>Talking Points</Text>
+        <Text style={styles.subheader}>Scripts for advocating for your child</Text>
 
-      {/* Rainbow bar */}
-      <View style={styles.rainbow} />
-
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Hero */}
-        <View style={styles.hero}>
-          <View style={styles.heroIcon}>
-            <Text style={styles.heroIconText}>🗣️</Text>
-          </View>
-          <Text style={styles.heroTitle}>Talking Points</Text>
-          <Text style={styles.heroSub}>
-            Personalized scripts for every conversation — with pushback responses built in.
-          </Text>
+        {/* Audience Selector */}
+        <View style={styles.audienceSelector}>
+          {Object.keys(TP_CONTENT).map((key, index) => {
+            const audience = TP_CONTENT[key];
+            const isLocked = !isPremium && index >= FREE_AUDIENCES;
+            const isSelected = selectedAudience === key;
+            return (
+              <TouchableOpacity
+                key={key}
+                style={[
+                  styles.audienceBtn,
+                  { backgroundColor: isSelected ? audience.color : COLORS.white },
+                  isSelected && styles.audienceBtnSelected,
+                  isLocked && styles.audienceBtnLocked,
+                ]}
+                onPress={() => !isLocked && setSelectedAudience(key)}
+                disabled={isLocked}
+              >
+                <Text style={styles.audienceIcon}>{audience.icon}</Text>
+                <Text style={[
+                  styles.audienceText,
+                  { color: isSelected ? COLORS.white : COLORS.text },
+                  isLocked && { color: COLORS.textLight },
+                ]}>{audience.title}</Text>
+                {isLocked && <Text style={styles.lockIcon}>🔒</Text>}
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
-        {/* Audience selector */}
-        <View style={styles.audienceWrap}>
-          <Text style={styles.audienceLabel}>Who are you talking to?</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.audienceRow}>
-            {AUDIENCES.map((a, idx) => {
-              const locked = !isPremium && idx >= FREE_AUDIENCES;
-              const active = selectedAudience === a.key;
-              return (
-                <TouchableOpacity
-                  key={a.key}
-                  style={[styles.audienceBtn, active && styles.audienceBtnActive, locked && styles.audienceBtnLocked]}
-                  onPress={() => {
-                    if (locked) {
-                      router.push('/paywall');
-                    } else {
-                      setSelectedAudience(a.key);
-                      setExpandedPushbacks({});
-                    }
-                  }}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.audienceBtnIcon}>{locked ? '🔒' : a.icon}</Text>
-                  <Text style={[styles.audienceBtnLabel, active && styles.audienceBtnLabelActive, locked && styles.audienceBtnLabelLocked]}>
-                    {a.label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-        </View>
+        {/* Talking Points List */}
+        <View style={styles.pointsList}>
+          <Text style={styles.pointsListTitle}>{currentAudience.title}</Text>
+          <Text style={styles.pointsListSubtitle}>{currentAudience.subtitle}</Text>
 
-        {/* Context card */}
-        <View style={styles.contextWrap}>
-          <View style={styles.contextCard}>
-            <Text style={styles.contextIcon}>💡</Text>
-            <Text style={styles.contextText}>
-              <Text style={styles.contextBold}>{data.title}.</Text>{' '}
-              {data.subtitle}. Scripts are personalized with{' '}
-              {profile.childName ? profile.childName : 'your child'}'s name.
-            </Text>
-          </View>
-        </View>
-
-        {/* Talking points */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <View style={[styles.sectionHeaderIcon, { backgroundColor: COLORS.lavender }]}>
-              <Text>💬</Text>
-            </View>
-            <View>
-              <Text style={styles.sectionHeaderTitle}>Talking Points</Text>
-              <Text style={styles.sectionHeaderSub}>Tap a script to copy it</Text>
-            </View>
-          </View>
-
-          {data.points.map((point, idx) => {
-            const locked = !isPremium && idx >= FREE_SCRIPTS;
-            const script = personalize(point.script);
-            const pbOpen = expandedPushbacks[idx];
-
-            if (locked && idx === FREE_SCRIPTS) {
-              // Show premium gate after last free point
-              return (
-                <View key="gate" style={styles.premiumGateCard}>
-                  <Text style={styles.premiumGateIcon}>🔒</Text>
-                  <Text style={styles.premiumGateTitle}>
-                    Unlock All {data.points.length} Talking Points
-                  </Text>
-                  <Text style={styles.premiumGateSub}>
-                    Plus pushback responses, follow-up scripts, and all 5 audience types.
-                  </Text>
-                  <TouchableOpacity
-                    style={styles.premiumGateBtn}
-                    onPress={() => router.push('/paywall')}
-                  >
-                    <Text style={styles.premiumGateBtnText}>Upgrade to Premium →</Text>
-                  </TouchableOpacity>
-                </View>
-              );
-            }
-
-            if (locked) return null;
+          {currentAudience.points.map((point, index) => {
+            const isLocked = !isPremium && index >= FREE_SCRIPTS && selectedAudience !== 'diagnostician' && selectedAudience !== 'school';
+            const scriptText = getScript(point.script);
+            const isCopied = copiedIdx === index;
 
             return (
-              <View key={idx} style={styles.pointCard}>
-                {/* Script row */}
-                <TouchableOpacity
-                  style={styles.pointHeader}
-                  onPress={() => copyToClipboard(script, idx)}
-                  activeOpacity={0.7}
-                >
-                  <View style={styles.pointNumber}>
-                    <Text style={styles.pointNumberText}>{idx + 1}</Text>
-                  </View>
-                  <Text style={styles.pointScript}>{script}</Text>
+              <View key={index} style={styles.pointCard}>
+                <View style={styles.pointHeader}>
+                  <View style={styles.pointNumber}><Text style={styles.pointNumberText}>{index + 1}</Text></View>
+                  <Text style={styles.pointScript}>{scriptText}</Text>
                   <TouchableOpacity
-                    style={[styles.copyBtn, copiedIdx === idx && styles.copyBtnCopied]}
-                    onPress={() => copyToClipboard(script, idx)}
+                    style={[styles.copyBtn, isCopied && styles.copyBtnCopied]}
+                    onPress={() => copyToClipboard(scriptText, index)}
                   >
-                    <Text style={styles.copyBtnText}>{copiedIdx === idx ? '✓' : '📋'}</Text>
+                    <Text style={styles.copyBtnText}>{isCopied ? '✅' : '📋'}</Text>
                   </TouchableOpacity>
-                </TouchableOpacity>
+                </View>
 
-                {/* Pushback toggle */}
                 {point.pushbacks && point.pushbacks.length > 0 && (
                   <>
                     <TouchableOpacity
                       style={styles.pushbackToggle}
-                      onPress={() => setExpandedPushbacks(prev => ({ ...prev, [idx]: !prev[idx] }))}
+                      onPress={() => setExpandedPushbacks(prev => ({ ...prev, [index]: !prev[index] }))}
                     >
                       <Text style={styles.pushbackToggleText}>
-                        {pbOpen ? '▲' : '▼'} {point.pushbacks.length} pushback response{point.pushbacks.length !== 1 ? 's' : ''}
+                        {expandedPushbacks[index] ? 'Hide Pushbacks ▲' : 'Show Pushbacks ▼'}
                       </Text>
                     </TouchableOpacity>
 
-                    {pbOpen && (
+                    {expandedPushbacks[index] && (
                       <View style={styles.pushbacksWrap}>
-                        {point.pushbacks.map((pb, pi) => (
-                          <View key={pi} style={styles.pushbackItem}>
-                            <Text style={styles.pushbackObjLabel}>They say:</Text>
-                            <Text style={styles.pushbackObjText}>{pb.objection}</Text>
-                            <Text style={styles.pushbackRespLabel}>You say:</Text>
+                        {point.pushbacks.map((pb, pbIdx) => (
+                          <View key={pbIdx} style={styles.pushbackItem}>
+                            <Text style={styles.pushbackObjLabel}>Objection:</Text>
+                            <Text style={styles.pushbackObjText}>{getScript(pb.objection)}</Text>
+                            <Text style={styles.pushbackRespLabel}>Response:</Text>
                             <View style={styles.pushbackRespRow}>
-                              <Text style={styles.pushbackRespText}>{personalize(pb.response)}</Text>
+                              <Text style={styles.pushbackRespText}>{getScript(pb.response)}</Text>
                               <TouchableOpacity
                                 style={styles.pushbackCopyBtn}
-                                onPress={() => copyToClipboard(personalize(pb.response), idx * 100 + pi)}
+                                onPress={() => copyToClipboard(getScript(pb.response), index * 100 + pbIdx)}
                               >
-                                <Text style={styles.copyBtnText}>
-                                  {copiedIdx === idx * 100 + pi ? '✓' : '📋'}
-                                </Text>
+                                <Text style={styles.copyBtnText}>📋</Text>
                               </TouchableOpacity>
                             </View>
                           </View>
@@ -497,206 +422,142 @@ export default function TalkingPointsScreen() {
                     )}
                   </>
                 )}
+
+                {isLocked && renderPremiumGate()}
               </View>
             );
           })}
+
+          {!isPremium && selectedAudience !== 'diagnostician' && selectedAudience !== 'school' && currentAudience.points.length > FREE_SCRIPTS && (
+            renderPremiumGate()
+          )}
         </View>
 
-        {/* Follow-up scripts */}
-        {isPremium && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <View style={[styles.sectionHeaderIcon, { backgroundColor: COLORS.mint }]}>
-                <Text>📅</Text>
-              </View>
-              <View>
-                <Text style={styles.sectionHeaderTitle}>How to Follow Up</Text>
-                <Text style={styles.sectionHeaderSub}>Exact scripts for getting callbacks and escalating</Text>
-              </View>
-            </View>
+        {/* Follow-up Plans */}
+        {currentAudience.followup && currentAudience.followup.length > 0 && (
+          <View style={styles.pointsList}>
+            <Text style={styles.pointsListTitle}>Follow-up Plans</Text>
+            <Text style={styles.pointsListSubtitle}>What to do after the conversation</Text>
 
-            <View style={styles.followupCard}>
-              {data.followup.map((step, si) => (
-                <View key={si} style={[styles.followupItem, si < data.followup.length - 1 && styles.followupItemBorder]}>
-                  <View style={styles.followupStep}>
-                    <Text style={styles.followupStepText}>{si + 1}</Text>
-                  </View>
-                  <View style={styles.followupBody}>
-                    <Text style={styles.followupTitle}>{step.title}</Text>
-                    {step.timing && (
-                      <Text style={styles.followupTiming}>⏱ {step.timing}</Text>
-                    )}
-                    <View style={styles.followupScriptRow}>
-                      <Text style={styles.followupScript}>{personalize(step.script)}</Text>
-                      <TouchableOpacity
-                        style={styles.pushbackCopyBtn}
-                        onPress={() => copyToClipboard(personalize(step.script), 9000 + si)}
-                      >
-                        <Text style={styles.copyBtnText}>
-                          {copiedIdx === 9000 + si ? '✓' : '📋'}
-                        </Text>
-                      </TouchableOpacity>
+            {!isPremium ? (
+              <View style={styles.followupTeaser}>
+                <Text style={styles.followupTeaserIcon}>🗓️</Text>
+                <Text style={styles.followupTeaserTitle}>Unlock Follow-up Plans</Text>
+                <Text style={styles.followupTeaserSub}>
+                  Go Premium to access detailed follow-up plans for every audience, ensuring you never miss a step.
+                </Text>
+                <TouchableOpacity style={styles.premiumGateBtn} onPress={() => router.push('/(app)/premium/')}>
+                  <Text style={styles.premiumGateBtnText}>Go Premium</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View style={styles.followupCard}>
+                {currentAudience.followup.map((step, index) => (
+                  <View key={index} style={[styles.followupItem, index < currentAudience.followup.length - 1 && styles.followupItemBorder]}>
+                    <View style={styles.followupStep}><Text style={styles.followupStepText}>{index + 1}</Text></View>
+                    <View style={styles.followupBody}>
+                      <Text style={styles.followupTitle}>{step.title}</Text>
+                      {step.timing && <Text style={styles.followupTiming}>{step.timing}</Text>}
+                      <View style={styles.followupScriptRow}>
+                        <Text style={styles.followupScript}>{getScript(step.script)}</Text>
+                        <TouchableOpacity
+                          style={styles.pushbackCopyBtn}
+                          onPress={() => copyToClipboard(getScript(step.script), index * 1000)}
+                        >
+                          <Text style={styles.copyBtnText}>📋</Text>
+                        </TouchableOpacity>
+                      </View>
                     </View>
                   </View>
-                </View>
-              ))}
-            </View>
+                ))}
+              </View>
+            )}
           </View>
         )}
 
-        {/* Premium teaser for follow-ups */}
-        {!isPremium && (
-          <View style={[styles.section, { paddingBottom: SPACING.xxxl }]}>
-            <View style={styles.followupTeaser}>
-              <Text style={styles.followupTeaserIcon}>📅</Text>
-              <Text style={styles.followupTeaserTitle}>Follow-Up Scripts</Text>
-              <Text style={styles.followupTeaserSub}>
-                Unlock exact scripts for follow-up calls, escalations, and getting callbacks — included with Premium.
-              </Text>
-              <TouchableOpacity
-                style={styles.premiumGateBtn}
-                onPress={() => router.push('/paywall')}
-              >
-                <Text style={styles.premiumGateBtnText}>Unlock Follow-Up Scripts →</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
-
-        <View style={{ height: 40 }} />
+        <View style={{ height: insets.bottom }} />
       </ScrollView>
     </View>
   );
 }
 
-// ── Styles ────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bg },
-
-  // Header
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.bg,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollViewContent: {
+    padding: SPACING.md,
+    paddingTop: SPACING.xl + 10,
+  },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: SPACING.lg,
-    paddingTop: 0,
-    paddingBottom: SPACING.md,
-    backgroundColor: COLORS.white,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    fontSize: FONT_SIZES.h5,
+    fontWeight: '800',
+    color: COLORS.text,
+    marginBottom: SPACING.xs,
+    textAlign: 'center',
   },
-  backBtn: { padding: SPACING.xs },
-  backText: { fontSize: FONT_SIZES.sm, fontWeight: '600', color: COLORS.purple },
-  headerTitle: { fontSize: FONT_SIZES.base, fontWeight: '700', color: COLORS.text },
-  shareBtn: {
-    backgroundColor: COLORS.lavender,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.xs,
-    borderRadius: RADIUS.pill,
+  subheader: {
+    fontSize: FONT_SIZES.sm,
+    color: COLORS.textMid,
+    textAlign: 'center',
+    marginBottom: SPACING.xl,
   },
-  shareBtnText: { fontSize: FONT_SIZES.xs, fontWeight: '700', color: COLORS.purple },
-
-  // Rainbow
-  rainbow: {
-    height: 4,
-    backgroundColor: COLORS.purple,
-    backgroundImage: undefined,
-  },
-
-  // Hero
-  hero: {
-    backgroundColor: COLORS.lavender,
-    paddingVertical: SPACING.xl,
-    paddingHorizontal: SPACING.xl,
-    alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  heroIcon: {
-    width: 60, height: 60,
-    backgroundColor: COLORS.purple,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: SPACING.md,
-    ...SHADOWS.md,
-  },
-  heroIconText: { fontSize: 28 },
-  heroTitle: { fontSize: FONT_SIZES.xl, fontWeight: '800', color: COLORS.text, marginBottom: SPACING.xs },
-  heroSub: { fontSize: FONT_SIZES.sm, color: COLORS.textMid, textAlign: 'center', lineHeight: 20, opacity: 0.85 },
-
   // Audience selector
-  audienceWrap: {
-    backgroundColor: COLORS.white,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-    paddingVertical: SPACING.md,
-    paddingLeft: SPACING.lg,
+  audienceSelector: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: SPACING.sm,
+    marginBottom: SPACING.xl,
   },
-  audienceLabel: {
-    fontSize: FONT_SIZES.xs,
-    fontWeight: '700',
-    letterSpacing: 0.7,
-    textTransform: 'uppercase',
-    color: COLORS.textLight,
-    marginBottom: SPACING.sm,
-  },
-  audienceRow: { gap: SPACING.sm, paddingRight: SPACING.lg },
   audienceBtn: {
+    flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: SPACING.sm,
     paddingHorizontal: SPACING.md,
-    borderRadius: RADIUS.sm,
+    borderRadius: RADIUS.pill,
     borderWidth: 1.5,
     borderColor: COLORS.border,
-    backgroundColor: COLORS.bg,
-    minWidth: 72,
+    gap: SPACING.xs,
   },
-  audienceBtnActive: {
-    borderColor: COLORS.purple,
-    backgroundColor: COLORS.lavender,
+  audienceBtnSelected: {
+    borderColor: 'transparent',
   },
-  audienceBtnLocked: { opacity: 0.5 },
-  audienceBtnIcon: { fontSize: 22, marginBottom: 4 },
-  audienceBtnLabel: { fontSize: 10, fontWeight: '600', color: COLORS.textMid, textAlign: 'center' },
-  audienceBtnLabelActive: { color: COLORS.purple },
-  audienceBtnLabelLocked: { color: COLORS.textLight },
-
-  // Context card
-  contextWrap: { paddingHorizontal: SPACING.lg, paddingTop: SPACING.lg },
-  contextCard: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: SPACING.sm,
-    backgroundColor: COLORS.white,
-    borderRadius: RADIUS.sm,
-    borderWidth: 1.5,
-    borderColor: COLORS.border,
-    padding: SPACING.md,
-    ...SHADOWS.sm,
+  audienceBtnLocked: {
+    opacity: 0.6,
   },
-  contextIcon: { fontSize: 16, marginTop: 2 },
-  contextText: { flex: 1, fontSize: FONT_SIZES.xs, color: COLORS.textMid, lineHeight: 18 },
-  contextBold: { fontWeight: '700', color: COLORS.text },
-
-  // Section
-  section: { paddingHorizontal: SPACING.lg, paddingTop: SPACING.xl },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-    marginBottom: SPACING.md,
+  audienceIcon: {
+    fontSize: FONT_SIZES.sm,
   },
-  sectionHeaderIcon: {
-    width: 36, height: 36,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
+  audienceText: {
+    fontSize: FONT_SIZES.sm,
+    fontWeight: '700',
   },
-  sectionHeaderTitle: { fontSize: FONT_SIZES.base, fontWeight: '700', color: COLORS.text },
-  sectionHeaderSub: { fontSize: FONT_SIZES.xs, color: COLORS.textLight },
-
-  // Point card
+  lockIcon: {
+    fontSize: FONT_SIZES.xs,
+    marginLeft: SPACING.xs,
+  },
+  // Talking points list
+  pointsList: {
+    marginBottom: SPACING.xl,
+  },
+  pointsListTitle: {
+    fontSize: FONT_SIZES.h6,
+    fontWeight: '800',
+    color: COLORS.text,
+    marginBottom: SPACING.xs,
+    textAlign: 'center',
+  },
+  pointsListSubtitle: {
+    fontSize: FONT_SIZES.sm,
+    color: COLORS.textMid,
+    textAlign: 'center',
+    marginBottom: SPACING.lg,
+  },
   pointCard: {
     backgroundColor: COLORS.white,
     borderRadius: RADIUS.md,
@@ -735,7 +596,6 @@ const styles = StyleSheet.create({
   },
   copyBtnCopied: { backgroundColor: COLORS.successBg, borderColor: COLORS.successBorder },
   copyBtnText: { fontSize: 14 },
-
   // Pushbacks
   pushbackToggle: {
     paddingHorizontal: SPACING.md,
@@ -770,7 +630,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     flexShrink: 0,
   },
-
   // Premium gate card
   premiumGateCard: {
     backgroundColor: COLORS.white,
@@ -793,7 +652,6 @@ const styles = StyleSheet.create({
     ...SHADOWS.md,
   },
   premiumGateBtnText: { color: COLORS.white, fontWeight: '700', fontSize: FONT_SIZES.sm },
-
   // Follow-up card
   followupCard: {
     backgroundColor: COLORS.white,
@@ -830,7 +688,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.border,
   },
-
   // Follow-up teaser
   followupTeaser: {
     backgroundColor: COLORS.white,
