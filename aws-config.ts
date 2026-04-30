@@ -8,5 +8,5 @@ export const awsConfig = {
    * Format: 'your-domain-prefix.auth.us-east-2.amazoncognito.com'
    * Set this after completing Step 3 in SETUP_GUIDE.md.
    */
-  hostedUiDomain: '', // ← FILL IN after Hosted UI setup
+  hostedUiDomain: 'us-east-2crdqipsdk.auth.us-east-2.amazoncognito.com',
 };
