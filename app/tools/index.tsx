@@ -139,9 +139,9 @@ const SECTIONS: { label: string; tools: Tool[] }[] = [
       {
         icon: '📝',
         title: 'Provider Report',
-        description: 'Generate a shareable summary of observations and concerns for any provider.',
-        cta: 'Coming soon',
-        soon: true,
+        description: 'Generate a printable summary from your Provider Prep sessions.',
+        cta: 'Generate',
+        route: '/provider-report',
         accentColor: COLORS.peachAccent,
       },
       {
