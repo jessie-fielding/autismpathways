@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -576,7 +576,7 @@ export default function DashboardScreen() {
   const insets = useSafeAreaInsets();
   const { signOut } = useAuth();
   const { isPremium } = useIsPremium();
-  const { child, childId, key: childKey } = useActiveChild();
+  const { child, childId, key: childKey, switchChild } = useActiveChild();
 
   // ── State ──────────────────────────────────────────────────────────────────
   const [profile, setProfile] = useState<{ childName?: string; diagnosis?: string; diagnosisLevel?: string } | null>(null);
@@ -594,8 +594,15 @@ export default function DashboardScreen() {
   const IEP_TOTAL = 5;
 
   // ── Load data ──────────────────────────────────────────────────────────────
-  const loadData = useCallback(async () => {
+  // Accepts an optional explicit childId so we can call it immediately after
+  // a switch before useActiveChild's internal state has had time to update.
+  const loadData = useCallback(async (overrideChildId?: string) => {
     try {
+      // Build a key function using the override ID if provided, else fall back
+      // to the hook's current childId.
+      const resolvedId = overrideChildId ?? childId;
+      const ck = (base: string) => resolvedId ? `${base}_${resolvedId}` : base;
+
       const [
         rawProfile,
         rawDiag,      rawDiagFallback,
@@ -607,13 +614,13 @@ export default function DashboardScreen() {
         rawDev,       rawDevFallback,
       ] = await Promise.all([
         AsyncStorage.getItem('profile'),
-        AsyncStorage.getItem(childKey('ap_diagnosis_step')),   AsyncStorage.getItem('ap_diagnosis_step'),
-        AsyncStorage.getItem(childKey('ap_medicaid_progress')), AsyncStorage.getItem('ap_medicaid_progress'),
-        AsyncStorage.getItem(childKey('ap_waiver_progress')),  AsyncStorage.getItem('ap_waiver_progress'),
-        AsyncStorage.getItem(childKey('ap_iep_progress')),     AsyncStorage.getItem('ap_iep_progress'),
+        AsyncStorage.getItem(ck('ap_diagnosis_step')),   AsyncStorage.getItem('ap_diagnosis_step'),
+        AsyncStorage.getItem(ck('ap_medicaid_progress')), AsyncStorage.getItem('ap_medicaid_progress'),
+        AsyncStorage.getItem(ck('ap_waiver_progress')),  AsyncStorage.getItem('ap_waiver_progress'),
+        AsyncStorage.getItem(ck('ap_iep_progress')),     AsyncStorage.getItem('ap_iep_progress'),
         AsyncStorage.getItem('ap_weekly_checks'),
-        AsyncStorage.getItem(childKey('ap_icd_quiz_codes')),   AsyncStorage.getItem('ap_icd_quiz_codes'),
-        AsyncStorage.getItem(childKey('ap_disability_quiz_results')), AsyncStorage.getItem('ap_disability_quiz_results'),
+        AsyncStorage.getItem(ck('ap_icd_quiz_codes')),   AsyncStorage.getItem('ap_icd_quiz_codes'),
+        AsyncStorage.getItem(ck('ap_disability_quiz_results')), AsyncStorage.getItem('ap_disability_quiz_results'),
       ]);
 
       // Prefer child-scoped value; fall back to legacy global key
@@ -636,9 +643,14 @@ export default function DashboardScreen() {
         setDevFlags(Array.isArray(flags) ? flags.slice(0, 3) : []);
       }
     } catch (_) {}
-  }, [childKey]);
+  }, [childId]);
 
   useFocusEffect(useCallback(() => { loadData(); }, [loadData]));
+
+  // Re-load data whenever the active child changes (e.g. after a switch)
+  useEffect(() => {
+    if (childId) loadData(childId);
+  }, [childId]);
 
   const toggleWeekly = async (i: number) => {
     const updated = weeklyChecks.map((v, idx) => idx === i ? !v : v);
@@ -685,7 +697,7 @@ export default function DashboardScreen() {
           </Text>
         </View>
         <View style={styles.navRight}>
-          <ChildSwitcher onSwitch={() => loadData()} />
+          <ChildSwitcher onSwitch={(newId: string) => loadData(newId)} />
           <TouchableOpacity style={styles.navGear} onPress={() => router.push('/settings')}>
             <Text style={styles.navGearIcon}>⚙️</Text>
           </TouchableOpacity>
