@@ -840,8 +840,7 @@ export default function DashboardScreen() {
               activeOpacity={0.8}
             >
               <Text style={styles.ptIcon}>➕</Text>
-              <Text style={[styles.ptName, { color: COLORS.purple }]}>More{'
-'}Tools</Text>
+              <Text style={[styles.ptName, { color: COLORS.purple }]}>More Tools</Text>
             </TouchableOpacity>
           </ScrollView>
 
