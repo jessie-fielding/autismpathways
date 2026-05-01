@@ -731,7 +731,7 @@ export default function DashboardScreen() {
                 {isPremium ? (
                   <Text style={[styles.pcTag, styles.pcTagTeal]}>⭐ Premium</Text>
                 ) : (
-                  <Text style={[styles.pcTag, styles.pcTagPurple]}>Beta Access</Text>
+                  <Text style={[styles.pcTag, styles.pcTagPurple]}>Free Plan</Text>
                 )}
                 {diagLevel ? <Text style={[styles.pcTag, styles.pcTagPurple]}>Level {diagLevel}</Text> : null}
               </View>

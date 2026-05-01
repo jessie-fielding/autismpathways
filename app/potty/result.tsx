@@ -279,21 +279,21 @@ export default function PottyResultScreen() {
           <Text style={styles.premiumHeaderText}>{premium.header}</Text>
         </View>
 
-        {/* Premium cards — Coming Soon */}
+        {/* Premium locked cards */}
         {premium.items.map((item) => (
           <TouchableOpacity
             key={item.title}
-            style={[styles.premiumCard, styles.premiumCardUnlocked]}
-            onPress={() => Alert.alert('Coming Soon', `${item.title} is being built and will be available in an upcoming update!`)}
+            style={[styles.premiumCard, styles.premiumCardLocked]}
+            onPress={() => router.push('/paywall')}
             activeOpacity={0.8}
           >
             <View style={styles.tipCardTop}>
               <Text style={styles.tipIcon}>{item.emoji}</Text>
               <Text style={styles.tipTitle}>{item.title}</Text>
             </View>
-            <Text style={styles.tipText}>{item.body}</Text>
-            <View style={styles.comingSoonBadge}>
-              <Text style={styles.comingSoonBadgeText}>🚧 Coming Soon</Text>
+            <Text style={[styles.tipText, { opacity: 0.5 }]}>{item.body}</Text>
+            <View style={styles.lockedBadge}>
+              <Text style={styles.lockedBadgeText}>🔒 Premium — Tap to Unlock</Text>
             </View>
           </TouchableOpacity>
         ))}
@@ -479,17 +479,25 @@ const styles = StyleSheet.create({
     borderColor: '#f0c040',
   },
   premiumBadgeText: { fontSize: FONT_SIZES.xs, fontWeight: '700', color: '#a07800' },
-  comingSoonBadge: {
+  premiumCardLocked: {
+    opacity: 0.85,
+    borderColor: '#c5b8f0',
+  },
+  lockedBadge: {
     alignSelf: 'flex-start',
     marginTop: 8,
     paddingHorizontal: 10,
     paddingVertical: 4,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#f0ebff',
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#d0d0d0',
+    borderColor: '#c5b8f0',
   },
-  comingSoonBadgeText: { fontSize: FONT_SIZES.xs, fontWeight: '700', color: '#888888' },
+  lockedBadgeText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#5a4fcf',
+  },
   ctaSection: {
     padding: SPACING.lg,
     gap: SPACING.sm,

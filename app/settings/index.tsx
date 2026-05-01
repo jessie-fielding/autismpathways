@@ -274,10 +274,10 @@ export default function SettingsScreen() {
           </View>
         ) : (
           <View style={[styles.premiumBanner, styles.freeBanner]}>
-            <Text style={styles.premiumStar}>🌟</Text>
-            <Text style={styles.premiumTitle}>Beta Access</Text>
+            <Text style={styles.premiumStar}>⭐</Text>
+            <Text style={styles.premiumTitle}>Upgrade to Premium</Text>
             <Text style={styles.premiumSub}>
-              You're using the beta — all features are fully unlocked. Thank you for helping us build this!
+              Unlock the Appeal Tracker, unlimited contacts, all talking point scripts, and more.
             </Text>
           </View>
         )}
@@ -356,7 +356,7 @@ export default function SettingsScreen() {
             icon="📋"
             title="Disability Quiz"
             subtitle="Check your readiness score"
-            onPress={() => Alert.alert('Coming Soon', 'The Disability Quiz is coming in the next update!')}
+            onPress={() => router.push('/disability-quiz')}
           />
           <View style={styles.divider} />
           <Row
@@ -446,11 +446,11 @@ export default function SettingsScreen() {
             icon="⭐"
             title="Rate the App"
             subtitle="Help other families find us"
-            onPress={() => Alert.alert('Coming Soon', 'App Store rating will be available after launch!')}
+            onPress={() => Linking.openURL('https://apps.apple.com/app/id6744808065?action=write-review')}
           />
         </View>
 
-        <Text style={styles.version}>Autism Pathways · Beta v0.1.0</Text>
+        <Text style={styles.version}>Autism Pathways v1.0</Text>
         <Text style={styles.copyright}>© 2026 Autism Pathways LLC</Text>
 
         {deleting && (

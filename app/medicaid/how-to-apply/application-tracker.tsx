@@ -155,9 +155,9 @@ export default function ApplicationTracker() {
             <View style={[styles.premiumBanner, { backgroundColor: '#e8f8f0', borderColor: '#a8ddc9' }]}>
               <Text style={styles.premiumIcon}>✓</Text>
               <View style={styles.premiumInfo}>
-                <Text style={[styles.premiumTitle, { color: '#2e7d5e' }]}>Beta — Fully Unlocked</Text>
+                <Text style={[styles.premiumTitle, { color: '#2e7d5e' }]}>Premium — Fully Unlocked</Text>
                 <Text style={[styles.premiumText, { color: '#2e7d5e' }]}>
-                  Follow-up reminders, status tracking, and document storage are all active for beta users.
+                  Follow-up reminders, status tracking, and document storage are all active for your account.
                 </Text>
               </View>
             </View>

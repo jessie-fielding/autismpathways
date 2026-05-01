@@ -18,7 +18,7 @@ const API_BASE = 'https://autismpathways.app';
  * ──────────────────────────────────────────────────────────────────────────────
  */
 
-export const BETA_MODE = true; // ← flip to false before App Store launch
+export const BETA_MODE = false; // production — real IAP required
 
 // AsyncStorage key where IAP purchase confirmation is stored
 export const IAP_PURCHASED_KEY = 'ap_iap_purchased';

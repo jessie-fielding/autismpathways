@@ -448,7 +448,7 @@ export default function SafeSpaceScreen() {
             <View style={styles.shareSectionHeader}>
               <Text style={styles.shareSectionTitle}>Share this entry</Text>
               <View style={styles.comingSoonBadge}>
-                <Text style={styles.comingSoonText}>Coming Soon</Text>
+                <Text style={styles.comingSoonText}>In Development</Text>
               </View>
             </View>
             <Text style={styles.shareSectionSub}>Soon you'll be able to share entries with trusted family members or caregivers.</Text>
