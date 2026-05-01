@@ -26,7 +26,7 @@ import { COLORS, SPACING, RADIUS, FONT_SIZES, SHADOWS } from '../../lib/theme';
 import { BETA_MODE, IAP_PURCHASED_KEY } from '../../hooks/useIsPremium';
 
 // ── IAP Product ID ────────────────────────────────────────────────────────────
-const PRODUCT_ID = 'com.autismpathways.premium.annual';
+const PRODUCT_ID = 'app.autismpathways.premium.annual';
 
 // ── Conditional import ────────────────────────────────────────────────────────
 let IAP: typeof import('expo-in-app-purchases') | null = null;
