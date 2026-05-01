@@ -685,10 +685,11 @@ export default function DashboardScreen() {
   ];
 
   const TOOL_TILES = [
-    { icon: '🛠️', name: 'All Tools', route: '/tools' },
-    { icon: '⚙️', name: 'Settings', route: '/settings' },
-    { icon: '🤝', name: 'Support', route: 'mailto:support@autismpathways.app' },
-    { icon: '📄', name: 'Forms', route: '/tools' },
+    { icon: '📓', name: 'Observations', route: '/observations' },
+    { icon: '🩺', name: 'Provider Prep', route: '/provider-prep' },
+    { icon: '🧘', name: 'Safe Space', route: '/safe-space' },
+    { icon: '🧮', name: 'CCB Tool', route: '/ccb-tool' },
+    { icon: '📚', name: 'Learning', route: '/(tabs)/explore' },
   ];
 
   return (
@@ -697,7 +698,7 @@ export default function DashboardScreen() {
       <View style={[styles.topNav, { paddingTop: insets.top + 4 }]}>
         <View style={styles.navLeft}>
           <View style={styles.navLogo}>
-            <Text style={{ fontSize: 14 }}>🧩</Text>
+            <Text style={{ fontSize: 14 }}>🌈</Text>
           </View>
           <Text style={styles.navTitle}>
             Autism <Text style={styles.navTitlePurple}>Pathways</Text>
@@ -819,27 +820,30 @@ export default function DashboardScreen() {
             ))}
           </View>
 
-          {/* TOOLS GRID */}
+          {/* TOOLS SCROLLER */}
           <Text style={styles.sectionLabel}>QUICK ACCESS</Text>
-          <View style={styles.toolsGrid}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pathwayScroll} contentContainerStyle={{ paddingRight: SPACING.lg }}>
             {TOOL_TILES.map((t) => (
               <TouchableOpacity
                 key={t.name}
-                style={styles.toolTile}
-                onPress={() => {
-                  if (t.route.startsWith('mailto:')) {
-                    Linking.openURL(t.route);
-                  } else {
-                    router.push(t.route as any);
-                  }
-                }}
+                style={styles.pathwayTile}
+                onPress={() => router.push(t.route as any)}
                 activeOpacity={0.8}
               >
-                <Text style={styles.toolIcon}>{t.icon}</Text>
-                <Text style={styles.toolName}>{t.name}</Text>
+                <Text style={styles.ptIcon}>{t.icon}</Text>
+                <Text style={styles.ptName}>{t.name}</Text>
               </TouchableOpacity>
             ))}
-          </View>
+            <TouchableOpacity
+              style={[styles.pathwayTile, { backgroundColor: '#f0ebff', borderColor: '#c5b8f0', minWidth: 80 }]}
+              onPress={() => router.push('/tools')}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.ptIcon}>➕</Text>
+              <Text style={[styles.ptName, { color: COLORS.purple }]}>More{'
+'}Tools</Text>
+            </TouchableOpacity>
+          </ScrollView>
 
           {/* UPGRADE BANNER (non-premium only) */}
           {!isPremium && (

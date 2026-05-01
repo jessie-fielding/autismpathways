@@ -1,4 +1,5 @@
 import React, { useCallback, useRef, useState } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useActiveChild } from '../../services/childManager';
 import {
   Alert,
@@ -391,10 +392,11 @@ export default function IEPScreen() {
   const archivedGoals = goals.filter(g => g.archived);
 
   const s = cs; // alias for styles
+  const insets = useSafeAreaInsets();
 
   return (
     <View style={s.container}>
-      <View style={s.header}>
+      <View style={[s.header, { paddingTop: insets.top + 8 }]}>
         <Text style={s.headerTitle}>IEP Pathway</Text>
         <TouchableOpacity style={s.setupBtn} onPress={() => { setDraftSetup(setup); setShowSetup(true); }}>
           <Text style={s.setupBtnText}>⚙️ Setup</Text>
