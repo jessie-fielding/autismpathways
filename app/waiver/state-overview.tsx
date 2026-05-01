@@ -61,6 +61,10 @@ export default function StateOverviewScreen() {
   const [expandedOverview, setExpandedOverview] = useState(false);
 
   useEffect(() => {
+    // Advance waiver progress to at least step 2 when state overview is viewed
+    AsyncStorage.getItem('ap_waiver_progress').then(cur => {
+      if (parseInt(cur || '0', 10) < 2) AsyncStorage.setItem('ap_waiver_progress', '2');
+    });
     if (!params.state) {
       AsyncStorage.getItem('ap_state').then(val => {
         if (val) setStateAbbr(val);

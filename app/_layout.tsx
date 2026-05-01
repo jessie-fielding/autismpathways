@@ -2,13 +2,11 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
-import { useState } from 'react';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { AuthProvider } from '../services/useAuth';
 import { PmipProviderStoreProvider } from '../lib/pmip/pmipProviderStore';
 import NotificationPermissionPrompt from '../components/NotificationPermissionPrompt';
-import SplashVideoScreen from '../components/SplashVideoScreen';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -16,7 +14,6 @@ export const unstable_settings = {
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
-  const [showSplash, setShowSplash] = useState(true);
 
   return (
     <AuthProvider>
@@ -27,9 +24,6 @@ export default function RootLayout() {
           </Stack>
           <StatusBar style="auto" />
           <NotificationPermissionPrompt />
-          {showSplash && (
-            <SplashVideoScreen onFinish={() => setShowSplash(false)} />
-          )}
         </ThemeProvider>
       </PmipProviderStoreProvider>
     </AuthProvider>

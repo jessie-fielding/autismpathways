@@ -128,6 +128,11 @@ export default function BowelDiaryScreen() {
     setDiary(updated);
     setEditingKey(null);
     setDraft({ bm: null, bristol: null });
+    // Advance potty progress based on diary entry count (steps 2-5)
+    const entryCount = Object.keys(updated).length;
+    const newScore = entryCount >= 14 ? 5 : entryCount >= 7 ? 4 : entryCount >= 3 ? 3 : 2;
+    const curScore = parseInt(await AsyncStorage.getItem('ap_potty_progress') || '0', 10);
+    if (newScore > curScore) await AsyncStorage.setItem('ap_potty_progress', String(newScore));
   };
 
   const getInsight = () => {

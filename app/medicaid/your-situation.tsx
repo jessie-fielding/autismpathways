@@ -57,7 +57,7 @@ export default function YourSituation() {
     if (selected === 'denied') {
       router.push('/medicaid/denial-reason');
     } else if (selected === 'approved') {
-      router.push('/waiver-journey/step-1-intro');
+      router.push('/medicaid/approved');
     } else if (selected === 'not-applied') {
       router.push('/medicaid/how-to-apply');
     }
@@ -86,7 +86,7 @@ export default function YourSituation() {
               style={styles.confettiButton}
               onPress={() => {
                 setShowConfetti(false);
-                router.push('/waiver-journey/step-1-intro');
+                router.push('/medicaid/approved');
               }}
             >
               <Text style={styles.confettiButtonText}>See what's next →</Text>

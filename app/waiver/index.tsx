@@ -33,6 +33,9 @@ export default function WaiverStatePickerScreen() {
 
   const handleSelect = async (abbr: string) => {
     await AsyncStorage.setItem('ap_state', abbr);
+    // Advance waiver progress to at least step 1 (state selected)
+    const cur = parseInt(await AsyncStorage.getItem('ap_waiver_progress') || '0', 10);
+    if (cur < 1) await AsyncStorage.setItem('ap_waiver_progress', '1');
     router.push({ pathname: '/waiver/state-overview', params: { state: abbr } });
   };
 

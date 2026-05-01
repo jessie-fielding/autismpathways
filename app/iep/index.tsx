@@ -292,16 +292,35 @@ export default function IEPScreen() {
   useFocusEffect(useCallback(() => { loadData(); }, [activeChild]));
   useChildChanged(() => { loadData(); });
 
+  // Helper: recalculate and persist IEP progress score (0-5) to dashboard key
+  const updateIepProgress = async (updatedGoals: IEPGoal[], updatedMeetings: IEPMeeting[], hasSetup: boolean) => {
+    if (!activeChild) return;
+    let score = 0;
+    if (hasSetup) score += 1;                                    // setup done
+    if (updatedGoals.length > 0) score += 1;                    // has goals
+    if (updatedMeetings.length > 0) score += 1;                 // has meeting
+    if (updatedGoals.some(g => g.progress >= 50)) score += 1;  // goal >=50%
+    if (updatedGoals.some(g => g.progress >= 100)) score += 1; // goal 100%
+    await AsyncStorage.setItem(`ap_iep_progress_${activeChild.id}`, String(score));
+    await AsyncStorage.setItem('ap_iep_progress', String(score));
+  };
+
   const saveGoals = async (newGoals: IEPGoal[]) => {
     if (!activeChild) return;
     await AsyncStorage.setItem(`iep_${activeChild.id}_goals`, JSON.stringify(newGoals));
     setGoals(newGoals.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+    const curSetup = JSON.parse(await AsyncStorage.getItem(`iep_${activeChild.id}_setup`) || 'null');
+    const curMeetings = JSON.parse(await AsyncStorage.getItem(`iep_${activeChild.id}_meetings`) || '[]');
+    await updateIepProgress(newGoals, curMeetings, !!curSetup);
   };
 
   const saveMeetings = async (newMeetings: IEPMeeting[]) => {
     if (!activeChild) return;
     await AsyncStorage.setItem(`iep_${activeChild.id}_meetings`, JSON.stringify(newMeetings));
     setMeetings(newMeetings.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+    const curSetup = JSON.parse(await AsyncStorage.getItem(`iep_${activeChild.id}_setup`) || 'null');
+    const curGoals = JSON.parse(await AsyncStorage.getItem(`iep_${activeChild.id}_goals`) || '[]');
+    await updateIepProgress(curGoals, newMeetings, !!curSetup);
   };
 
   const saveSetup = async () => {
@@ -309,6 +328,9 @@ export default function IEPScreen() {
     await AsyncStorage.setItem(`iep_${activeChild.id}_setup`, JSON.stringify(draftSetup));
     setSetup(draftSetup);
     setShowSetup(false);
+    const curGoals = JSON.parse(await AsyncStorage.getItem(`iep_${activeChild.id}_goals`) || '[]');
+    const curMeetings = JSON.parse(await AsyncStorage.getItem(`iep_${activeChild.id}_meetings`) || '[]');
+    await updateIepProgress(curGoals, curMeetings, true);
   };
 
   const clearFlags = async () => {

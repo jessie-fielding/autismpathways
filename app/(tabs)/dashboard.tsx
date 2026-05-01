@@ -586,6 +586,7 @@ export default function DashboardScreen() {
   const [medicaidProgress, setMedicaidProgress] = useState(0);
   const [waiverProgress, setWaiverProgress] = useState(0);
   const [iepProgress, setIepProgress] = useState(0);
+  const [pottyProgress, setPottyProgress] = useState(0);
   const [weeklyChecks, setWeeklyChecks] = useState<boolean[]>([false, false, false, false]);
   const [icdCodes, setIcdCodes] = useState<string[]>([]);
   const [devFlags, setDevFlags] = useState<string[]>([]);
@@ -594,6 +595,7 @@ export default function DashboardScreen() {
   const MEDICAID_TOTAL = 6;
   const WAIVER_TOTAL = 7;
   const IEP_TOTAL = 5;
+  const POTTY_TOTAL = 5;
 
   // ── Load data ──────────────────────────────────────────────────────────────
   // Accepts an optional explicit childId so we can call it immediately after
@@ -612,6 +614,7 @@ export default function DashboardScreen() {
         rawWaiver,    rawWaiverFallback,
         rawIep,       rawIepFallback,
         rawWeekly,
+        rawPotty,
         rawIcd,       rawIcdFallback,
         rawDev,       rawDevFallback,
       ] = await Promise.all([
@@ -620,6 +623,7 @@ export default function DashboardScreen() {
         AsyncStorage.getItem(ck('ap_medicaid_progress')), AsyncStorage.getItem('ap_medicaid_progress'),
         AsyncStorage.getItem(ck('ap_waiver_progress')),  AsyncStorage.getItem('ap_waiver_progress'),
         AsyncStorage.getItem(ck('ap_iep_progress')),     AsyncStorage.getItem('ap_iep_progress'),
+        AsyncStorage.getItem('ap_potty_progress'),
         AsyncStorage.getItem('ap_weekly_checks'),
         AsyncStorage.getItem(ck('ap_icd_quiz_codes')),   AsyncStorage.getItem('ap_icd_quiz_codes'),
         AsyncStorage.getItem(ck('ap_disability_quiz_results')), AsyncStorage.getItem('ap_disability_quiz_results'),
@@ -638,6 +642,7 @@ export default function DashboardScreen() {
       setMedicaidProgress(medicaidRaw ? parseInt(medicaidRaw, 10) : 0);
       setWaiverProgress(waiverRaw   ? parseInt(waiverRaw,   10) : 0);
       setIepProgress(iepRaw        ? parseInt(iepRaw,       10) : 0);
+      setPottyProgress(rawPotty    ? parseInt(rawPotty,     10) : 0);
       if (rawWeekly) setWeeklyChecks(JSON.parse(rawWeekly));
       if (icdRaw) setIcdCodes(JSON.parse(icdRaw));
       if (devRaw) {
@@ -676,7 +681,7 @@ export default function DashboardScreen() {
     { icon: '🏥', name: 'Medicaid', route: '/medicaid', progress: medicaidProgress, total: MEDICAID_TOTAL },
     { icon: '📋', name: 'Waiver', route: '/waiver', progress: waiverProgress, total: WAIVER_TOTAL },
     { icon: '🏫', name: 'IEP', route: '/iep', progress: iepProgress, total: IEP_TOTAL },
-    { icon: '🚽', name: 'Potty', route: '/potty', progress: 0, total: 5 },
+    { icon: '🚽', name: 'Potty', route: '/potty', progress: pottyProgress, total: POTTY_TOTAL },
   ];
 
   const TOOL_TILES = [

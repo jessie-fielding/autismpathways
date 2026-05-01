@@ -31,7 +31,7 @@ export default function Results() {
   const handleNext = () => {
     if (!selected) return;
     if (selected === 'approved') {
-      router.push('/waiver-journey/step-1-intro');
+      router.push('/medicaid/approved');
     } else if (selected === 'denied') {
       router.push('/medicaid/denial-reason');
     } else {
@@ -128,7 +128,7 @@ export default function Results() {
         >
           <Text style={[styles.navButtonText, styles.navButtonTextPrimary]}>
             {selected === 'approved'
-              ? 'Go to Waiver Journey →'
+              ? 'See Post-Approval Steps →'
               : selected === 'denied'
               ? 'Start denial pathway →'
               : selected === 'waiting'

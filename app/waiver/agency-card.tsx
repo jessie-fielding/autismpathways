@@ -58,6 +58,9 @@ export default function AgencyCardScreen() {
       await AsyncStorage.setItem('ap_saved_agencies', JSON.stringify(list));
     }
     setSaved(true);
+    // Advance waiver progress to at least step 3 (agency saved)
+    const cur = parseInt(await AsyncStorage.getItem('ap_waiver_progress') || '0', 10);
+    if (cur < 3) await AsyncStorage.setItem('ap_waiver_progress', '3');
     Alert.alert('Saved!', 'This agency has been saved to your profile.');
   };
 

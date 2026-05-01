@@ -35,6 +35,9 @@ export default function CountyPickerScreen() {
 
   const handleSelect = async (countyKey: string) => {
     await AsyncStorage.setItem('ap_county', countyKey);
+    // Advance waiver progress to at least step 2 (county selected)
+    const cur = parseInt(await AsyncStorage.getItem('ap_waiver_progress') || '0', 10);
+    if (cur < 2) await AsyncStorage.setItem('ap_waiver_progress', '2');
     router.push({ pathname: '/waiver/agency-card', params: { state: stateAbbr, county: countyKey } });
   };
 

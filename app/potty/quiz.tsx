@@ -5,7 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '../../lib/theme';
 
-type ScoreKey = 'encopresis' | 'bodySignals' | 'sensory' | 'regression';
+type ScoreKey = 'encopresis' | 'bodySignals' | 'sensory' | 'regression' | 'fearAnxiety' | 'developmental';
 
 interface Option {
   emoji: string;
@@ -144,7 +144,7 @@ export default function PottyQuizScreen() {
   };
 
   const calculateResult = async () => {
-    const scores: Record<ScoreKey, number> = { encopresis: 0, bodySignals: 0, sensory: 0, regression: 0 };
+    const scores: Record<ScoreKey, number> = { encopresis: 0, bodySignals: 0, sensory: 0, regression: 0, fearAnxiety: 0, developmental: 0 };
     QUESTIONS.forEach((question) => {
       const idx = answers[question.id];
       if (idx === undefined) return;
@@ -154,11 +154,34 @@ export default function PottyQuizScreen() {
       });
     });
 
+    // Encopresis guard: only route to encopresis if at least 2 of 3 specific
+    // constipation indicators are present:
+    //   Q2 (bowel frequency): option index 2 = every 3-5 days, or 3 = unsure
+    //   Q7 (hard stools):     option index 0 = frequently painful, or 1 = sometimes
+    //   Q3 (accident awareness): option index 0 = completely unaware
+    const q2Idx = answers['q2'];
+    const q3Idx = answers['q3'];
+    const q7Idx = answers['q7'];
+    const constipationIndicators = [
+      q2Idx === 2 || q2Idx === 3,   // infrequent / unsure bowel movements
+      q7Idx === 0 || q7Idx === 1,   // hard/painful stools
+      q3Idx === 0,                   // completely unaware of accidents
+    ].filter(Boolean).length;
+
+    // If fewer than 2 constipation indicators, zero out encopresis score
+    // so it can't win over other causes
+    if (constipationIndicators < 2) {
+      scores.encopresis = 0;
+    }
+
     const sorted = (Object.keys(scores) as ScoreKey[]).sort((a, b) => scores[b] - scores[a]);
     const primary = sorted[0];
     const secondary = scores[sorted[1]] >= 2 ? sorted[1] : null;
 
     await AsyncStorage.setItem('potty_result', JSON.stringify({ primary, secondary, scores, answers }));
+    // Advance potty progress to at least step 1 (quiz completed)
+    const cur = parseInt(await AsyncStorage.getItem('ap_potty_progress') || '0', 10);
+    if (cur < 1) await AsyncStorage.setItem('ap_potty_progress', '1');
     router.replace({ pathname: '/potty/result', params: { primary, secondary: secondary ?? '' } });
   };
 
