@@ -1,5 +1,7 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useActiveChild } from '../../../services/childManager';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useEffect }, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { COLORS, FONT_SIZES, RADIUS, SPACING } from '../../../lib/theme';
 
@@ -43,6 +45,14 @@ const SECTIONS = [
 
 export default function PaperworkChecklist() {
   const router = useRouter();
+  const { key: childKey } = useActiveChild();
+  useEffect(() => {
+    // Advance Medicaid dashboard progress to step 2
+    (async () => {
+      const cur = parseInt(await AsyncStorage.getItem(childKey('ap_medicaid_progress')) || '0', 10);
+      if (cur < 2) await AsyncStorage.setItem(childKey('ap_medicaid_progress'), '2');
+    })();
+  }, []);
   const [checked, setChecked] = useState<Set<string>>(new Set());
 
   const toggle = (id: string) => {

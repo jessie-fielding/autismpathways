@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useIsPremium } from '../../hooks/useIsPremium';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -279,24 +279,23 @@ export default function PottyResultScreen() {
           <Text style={styles.premiumHeaderText}>{premium.header}</Text>
         </View>
 
-        {/* Premium cards — unlocked for beta */}
+        {/* Premium cards — Coming Soon */}
         {premium.items.map((item) => (
-          <View key={item.title} style={[styles.premiumCard, isPremium && styles.premiumCardUnlocked]}>
+          <TouchableOpacity
+            key={item.title}
+            style={[styles.premiumCard, styles.premiumCardUnlocked]}
+            onPress={() => Alert.alert('Coming Soon', `${item.title} is being built and will be available in an upcoming update!`)}
+            activeOpacity={0.8}
+          >
             <View style={styles.tipCardTop}>
               <Text style={styles.tipIcon}>{item.emoji}</Text>
               <Text style={styles.tipTitle}>{item.title}</Text>
             </View>
             <Text style={styles.tipText}>{item.body}</Text>
-            {isPremium ? (
-              <View style={styles.unlockedBadge}>
-                <Text style={styles.unlockedBadgeText}>✓ Included</Text>
-              </View>
-            ) : (
-              <View style={styles.premiumBadge}>
-                <Text style={styles.premiumBadgeText}>⭐ Premium</Text>
-              </View>
-            )}
-          </View>
+            <View style={styles.comingSoonBadge}>
+              <Text style={styles.comingSoonBadgeText}>🚧 Coming Soon</Text>
+            </View>
+          </TouchableOpacity>
         ))}
 
         {/* CTA buttons */}
@@ -480,6 +479,17 @@ const styles = StyleSheet.create({
     borderColor: '#f0c040',
   },
   premiumBadgeText: { fontSize: FONT_SIZES.xs, fontWeight: '700', color: '#a07800' },
+  comingSoonBadge: {
+    alignSelf: 'flex-start',
+    marginTop: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#d0d0d0',
+  },
+  comingSoonBadgeText: { fontSize: FONT_SIZES.xs, fontWeight: '700', color: '#888888' },
   ctaSection: {
     padding: SPACING.lg,
     gap: SPACING.sm,

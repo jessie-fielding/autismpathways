@@ -1,5 +1,7 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useActiveChild } from '../../../services/childManager';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useEffect }, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { COLORS, FONT_SIZES, RADIUS, SPACING } from '../../../lib/theme';
 
@@ -59,6 +61,14 @@ const METHODS = [
 
 export default function InPersonVsPhone() {
   const router = useRouter();
+  const { key: childKey } = useActiveChild();
+  useEffect(() => {
+    // Advance Medicaid dashboard progress to step 3
+    (async () => {
+      const cur = parseInt(await AsyncStorage.getItem(childKey('ap_medicaid_progress')) || '0', 10);
+      if (cur < 3) await AsyncStorage.setItem(childKey('ap_medicaid_progress'), '3');
+    })();
+  }, []);
   const [selected, setSelected] = useState<string | null>(null);
 
   return (

@@ -302,6 +302,14 @@ export default function AgencyCardScreen() {
           </Text>
         </View>
 
+        {/* What's Next */}
+        <TouchableOpacity
+          style={styles.nextStepsBtn}
+          onPress={() => router.push('/waiver/next-steps')}
+        >
+          <Text style={styles.nextStepsBtnText}>What Do I Do Now? →</Text>
+        </TouchableOpacity>
+
         <View style={styles.rainbowBar} />
       </ScrollView>
     </View>
@@ -539,6 +547,20 @@ const styles = StyleSheet.create({
   disclaimerText: { fontSize: FONT_SIZES.xs, color: COLORS.textLight, lineHeight: 16 },
 
   rainbowBar: { height: 4, backgroundColor: COLORS.purple, marginTop: SPACING.lg },
+
+  nextStepsBtn: {
+    margin: SPACING.md,
+    marginTop: SPACING.md,
+    padding: SPACING.md,
+    backgroundColor: COLORS.purple,
+    borderRadius: RADIUS.md,
+    alignItems: 'center',
+  },
+  nextStepsBtnText: {
+    color: COLORS.white,
+    fontSize: FONT_SIZES.md,
+    fontWeight: '700',
+  },
 
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: SPACING.xl },
   emptyText: { fontSize: FONT_SIZES.md, color: COLORS.textLight, marginBottom: SPACING.md },

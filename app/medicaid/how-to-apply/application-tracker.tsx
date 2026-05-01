@@ -1,5 +1,7 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useActiveChild } from '../../../services/childManager';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useEffect }, { useState } from 'react';
 import {
   ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
@@ -8,6 +10,14 @@ import { useIsPremium } from '../../../hooks/useIsPremium';
 
 export default function ApplicationTracker() {
   const router = useRouter();
+  const { key: childKey } = useActiveChild();
+  useEffect(() => {
+    // Advance Medicaid dashboard progress to step 4
+    (async () => {
+      const cur = parseInt(await AsyncStorage.getItem(childKey('ap_medicaid_progress')) || '0', 10);
+      if (cur < 4) await AsyncStorage.setItem(childKey('ap_medicaid_progress'), '4');
+    })();
+  }, []);
   const { isPremium } = useIsPremium();
   const [applicationDate, setApplicationDate] = useState('');
   const [applicationMethod, setApplicationMethod] = useState('');

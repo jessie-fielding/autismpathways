@@ -1,5 +1,7 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useActiveChild } from '../../../services/childManager';
 import { useRouter } from 'expo-router';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { COLORS, FONT_SIZES, RADIUS, SPACING } from '../../../lib/theme';
 
@@ -13,6 +15,14 @@ const STEPS = [
 
 export default function HowToApplyIntro() {
   const router = useRouter();
+  const { key: childKey } = useActiveChild();
+  useEffect(() => {
+    // Advance Medicaid dashboard progress to step 1
+    (async () => {
+      const cur = parseInt(await AsyncStorage.getItem(childKey('ap_medicaid_progress')) || '0', 10);
+      if (cur < 1) await AsyncStorage.setItem(childKey('ap_medicaid_progress'), '1');
+    })();
+  }, []);
 
   return (
     <View style={styles.container}>
