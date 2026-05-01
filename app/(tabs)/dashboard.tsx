@@ -623,8 +623,8 @@ export default function DashboardScreen() {
         AsyncStorage.getItem(ck('ap_medicaid_progress')), AsyncStorage.getItem('ap_medicaid_progress'),
         AsyncStorage.getItem(ck('ap_waiver_progress')),  AsyncStorage.getItem('ap_waiver_progress'),
         AsyncStorage.getItem(ck('ap_iep_progress')),     AsyncStorage.getItem('ap_iep_progress'),
-        AsyncStorage.getItem('ap_potty_progress'),
         AsyncStorage.getItem('ap_weekly_checks'),
+        AsyncStorage.getItem('ap_potty_progress'),
         AsyncStorage.getItem(ck('ap_icd_quiz_codes')),   AsyncStorage.getItem('ap_icd_quiz_codes'),
         AsyncStorage.getItem(ck('ap_disability_quiz_results')), AsyncStorage.getItem('ap_disability_quiz_results'),
       ]);
