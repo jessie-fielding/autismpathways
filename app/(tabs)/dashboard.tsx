@@ -850,7 +850,7 @@ export default function DashboardScreen() {
               <View style={styles.upgradeLeft}>
                 <Text style={styles.upgradeTitle}>Unlock Premium Access</Text>
                 <Text style={styles.upgradeSub}>Appeal Tracker, unlimited contacts, all talking points scripts, and more.</Text>
-                <Text style={styles.upgradePrice}>$4.99/mo · $39.99/yr</Text>
+                <Text style={styles.upgradePrice}>$9.99/mo · $79.99/yr</Text>
               </View>
               <Text style={styles.upgradeArrow}>→</Text>
             </TouchableOpacity>

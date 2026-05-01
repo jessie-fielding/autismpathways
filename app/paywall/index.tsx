@@ -185,7 +185,7 @@ export default function PaywallScreen() {
             You're in the beta — all premium features are fully unlocked for free. Thank you for helping us build Autism Pathways!
           </Text>
           <Text style={styles.betaNote}>
-            When we launch on the App Store, premium will be available as an annual subscription. Beta users will receive a special discount.
+            Premium is available as a monthly or annual subscription.
           </Text>
           <TouchableOpacity
             style={styles.betaBtn}
@@ -219,7 +219,7 @@ export default function PaywallScreen() {
           {price ? (
             <View style={styles.pricePill}>
               <Text style={styles.priceText}>{price} / year</Text>
-              <Text style={styles.priceNote}>Less than a co-pay</Text>
+              <Text style={styles.priceNote}>Less than one therapy co-pay</Text>
             </View>
           ) : (
             <ActivityIndicator color={COLORS.purple} style={{ marginTop: SPACING.md }} />
