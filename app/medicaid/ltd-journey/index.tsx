@@ -12,7 +12,7 @@ export default function LtdJourneyIntro() {
         <TouchableOpacity onPress={() => router.back()}>
           <Text style={styles.backButton}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>LTD Provider Journey</Text>
+        <Text style={styles.headerTitle}>Provider Journey</Text>
       </View>
 
       <View style={styles.progressContainer}>
@@ -33,8 +33,8 @@ export default function LtdJourneyIntro() {
           <Text style={styles.sectionLabel}>PROVIDER VISIT PREP</Text>
           <Text style={styles.mainTitle}>Let's prepare for your provider visit</Text>
           <Text style={styles.mainSubtitle}>
-            The LTD determination happens at a provider visit. Going in prepared makes a real
-            difference in the outcome.
+            Your provider plays a key role in documenting your child's needs. Going in prepared can
+            make a big difference.
           </Text>
         </View>
 
@@ -42,9 +42,9 @@ export default function LtdJourneyIntro() {
           <View style={styles.introBox}>
             <Text style={styles.introIcon}>🩺</Text>
             <Text style={styles.introText}>
-              Your provider needs to complete a specific form — the PMIP — that documents your
-              child's functional limitations. The more clearly you can describe your child's daily
-              challenges, the more accurately the form will reflect their needs.
+              Your provider may need to complete specific paperwork or provide detailed notes about
+              your child's functional limitations. The more clearly you describe your child's daily
+              challenges, the more accurate that documentation will be.
             </Text>
           </View>
 
@@ -54,7 +54,7 @@ export default function LtdJourneyIntro() {
             { step: '1', title: 'Tell us about your child', desc: 'A short quiz to capture your child\'s needs and challenges' },
             { step: '2', title: 'Get a provider summary', desc: 'We\'ll organize everything into a clear one-page summary' },
             { step: '3', title: 'Bring it to your appointment', desc: 'Hand it to your provider so they have the full picture' },
-            { step: '4', title: 'Get the PMIP form', desc: 'Your provider completes the form — then you apply for LTD' },
+            { step: '4', title: 'Get provider documentation', desc: 'Your provider completes the required paperwork — then you can move forward with your application' },
           ].map((item) => (
             <View key={item.step} style={styles.stepRow}>
               <View style={styles.stepBadge}>
@@ -71,8 +71,8 @@ export default function LtdJourneyIntro() {
             <Text style={styles.infoLabel}>💡 WHY THIS MATTERS</Text>
             <Text style={styles.infoText}>
               Providers see many patients. Coming in with a clear, organized summary of your child's
-              needs helps them complete the PMIP form accurately and thoroughly — which directly
-              affects your child's eligibility determination.
+              needs helps them complete the required documentation accurately and thoroughly — which
+              directly affects your child's eligibility determination.
             </Text>
           </View>
         </View>

@@ -4,10 +4,10 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-nati
 import { COLORS, FONT_SIZES, RADIUS, SPACING } from '../../../lib/theme';
 
 const APPLY_STEPS = [
-  { id: 's1', title: 'Gather your PMIP form', desc: 'Make sure it\'s signed and dated by your provider' },
-  { id: 's2', title: 'Attach your child\'s diagnosis documentation', desc: 'Evaluation reports, diagnosis letters from providers' },
-  { id: 's3', title: 'Complete the LTD application', desc: 'Available through your state\'s Medicaid office or online portal' },
-  { id: 's4', title: 'Submit the application', desc: 'In person, by mail, or online depending on your state' },
+  { id: 's1', title: 'Gather provider documentation', desc: 'Collect any paperwork or notes your provider completed about your child\'s needs' },
+  { id: 's2', title: 'Include diagnosis and evaluation records', desc: 'Evaluation reports, diagnosis letters, and any assessments from providers' },
+  { id: 's3', title: "Complete your state's application", desc: 'Available through your state\'s Medicaid office or online portal' },
+  { id: 's4', title: "Submit through your state's Medicaid or waiver system", desc: 'In person, by mail, or online depending on your state' },
   { id: 's5', title: 'Note your submission date', desc: 'Follow up in 2–3 weeks if you haven\'t heard back' },
 ];
 
@@ -27,7 +27,7 @@ export default function ApplyForLtd() {
         <TouchableOpacity onPress={() => router.back()}>
           <Text style={styles.backButton}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>LTD Provider Journey</Text>
+        <Text style={styles.headerTitle}>Provider Journey</Text>
       </View>
 
       <View style={styles.progressContainer}>
@@ -45,11 +45,11 @@ export default function ApplyForLtd() {
           <View style={styles.sectionNumber}>
             <Text style={styles.sectionNumberText}>4</Text>
           </View>
-          <Text style={styles.sectionLabel}>APPLY FOR LTD</Text>
-          <Text style={styles.mainTitle}>You're ready to apply for LTD</Text>
+          <Text style={styles.sectionLabel}>SUBMIT YOUR APPLICATION</Text>
+          <Text style={styles.mainTitle}>Next step: submit your application</Text>
           <Text style={styles.mainSubtitle}>
-            With your PMIP form in hand, you have everything you need. Follow these steps to submit
-            your LTD application.
+            With your documentation ready, you can move forward with your state's disability-based
+            Medicaid or waiver application.
           </Text>
         </View>
 
@@ -87,8 +87,9 @@ export default function ApplyForLtd() {
             <Text style={styles.infoText}>
               Call your state's Medicaid office and say:{'\n\n'}
               <Text style={styles.script}>
-                "I'd like to submit an LTD application for my child. They have a completed PMIP
-                form. Can you tell me the process and where to submit?"
+                "I'd like to submit a disability-based Medicaid application for my child. I have
+                provider documentation of their needs. Can you tell me the process and where to
+                submit?"
               </Text>
             </Text>
           </View>
@@ -96,7 +97,7 @@ export default function ApplyForLtd() {
           <View style={styles.nextBox}>
             <Text style={styles.nextTitle}>AFTER APPROVAL</Text>
             <Text style={styles.nextText}>
-              Once your child is approved for LTD, they become eligible for Medicaid waivers. These
+              Once your child is approved, they may become eligible for Medicaid waivers. These
               waivers can fund therapies, respite care, assistive technology, and community support
               services.
             </Text>

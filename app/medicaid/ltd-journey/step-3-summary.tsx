@@ -42,7 +42,7 @@ export default function Step3Summary() {
         <TouchableOpacity onPress={() => router.back()}>
           <Text style={styles.backButton}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>LTD Provider Journey</Text>
+        <Text style={styles.headerTitle}>Provider Journey</Text>
       </View>
 
       <View style={styles.progressContainer}>
@@ -64,7 +64,7 @@ export default function Step3Summary() {
           <Text style={styles.mainTitle}>Here's what to share with your provider</Text>
           <Text style={styles.mainSubtitle}>
             Show this screen to your provider or print it before your appointment. It gives them
-            everything they need to complete the PMIP form accurately.
+            everything they need to complete the required documentation accurately.
           </Text>
         </View>
 
@@ -73,7 +73,7 @@ export default function Step3Summary() {
           <View style={styles.summaryCard}>
             <View style={styles.summaryHeader}>
               <Text style={styles.summaryTitle}>PROVIDER BRIEFING</Text>
-              <Text style={styles.summarySubtitle}>For LTD / PMIP Determination</Text>
+              <Text style={styles.summarySubtitle}>For Disability-Based Medicaid Documentation</Text>
             </View>
 
             <View style={styles.summarySection}>
@@ -121,8 +121,8 @@ export default function Step3Summary() {
 
             <View style={styles.summaryFooter}>
               <Text style={styles.summaryFooterText}>
-                Please complete the PMIP form based on the above information. This child is seeking
-                Long-Term Disability determination for Medicaid eligibility.
+                Please complete any required state-specific documentation based on the above
+                information. This child is seeking disability-based Medicaid eligibility.
               </Text>
             </View>
           </View>
@@ -132,8 +132,8 @@ export default function Step3Summary() {
             <Text style={styles.tipText}>
               Show this to your provider and say:{'\n\n'}
               <Text style={styles.script}>
-                "We're here to get the PMIP form completed for my child's LTD determination. I've
-                put together a summary of their needs to help you fill it out accurately."
+                "I've put together a summary of my child's needs to help you complete any required
+                documentation for their disability-based Medicaid eligibility."
               </Text>
             </Text>
           </View>

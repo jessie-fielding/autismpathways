@@ -5,16 +5,40 @@ import { COLORS, FONT_SIZES, RADIUS, SPACING } from '../../../lib/theme';
 
 const OPTIONS = [
   {
-    id: 'yes',
-    icon: '✅',
-    title: 'Yes, we have LTD',
-    description: 'Our child has been approved for Long-Term Disability determination',
+    id: 'not_started',
+    icon: '🌱',
+    title: "We haven't started yet",
+    description: "We're just beginning to explore the disability-based pathway",
   },
   {
-    id: 'no',
-    icon: '⏳',
-    title: 'No, not yet',
-    description: 'We haven\'t gone through the LTD process yet',
+    id: 'talked_provider',
+    icon: '🩺',
+    title: "We've talked to a provider",
+    description: "We've had a conversation but haven't gathered paperwork yet",
+  },
+  {
+    id: 'gathering',
+    icon: '📋',
+    title: "We're gathering paperwork",
+    description: "We're collecting documentation and forms needed for the process",
+  },
+  {
+    id: 'submitted',
+    icon: '📬',
+    title: "We've submitted an application",
+    description: "We've submitted and are waiting to hear back",
+  },
+  {
+    id: 'approved',
+    icon: '✅',
+    title: "We've been approved",
+    description: "Our child has been approved for disability-based Medicaid eligibility",
+  },
+  {
+    id: 'denied',
+    icon: '⚠️',
+    title: 'We were denied',
+    description: "Our application was denied and we're figuring out next steps",
   },
 ];
 
@@ -24,11 +48,17 @@ export default function LtdCheck() {
 
   const handleNext = () => {
     if (!selected) return;
-    if (selected === 'yes') {
+    if (selected === 'approved') {
       router.push('/waiver-journey/step-1-intro');
     } else {
       router.push('/medicaid/ltd-journey');
     }
+  };
+
+  const getButtonLabel = () => {
+    if (selected === 'approved') return 'Go to Waiver Journey →';
+    if (selected) return 'Prepare for provider →';
+    return 'Continue →';
   };
 
   return (
@@ -55,11 +85,10 @@ export default function LtdCheck() {
           <View style={styles.sectionNumber}>
             <Text style={styles.sectionNumberText}>2</Text>
           </View>
-          <Text style={styles.sectionLabel}>LTD STATUS</Text>
-          <Text style={styles.mainTitle}>Has your child been approved for LTD?</Text>
+          <Text style={styles.sectionLabel}>YOUR STATUS</Text>
+          <Text style={styles.mainTitle}>Where are you in the process?</Text>
           <Text style={styles.mainSubtitle}>
-            Long-Term Disability (LTD) determination is the key that unlocks the disability-based
-            Medicaid pathway. Let's find out where you are.
+            Let us know where you are so we can point you in the right direction.
           </Text>
         </View>
 
@@ -80,21 +109,21 @@ export default function LtdCheck() {
             </TouchableOpacity>
           ))}
 
-          {selected === 'yes' && (
+          {selected === 'approved' && (
             <View style={styles.successBox}>
               <Text style={styles.successLabel}>🎉 GREAT NEWS</Text>
               <Text style={styles.successText}>
-                With LTD approval, you're ready to explore Medicaid waivers. These can cover
+                With your approval, you're ready to explore Medicaid waivers. These can cover
                 therapies, respite care, assistive technology, and more for your child.
               </Text>
             </View>
           )}
 
-          {selected === 'no' && (
+          {selected && selected !== 'approved' && (
             <View style={styles.infoBox}>
               <Text style={styles.infoLabel}>📋 WHAT'S NEXT</Text>
               <Text style={styles.infoText}>
-                No problem — we'll walk you through how to prepare for the LTD provider visit. This
+                No problem — we'll walk you through how to prepare for the provider visit. This
                 includes what to bring, what to say, and how to make sure the provider has everything
                 they need to complete the documentation.
               </Text>
@@ -116,7 +145,7 @@ export default function LtdCheck() {
           onPress={handleNext}
         >
           <Text style={[styles.navButtonText, styles.navButtonTextPrimary]}>
-            {selected === 'yes' ? 'Go to Waiver Journey →' : selected === 'no' ? 'Prepare for provider →' : 'Continue →'}
+            {getButtonLabel()}
           </Text>
         </TouchableOpacity>
       </View>

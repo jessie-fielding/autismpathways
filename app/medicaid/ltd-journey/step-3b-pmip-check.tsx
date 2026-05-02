@@ -7,14 +7,14 @@ const OPTIONS = [
   {
     id: 'yes',
     icon: '📄',
-    title: 'Yes, I have the form',
-    description: 'The provider completed the PMIP form and gave it to me',
+    title: 'Yes, I have documentation',
+    description: 'The provider completed paperwork or notes about my child\'s needs',
   },
   {
     id: 'no',
     icon: '🔄',
-    title: 'No, need to try again',
-    description: 'The provider didn\'t complete it or I need to go back',
+    title: 'Not yet',
+    description: 'The provider didn\'t complete it or I need to follow up',
   },
 ];
 
@@ -38,7 +38,7 @@ export default function Step3bPmipCheck() {
         <TouchableOpacity onPress={() => router.back()}>
           <Text style={styles.backButton}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>LTD Provider Journey</Text>
+        <Text style={styles.headerTitle}>Provider Journey</Text>
       </View>
 
       <View style={styles.progressContainer}>
@@ -57,10 +57,10 @@ export default function Step3bPmipCheck() {
             <Text style={styles.sectionNumberText}>3B</Text>
           </View>
           <Text style={styles.sectionLabel}>AFTER THE VISIT</Text>
-          <Text style={styles.mainTitle}>Did your provider give you the PMIP form?</Text>
+          <Text style={styles.mainTitle}>Did your provider complete any paperwork?</Text>
           <Text style={styles.mainSubtitle}>
-            The PMIP form is the key document for your LTD application. It must be completed by your
-            provider at or after the visit.
+            After your visit, your provider may have completed documentation about your child's
+            disability needs. This is an important step in the eligibility process.
           </Text>
         </View>
 
@@ -86,13 +86,13 @@ export default function Step3bPmipCheck() {
               <Text style={styles.warningLabel}>💡 TIPS FOR YOUR NEXT VISIT</Text>
               <Text style={styles.warningText}>
                 When you go back, be direct:{'\n\n'}
-                <Text style={styles.script}>
-                  "We need the PMIP form completed today for my child's LTD determination. Can you
-                  complete it before we leave?"
+              <Text style={styles.script}>
+                  "I need documentation of my child's functional limitations and disability-related
+                  needs for a Medicaid eligibility application. Can you complete that before we leave?"
                 </Text>
                 {'\n\n'}
-                If the provider is unfamiliar with the form, ask them to contact the Medicaid office
-                directly. Some offices will fax the form to the provider.
+                If the provider is unsure what's needed, ask them to contact your state's Medicaid
+                office directly. Some offices will send the required form to the provider.
               </Text>
             </View>
           )}
@@ -101,19 +101,19 @@ export default function Step3bPmipCheck() {
             <View style={styles.successBox}>
               <Text style={styles.successLabel}>✅ YOU'RE READY</Text>
               <Text style={styles.successText}>
-                Excellent! With the PMIP form in hand, you're ready to apply for LTD. This is a
-                major milestone — you're very close to unlocking the disability-based Medicaid
-                pathway.
+                Excellent! With your documentation in hand, you're ready to move forward with your
+                application. This is a major milestone — you're very close to unlocking the
+                disability-based Medicaid pathway.
               </Text>
             </View>
           )}
 
           <View style={styles.infoBox}>
-            <Text style={styles.infoLabel}>ℹ️ WHAT IS THE PMIP FORM?</Text>
+            <Text style={styles.infoLabel}>ℹ️ ABOUT THE DOCUMENTATION</Text>
             <Text style={styles.infoText}>
-              The PMIP (Physician's Medical Information Profile) is a standardized form your
-              provider completes to document your child's functional limitations. It is required for
-              the LTD determination process and is submitted with your LTD application.
+              Your state may require a specific form (like a PMIP in Colorado) that your provider
+              completes to document your child's functional limitations. This documentation is
+              submitted as part of your disability-based Medicaid eligibility application.
             </Text>
           </View>
         </View>
@@ -132,7 +132,7 @@ export default function Step3bPmipCheck() {
           onPress={handleNext}
         >
           <Text style={[styles.navButtonText, styles.navButtonTextPrimary]}>
-            {selected === 'yes' ? 'Apply for LTD →' : selected === 'no' ? 'Try again →' : 'Continue →'}
+            {selected === 'yes' ? 'Submit application →' : selected === 'no' ? 'Try again →' : 'Continue →'}
           </Text>
         </TouchableOpacity>
       </View>

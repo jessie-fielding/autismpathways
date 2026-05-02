@@ -38,18 +38,18 @@ export default function IncomeJourneyIntro() {
           <View style={styles.introBox}>
             <Text style={styles.introIcon}>💙</Text>
             <Text style={styles.introText}>
-              Being denied for household Medicaid based on income is frustrating — but it does not
-              close the door for your child. There is a separate disability-based pathway that many
-              families don't know about.
+              Being denied Medicaid based on income is frustrating, but it doesn't always mean your
+              child won't qualify. There is a separate disability-based pathway that some children
+              may qualify for, depending on their needs.
             </Text>
           </View>
 
           <View style={styles.warningBox}>
             <Text style={styles.warningLabel}>⚡ IMPORTANT TO KNOW</Text>
             <Text style={styles.warningText}>
-              Household income limits do <Text style={styles.bold}>not</Text> apply to
-              disability-based Medicaid pathways for children. Your child may qualify based on their
-              disability status alone — regardless of your family's income.
+              Household income limits often don't apply the same way for disability-based Medicaid
+              pathways. In some cases, eligibility is based on your child's medical and functional
+              needs rather than family income.
             </Text>
           </View>
 
@@ -59,20 +59,20 @@ export default function IncomeJourneyIntro() {
             {
               step: '1',
               color: COLORS.purple,
-              title: 'Long-Term Disability (LTD) Determination',
-              desc: 'A formal process where a provider documents your child\'s disability and support needs.',
+              title: 'Provider Documentation',
+              desc: "Your child's provider documents their diagnosis, needs, and daily challenges.",
             },
             {
               step: '2',
               color: '#4D96FF',
-              title: 'PMIP Form Completion',
-              desc: 'Your provider completes a specific form that establishes your child\'s level of care needs.',
+              title: 'Required Forms or Evaluations',
+              desc: 'Your state may require specific forms or assessments to understand your child\'s level of care needs.',
             },
             {
               step: '3',
               color: '#4CAF50',
-              title: 'Medicaid Waiver Eligibility',
-              desc: 'With LTD approval, your child may qualify for Medicaid waivers that cover therapies, respite, and more.',
+              title: 'Eligibility Review',
+              desc: 'The state reviews medical documentation and determines if your child qualifies for disability-based Medicaid or waiver services.',
             },
           ].map((item, idx) => (
             <View key={item.step} style={styles.pathwayStep}>
@@ -90,11 +90,11 @@ export default function IncomeJourneyIntro() {
           ))}
 
           <View style={styles.infoBox}>
-            <Text style={styles.infoLabel}>💡 WHAT IS LTD?</Text>
+            <Text style={styles.infoLabel}>💡 WHAT DOES "DISABILITY-BASED" MEAN?</Text>
             <Text style={styles.infoText}>
-              Long-Term Disability determination is a clinical assessment of your child's functional
-              limitations. It's completed by a qualified provider and used to establish eligibility
-              for disability-based programs — separate from household income.
+              This pathway focuses on how your child's condition impacts their daily life. It looks
+              at things like communication, behavior, safety, and ability to complete everyday tasks.
+              A provider will usually need to document these needs clearly.
             </Text>
           </View>
         </View>
@@ -111,7 +111,7 @@ export default function IncomeJourneyIntro() {
           style={[styles.navButton, styles.navButtonPrimary]}
           onPress={() => router.push('/medicaid/income-journey/ltd-check')}
         >
-          <Text style={[styles.navButtonText, styles.navButtonTextPrimary]}>Check LTD status →</Text>
+          <Text style={[styles.navButtonText, styles.navButtonTextPrimary]}>Check your status →</Text>
         </TouchableOpacity>
       </View>
     </View>
