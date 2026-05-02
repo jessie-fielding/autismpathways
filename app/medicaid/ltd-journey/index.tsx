@@ -1,10 +1,14 @@
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useMedicaidState } from '../../../lib/MedicaidStateContext';
 import { COLORS, FONT_SIZES, RADIUS, SPACING } from '../../../lib/theme';
 
 export default function LtdJourneyIntro() {
   const router = useRouter();
+  const { stateData } = useMedicaidState();
+  const stateName = stateData?.stateName ?? null;
+  const formName = stateData?.requiredForm ?? 'required documentation';
 
   return (
     <View style={styles.container}>
@@ -12,7 +16,10 @@ export default function LtdJourneyIntro() {
         <TouchableOpacity onPress={() => router.back()}>
           <Text style={styles.backButton}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Provider Journey</Text>
+        <View style={styles.headerTextGroup}>
+          <Text style={styles.headerTitle}>Provider Journey</Text>
+          {stateName && <Text style={styles.headerState}>📍 {stateName}</Text>}
+        </View>
       </View>
 
       <View style={styles.progressContainer}>
@@ -54,7 +61,7 @@ export default function LtdJourneyIntro() {
             { step: '1', title: 'Tell us about your child', desc: 'A short quiz to capture your child\'s needs and challenges' },
             { step: '2', title: 'Get a provider summary', desc: 'We\'ll organize everything into a clear one-page summary' },
             { step: '3', title: 'Bring it to your appointment', desc: 'Hand it to your provider so they have the full picture' },
-            { step: '4', title: 'Get provider documentation', desc: 'Your provider completes the required paperwork — then you can move forward with your application' },
+            { step: '4', title: 'Get provider documentation', desc: `Your provider completes the ${formName} — then you can move forward with your application` },
           ].map((item) => (
             <View key={item.step} style={styles.stepRow}>
               <View style={styles.stepBadge}>
@@ -104,7 +111,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center',
   },
   backButton: { fontSize: 22, color: COLORS.purple, marginRight: SPACING.md },
+  headerTextGroup: { flex: 1 },
   headerTitle: { fontSize: FONT_SIZES.lg, fontWeight: '700', color: COLORS.text },
+  headerState: { fontSize: FONT_SIZES.xs, color: COLORS.purple, marginTop: 2 },
   progressContainer: {
     backgroundColor: COLORS.white, paddingHorizontal: SPACING.lg, paddingBottom: SPACING.md,
     borderBottomWidth: 1, borderBottomColor: COLORS.border,

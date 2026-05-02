@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useMedicaidState } from '../../../lib/MedicaidStateContext';
 import { COLORS, FONT_SIZES, RADIUS, SPACING } from '../../../lib/theme';
 
 const OPTIONS = [
@@ -20,7 +21,11 @@ const OPTIONS = [
 
 export default function Step3bPmipCheck() {
   const router = useRouter();
+  const { stateData } = useMedicaidState();
   const [selected, setSelected] = useState<string | null>(null);
+  const formName = stateData?.requiredForm ?? 'required documentation';
+  const stateName = stateData?.stateName ?? null;
+  const formNote = stateData?.requiredFormNote ?? null;
 
   const handleNext = () => {
     if (!selected) return;
@@ -38,7 +43,10 @@ export default function Step3bPmipCheck() {
         <TouchableOpacity onPress={() => router.back()}>
           <Text style={styles.backButton}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Provider Journey</Text>
+        <View style={styles.headerTextGroup}>
+          <Text style={styles.headerTitle}>Provider Journey</Text>
+          {stateName && <Text style={styles.headerState}>📍 {stateName}</Text>}
+        </View>
       </View>
 
       <View style={styles.progressContainer}>
@@ -111,9 +119,9 @@ export default function Step3bPmipCheck() {
           <View style={styles.infoBox}>
             <Text style={styles.infoLabel}>ℹ️ ABOUT THE DOCUMENTATION</Text>
             <Text style={styles.infoText}>
-              Your state may require a specific form (like a PMIP in Colorado) that your provider
-              completes to document your child's functional limitations. This documentation is
-              submitted as part of your disability-based Medicaid eligibility application.
+              {formNote
+                ? formNote
+                : 'Your state may require a specific form (like a PMIP in Colorado) that your provider completes to document your child\'s functional limitations. This documentation is submitted as part of your disability-based Medicaid eligibility application.'}
             </Text>
           </View>
         </View>
@@ -148,7 +156,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center',
   },
   backButton: { fontSize: 22, color: COLORS.purple, marginRight: SPACING.md },
+  headerTextGroup: { flex: 1 },
   headerTitle: { fontSize: FONT_SIZES.lg, fontWeight: '700', color: COLORS.text },
+  headerState: { fontSize: FONT_SIZES.xs, color: COLORS.purple, marginTop: 2 },
   progressContainer: {
     backgroundColor: COLORS.white, paddingHorizontal: SPACING.lg, paddingBottom: SPACING.md,
     borderBottomWidth: 1, borderBottomColor: COLORS.border,

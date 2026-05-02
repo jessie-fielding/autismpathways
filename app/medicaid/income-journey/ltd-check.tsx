@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useMedicaidState } from '../../../lib/MedicaidStateContext';
 import { COLORS, FONT_SIZES, RADIUS, SPACING } from '../../../lib/theme';
 
 const OPTIONS = [
@@ -44,6 +45,8 @@ const OPTIONS = [
 
 export default function LtdCheck() {
   const router = useRouter();
+  const { stateData } = useMedicaidState();
+  const stateName = stateData?.stateName ?? null;
   const [selected, setSelected] = useState<string | null>(null);
 
   const handleNext = () => {
@@ -67,7 +70,10 @@ export default function LtdCheck() {
         <TouchableOpacity onPress={() => router.back()}>
           <Text style={styles.backButton}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Income Journey</Text>
+        <View style={styles.headerTextGroup}>
+          <Text style={styles.headerTitle}>Income Journey</Text>
+          {stateName && <Text style={styles.headerState}>📍 {stateName}</Text>}
+        </View>
       </View>
 
       <View style={styles.progressContainer}>
@@ -161,7 +167,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center',
   },
   backButton: { fontSize: 22, color: COLORS.purple, marginRight: SPACING.md },
+  headerTextGroup: { flex: 1 },
   headerTitle: { fontSize: FONT_SIZES.lg, fontWeight: '700', color: COLORS.text },
+  headerState: { fontSize: FONT_SIZES.xs, color: COLORS.purple, marginTop: 2 },
   progressContainer: {
     backgroundColor: COLORS.white, paddingHorizontal: SPACING.lg, paddingBottom: SPACING.md,
     borderBottomWidth: 1, borderBottomColor: COLORS.border,

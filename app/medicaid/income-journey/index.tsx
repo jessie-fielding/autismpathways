@@ -1,10 +1,20 @@
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useMedicaidState } from '../../../lib/MedicaidStateContext';
 import { COLORS, FONT_SIZES, RADIUS, SPACING } from '../../../lib/theme';
 
 export default function IncomeJourneyIntro() {
   const router = useRouter();
+  const { stateData } = useMedicaidState();
+
+  // State-aware content — falls back to universal language if no state selected
+  const incomeHeadline = stateData?.incomeRuleHeadline ??
+    "Household income limits often don't apply the same way for disability-based Medicaid pathways.";
+  const incomeDetail = stateData?.incomeRuleDetail ??
+    "In some cases, eligibility is based on your child's medical and functional needs rather than family income.";
+  const stateName = stateData?.stateName ?? null;
+  const programName = stateData?.programName ?? 'Disability Determination';
 
   return (
     <View style={styles.container}>
@@ -12,7 +22,12 @@ export default function IncomeJourneyIntro() {
         <TouchableOpacity onPress={() => router.back()}>
           <Text style={styles.backButton}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Income Journey</Text>
+        <View style={styles.headerTextGroup}>
+          <Text style={styles.headerTitle}>Income Journey</Text>
+          {stateName && (
+            <Text style={styles.headerState}>📍 {stateName}</Text>
+          )}
+        </View>
       </View>
 
       <View style={styles.progressContainer}>
@@ -46,11 +61,10 @@ export default function IncomeJourneyIntro() {
 
           <View style={styles.warningBox}>
             <Text style={styles.warningLabel}>⚡ IMPORTANT TO KNOW</Text>
-            <Text style={styles.warningText}>
-              Household income limits often don't apply the same way for disability-based Medicaid
-              pathways. In some cases, eligibility is based on your child's medical and functional
-              needs rather than family income.
-            </Text>
+            <Text style={styles.warningText}>{incomeHeadline}</Text>
+            {stateData && (
+              <Text style={[styles.warningText, { marginTop: SPACING.sm }]}>{incomeDetail}</Text>
+            )}
           </View>
 
           <Text style={styles.pathwayTitle}>THE DISABILITY PATHWAY</Text>
@@ -65,14 +79,18 @@ export default function IncomeJourneyIntro() {
             {
               step: '2',
               color: '#4D96FF',
-              title: 'Required Forms or Evaluations',
-              desc: 'Your state may require specific forms or assessments to understand your child\'s level of care needs.',
+              title: stateData ? `${stateData.requiredForm}` : 'Required Forms or Evaluations',
+              desc: stateData
+                ? stateData.requiredFormNote
+                : "Your state may require specific forms or assessments to understand your child's level of care needs.",
             },
             {
               step: '3',
               color: '#4CAF50',
               title: 'Eligibility Review',
-              desc: 'The state reviews medical documentation and determines if your child qualifies for disability-based Medicaid or waiver services.',
+              desc: stateData
+                ? `${stateData.stateName} reviews the documentation and determines if your child qualifies for disability-based Medicaid or waiver services.`
+                : 'The state reviews medical documentation and determines if your child qualifies for disability-based Medicaid or waiver services.',
             },
           ].map((item, idx) => (
             <View key={item.step} style={styles.pathwayStep}>
@@ -97,6 +115,18 @@ export default function IncomeJourneyIntro() {
               A provider will usually need to document these needs clearly.
             </Text>
           </View>
+
+          {stateData && stateData.waiverPrograms.length > 0 && (
+            <View style={styles.waiverBox}>
+              <Text style={styles.waiverLabel}>🏆 WAIVER PROGRAMS IN {stateData.stateName.toUpperCase()}</Text>
+              {stateData.waiverPrograms.map((w) => (
+                <View key={w.acronym} style={styles.waiverRow}>
+                  <Text style={styles.waiverName}>{w.acronym} — {w.name}</Text>
+                  <Text style={styles.waiverDesc}>{w.description}</Text>
+                </View>
+              ))}
+            </View>
+          )}
         </View>
       </ScrollView>
 
@@ -126,7 +156,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center',
   },
   backButton: { fontSize: 22, color: COLORS.purple, marginRight: SPACING.md },
+  headerTextGroup: { flex: 1 },
   headerTitle: { fontSize: FONT_SIZES.lg, fontWeight: '700', color: COLORS.text },
+  headerState: { fontSize: FONT_SIZES.xs, color: COLORS.purple, marginTop: 2 },
   progressContainer: {
     backgroundColor: COLORS.white, paddingHorizontal: SPACING.lg, paddingBottom: SPACING.md,
     borderBottomWidth: 1, borderBottomColor: COLORS.border,
@@ -176,6 +208,14 @@ const styles = StyleSheet.create({
   },
   infoLabel: { fontSize: FONT_SIZES.xs, fontWeight: '700', color: COLORS.infoText, letterSpacing: 1, marginBottom: SPACING.sm },
   infoText: { fontSize: FONT_SIZES.sm, color: COLORS.infoText, lineHeight: 20 },
+  waiverBox: {
+    backgroundColor: COLORS.white, borderRadius: RADIUS.md, padding: SPACING.lg,
+    marginTop: SPACING.lg, borderWidth: 1, borderColor: COLORS.border,
+  },
+  waiverLabel: { fontSize: FONT_SIZES.xs, fontWeight: '700', color: COLORS.purple, letterSpacing: 1, marginBottom: SPACING.md },
+  waiverRow: { marginBottom: SPACING.md },
+  waiverName: { fontSize: FONT_SIZES.sm, fontWeight: '700', color: COLORS.text, marginBottom: 2 },
+  waiverDesc: { fontSize: FONT_SIZES.xs, color: COLORS.textMid, lineHeight: 18 },
   navigationButtons: {
     flexDirection: 'row', gap: SPACING.md, paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.lg, backgroundColor: COLORS.white,

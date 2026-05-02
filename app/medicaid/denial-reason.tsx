@@ -61,7 +61,7 @@ export default function DenialReason() {
   const handleNext = () => {
     if (!selected) return;
     if (selected === 'income') {
-      router.push('/medicaid/income-journey');
+      router.push('/medicaid/select-state');
     } else {
       // admin or unsure → appeal path
       router.push('/medicaid/appeal-journey');

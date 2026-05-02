@@ -1,6 +1,7 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useMedicaidState } from '../../../lib/MedicaidStateContext';
 import { COLORS, FONT_SIZES, RADIUS, SPACING } from '../../../lib/theme';
 
 const NEED_LABELS: Record<string, string> = {
@@ -25,6 +26,9 @@ const DIAGNOSIS_LABELS: Record<string, string> = {
 
 export default function Step3Summary() {
   const router = useRouter();
+  const { stateData } = useMedicaidState();
+  const stateName = stateData?.stateName ?? null;
+  const formName = stateData?.requiredForm ?? null;
   const params = useLocalSearchParams<{
     childName: string;
     childAge: string;
@@ -42,7 +46,10 @@ export default function Step3Summary() {
         <TouchableOpacity onPress={() => router.back()}>
           <Text style={styles.backButton}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Provider Journey</Text>
+        <View style={styles.headerTextGroup}>
+          <Text style={styles.headerTitle}>Provider Journey</Text>
+          {stateName && <Text style={styles.headerState}>📍 {stateName}</Text>}
+        </View>
       </View>
 
       <View style={styles.progressContainer}>
@@ -73,7 +80,9 @@ export default function Step3Summary() {
           <View style={styles.summaryCard}>
             <View style={styles.summaryHeader}>
               <Text style={styles.summaryTitle}>PROVIDER BRIEFING</Text>
-              <Text style={styles.summarySubtitle}>For Disability-Based Medicaid Documentation</Text>
+              <Text style={styles.summarySubtitle}>
+                {formName ? `For ${formName}` : 'For Disability-Based Medicaid Documentation'}
+              </Text>
             </View>
 
             <View style={styles.summarySection}>
@@ -166,7 +175,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center',
   },
   backButton: { fontSize: 22, color: COLORS.purple, marginRight: SPACING.md },
+  headerTextGroup: { flex: 1 },
   headerTitle: { fontSize: FONT_SIZES.lg, fontWeight: '700', color: COLORS.text },
+  headerState: { fontSize: FONT_SIZES.xs, color: COLORS.purple, marginTop: 2 },
   progressContainer: {
     backgroundColor: COLORS.white, paddingHorizontal: SPACING.lg, paddingBottom: SPACING.md,
     borderBottomWidth: 1, borderBottomColor: COLORS.border,

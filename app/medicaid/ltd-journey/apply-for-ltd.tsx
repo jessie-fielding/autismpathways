@@ -1,9 +1,10 @@
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useMedicaidState } from '../../../lib/MedicaidStateContext';
 import { COLORS, FONT_SIZES, RADIUS, SPACING } from '../../../lib/theme';
 
-const APPLY_STEPS = [
+const BASE_STEPS = [
   { id: 's1', title: 'Gather provider documentation', desc: 'Collect any paperwork or notes your provider completed about your child\'s needs' },
   { id: 's2', title: 'Include diagnosis and evaluation records', desc: 'Evaluation reports, diagnosis letters, and any assessments from providers' },
   { id: 's3', title: "Complete your state's application", desc: 'Available through your state\'s Medicaid office or online portal' },
@@ -13,6 +14,7 @@ const APPLY_STEPS = [
 
 export default function ApplyForLtd() {
   const router = useRouter();
+  const { stateData } = useMedicaidState();
   const [completed, setCompleted] = useState<Set<string>>(new Set());
 
   const toggle = (id: string) => {
@@ -21,13 +23,25 @@ export default function ApplyForLtd() {
     setCompleted(next);
   };
 
+  const phoneScript = stateData?.phoneScript ??
+    "\"I'd like to submit a disability-based Medicaid application for my child. I have provider documentation of their needs. Can you tell me the process and where to submit?\"";
+
+  const phone = stateData?.medicaidPhone ?? null;
+  const appUrl = stateData?.applicationUrl ?? null;
+  const appPortalName = stateData?.applicationPortalName ?? null;
+  const stateTip = stateData?.stateTip ?? null;
+  const stateName = stateData?.stateName ?? null;
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
           <Text style={styles.backButton}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Provider Journey</Text>
+        <View style={styles.headerTextGroup}>
+          <Text style={styles.headerTitle}>Provider Journey</Text>
+          {stateName && <Text style={styles.headerState}>📍 {stateName}</Text>}
+        </View>
       </View>
 
       <View style={styles.progressContainer}>
@@ -64,7 +78,7 @@ export default function ApplyForLtd() {
 
           <Text style={styles.stepsTitle}>APPLICATION CHECKLIST</Text>
 
-          {APPLY_STEPS.map((step, idx) => (
+          {BASE_STEPS.map((step) => (
             <TouchableOpacity
               key={step.id}
               style={[styles.stepCard, completed.has(step.id) && styles.stepCardDone]}
@@ -82,15 +96,36 @@ export default function ApplyForLtd() {
             </TouchableOpacity>
           ))}
 
+          {/* State-specific application portal link */}
+          {appUrl && appPortalName && (
+            <TouchableOpacity
+              style={styles.portalButton}
+              onPress={() => Linking.openURL(appUrl)}
+            >
+              <Text style={styles.portalButtonIcon}>🔗</Text>
+              <View style={styles.portalButtonText}>
+                <Text style={styles.portalButtonTitle}>Apply online: {appPortalName}</Text>
+                <Text style={styles.portalButtonUrl}>{appUrl}</Text>
+              </View>
+            </TouchableOpacity>
+          )}
+
+          {/* State-specific tip */}
+          {stateTip && (
+            <View style={styles.tipBox}>
+              <Text style={styles.tipLabel}>💡 {stateName?.toUpperCase()} TIP</Text>
+              <Text style={styles.tipText}>{stateTip}</Text>
+            </View>
+          )}
+
           <View style={styles.infoBox}>
             <Text style={styles.infoLabel}>📞 IF YOU NEED HELP</Text>
             <Text style={styles.infoText}>
-              Call your state's Medicaid office and say:{'\n\n'}
-              <Text style={styles.script}>
-                "I'd like to submit a disability-based Medicaid application for my child. I have
-                provider documentation of their needs. Can you tell me the process and where to
-                submit?"
-              </Text>
+              {phone
+                ? `Call ${stateName ?? 'your state'}'s Medicaid office at ${phone} and say:`
+                : "Call your state's Medicaid office and say:"}
+              {'\n\n'}
+              <Text style={styles.script}>{phoneScript}</Text>
             </Text>
           </View>
 
@@ -137,7 +172,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center',
   },
   backButton: { fontSize: 22, color: COLORS.purple, marginRight: SPACING.md },
+  headerTextGroup: { flex: 1 },
   headerTitle: { fontSize: FONT_SIZES.lg, fontWeight: '700', color: COLORS.text },
+  headerState: { fontSize: FONT_SIZES.xs, color: COLORS.purple, marginTop: 2 },
   progressContainer: {
     backgroundColor: COLORS.white, paddingHorizontal: SPACING.lg, paddingBottom: SPACING.md,
     borderBottomWidth: 1, borderBottomColor: COLORS.border,
@@ -184,6 +221,21 @@ const styles = StyleSheet.create({
   stepTitle: { fontSize: FONT_SIZES.sm, fontWeight: '700', color: COLORS.text, marginBottom: 4 },
   stepTitleDone: { color: COLORS.purple },
   stepDesc: { fontSize: FONT_SIZES.xs, color: COLORS.textMid, lineHeight: 18 },
+  portalButton: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.lavender,
+    borderRadius: RADIUS.md, padding: SPACING.lg, marginTop: SPACING.lg,
+    borderWidth: 1, borderColor: COLORS.purple,
+  },
+  portalButtonIcon: { fontSize: 20, marginRight: SPACING.md },
+  portalButtonText: { flex: 1 },
+  portalButtonTitle: { fontSize: FONT_SIZES.sm, fontWeight: '700', color: COLORS.purple },
+  portalButtonUrl: { fontSize: FONT_SIZES.xs, color: COLORS.textMid, marginTop: 2 },
+  tipBox: {
+    backgroundColor: COLORS.infoBg, borderRadius: RADIUS.md, padding: SPACING.lg,
+    marginTop: SPACING.lg, borderWidth: 1, borderColor: COLORS.infoBorder,
+  },
+  tipLabel: { fontSize: FONT_SIZES.xs, fontWeight: '700', color: COLORS.infoText, letterSpacing: 1, marginBottom: SPACING.sm },
+  tipText: { fontSize: FONT_SIZES.sm, color: COLORS.infoText, lineHeight: 20 },
   infoBox: {
     backgroundColor: COLORS.infoBg, borderRadius: RADIUS.md, padding: SPACING.lg,
     marginTop: SPACING.lg, borderWidth: 1, borderColor: COLORS.infoBorder,
