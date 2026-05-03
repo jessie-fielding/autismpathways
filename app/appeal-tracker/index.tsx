@@ -655,20 +655,21 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: FONT_SIZES.lg,
-    color: COLORS.gray,
+    color: COLORS.textLight,
   },
   // Premium Gate Styles
   gateHero: {
     padding: SPACING.md,
     alignItems: 'center',
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.purple,
     borderBottomLeftRadius: RADIUS.lg,
     borderBottomRightRadius: RADIUS.lg,
     marginBottom: SPACING.md,
+    paddingTop: SPACING.lg,
   },
   gateHeroIcon: {
     backgroundColor: COLORS.white,
-    borderRadius: RADIUS.full,
+    borderRadius: 40,
     width: 80,
     height: 80,
     justifyContent: 'center',
@@ -679,14 +680,14 @@ const styles = StyleSheet.create({
     fontSize: 48,
   },
   gatePremiumBadge: {
-    backgroundColor: COLORS.gold,
+    backgroundColor: COLORS.yellowAccent,
     paddingVertical: SPACING.xs / 2,
     paddingHorizontal: SPACING.sm,
     borderRadius: RADIUS.sm,
     marginBottom: SPACING.sm,
   },
-  gatePremiumBadgeText: {
-    color: COLORS.white,
+    gatePremiumBadgeText: {
+    color: COLORS.text,
     fontWeight: 'bold',
     fontSize: FONT_SIZES.sm,
   },
@@ -734,10 +735,10 @@ const styles = StyleSheet.create({
   },
   gateFeatureDesc: {
     fontSize: FONT_SIZES.sm,
-    color: COLORS.gray,
+    color: COLORS.textLight,
   },
   gateStatCard: {
-    backgroundColor: COLORS.lightBlue,
+    backgroundColor: COLORS.blue,
     padding: SPACING.md,
     borderRadius: RADIUS.md,
     marginHorizontal: SPACING.md,
@@ -747,17 +748,17 @@ const styles = StyleSheet.create({
   gateStatNumber: {
     fontSize: FONT_SIZES.xl,
     fontWeight: 'bold',
-    color: COLORS.blue,
+    color: COLORS.infoText,
   },
   gateStatLabel: {
     fontSize: FONT_SIZES.md,
-    color: COLORS.blue,
+    color: COLORS.infoText,
     textAlign: 'center',
     marginTop: SPACING.xs,
   },
   gateStatSource: {
     fontSize: FONT_SIZES.sm,
-    color: COLORS.blue,
+    color: COLORS.infoText,
     opacity: 0.7,
     marginTop: SPACING.sm,
   },
@@ -766,7 +767,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   gateUpgradeBtn: {
-    backgroundColor: COLORS.accent,
+    backgroundColor: COLORS.purple,
     paddingVertical: SPACING.md,
     paddingHorizontal: SPACING.lg,
     borderRadius: RADIUS.md,
