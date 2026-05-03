@@ -85,6 +85,15 @@ export function AuthProvider({ children }: any) {
   }, []);
 
   const checkAuthStatus = async () => {
+    // Safety timeout — if Cognito or network is slow, never block the app forever
+    let done = false;
+    const safetyTimer = setTimeout(() => {
+      if (!done) {
+        done = true;
+        setIsLoading(false);
+      }
+    }, 4000);
+
     try {
       // First try to refresh via the Cognito SDK (handles token refresh automatically)
       const session = await getCurrentSession();
@@ -106,7 +115,11 @@ export function AuthProvider({ children }: any) {
     } catch (e) {
       console.error('Auth check failed:', e);
     } finally {
-      setIsLoading(false);
+      clearTimeout(safetyTimer);
+      if (!done) {
+        done = true;
+        setIsLoading(false);
+      }
     }
   };
 
