@@ -9,7 +9,8 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "postinstall": "node scripts/patch-expo-crypto.js"
+    "postinstall": "node scripts/patch-expo-crypto.js",
+    "bump-build": "bash scripts/bump-build.sh"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
