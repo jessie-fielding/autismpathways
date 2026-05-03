@@ -484,14 +484,14 @@ const styles = StyleSheet.create({
     paddingBottom: SPACING.sm,
     backgroundColor: COLORS.white,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.lightGray,
+    borderBottomColor: COLORS.border,
   },
   backBtn: {
     padding: SPACING.xs,
   },
   backText: {
     fontSize: FONT_SIZES.md,
-    color: COLORS.primary,
+    color: COLORS.purple,
   },
   headerTitle: {
     fontSize: FONT_SIZES.lg,
@@ -500,7 +500,7 @@ const styles = StyleSheet.create({
   },
   addHeaderBtn: {
     padding: SPACING.xs,
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.purple,
     borderRadius: RADIUS.sm,
   },
   addHeaderBtnText: {
@@ -511,7 +511,7 @@ const styles = StyleSheet.create({
   rainbow: {
     height: 3,
     width: '100%',
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.purple,
     // A nice rainbow gradient for premium features
     // TODO: Replace with LinearGradient from expo-linear-gradient
     // background: 'linear-gradient(to right, #6200EE, #03DAC6, #FF4081, #FFC107)',
@@ -520,9 +520,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     padding: SPACING.md,
-    backgroundColor: COLORS.lightGray,
+    backgroundColor: COLORS.border,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.gray,
+    borderBottomColor: COLORS.textLight,
   },
   statCard: {
     alignItems: 'center',
@@ -534,24 +534,24 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     fontSize: FONT_SIZES.sm,
-    color: COLORS.gray,
+    color: COLORS.textLight,
   },
   filterScroll: {
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.sm,
     backgroundColor: COLORS.white,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.lightGray,
+    borderBottomColor: COLORS.border,
   },
   filterBtn: {
     paddingVertical: SPACING.xs,
     paddingHorizontal: SPACING.sm,
     borderRadius: RADIUS.md,
     marginRight: SPACING.sm,
-    backgroundColor: COLORS.lightGray,
+    backgroundColor: COLORS.border,
   },
   filterBtnActive: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.purple,
   },
   filterBtnText: {
     color: COLORS.text,
@@ -588,7 +588,7 @@ const styles = StyleSheet.create({
   },
   appealMeta: {
     fontSize: FONT_SIZES.sm,
-    color: COLORS.gray,
+    color: COLORS.textLight,
     marginTop: SPACING.xs / 2,
   },
   appealSummaryRight: {
@@ -605,7 +605,7 @@ const styles = StyleSheet.create({
   },
   deadlineText: {
     fontSize: FONT_SIZES.sm,
-    color: COLORS.error,
+    color: COLORS.errorText
     marginTop: SPACING.xs / 2,
     fontWeight: 'bold',
   },
@@ -613,7 +613,7 @@ const styles = StyleSheet.create({
     padding: SPACING.md,
     paddingTop: 0,
     borderTopWidth: 1,
-    borderTopColor: COLORS.lightGray,
+    borderTopColor: COLORS.border,
   },
   detailRow: {
     flexDirection: 'row',
@@ -638,14 +638,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.md,
     borderRadius: RADIUS.sm,
     marginLeft: SPACING.sm,
-    backgroundColor: COLORS.lightGray,
+    backgroundColor: COLORS.border,
   },
   actionBtnText: {
-    color: COLORS.primary,
+    color: COLORS.purple,
     fontWeight: 'bold',
   },
   actionBtnDestructive: {
-    backgroundColor: COLORS.errorLight,
+    backgroundColor: COLORS.errorBg,
   },
   loadingContainer: {
     flex: 1,
@@ -780,7 +780,7 @@ const styles = StyleSheet.create({
   },
   gateUpgradeNote: {
     fontSize: FONT_SIZES.sm,
-    color: COLORS.gray,
+    color: COLORS.textLight,
     textAlign: 'center',
     marginTop: SPACING.sm,
   },
@@ -808,13 +808,13 @@ const styles = StyleSheet.create({
   },
   formLabel: {
     fontSize: FONT_SIZES.sm,
-    color: COLORS.gray,
+    color: COLORS.textLight,
     marginBottom: SPACING.xs / 2,
     marginTop: SPACING.sm,
   },
   formInput: {
     borderWidth: 1,
-    borderColor: COLORS.lightGray,
+    borderColor: COLORS.border,
     borderRadius: RADIUS.sm,
     padding: SPACING.sm,
     fontSize: FONT_SIZES.md,
@@ -832,7 +832,7 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.md,
     marginRight: SPACING.sm,
     marginBottom: SPACING.sm,
-    backgroundColor: COLORS.lightGray,
+    backgroundColor: COLORS.border,
   },
   statusPickerBtnText: {
     fontSize: FONT_SIZES.sm,
@@ -848,7 +848,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.md,
     borderRadius: RADIUS.md,
     marginLeft: SPACING.sm,
-    backgroundColor: COLORS.lightGray,
+    backgroundColor: COLORS.border,
   },
   modalBtnText: {
     fontSize: FONT_SIZES.md,
@@ -856,6 +856,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   modalBtnPrimary: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.purple,
   },
 });
