@@ -24,8 +24,15 @@ export default function IncomeJourneyIntro() {
         </TouchableOpacity>
         <View style={styles.headerTextGroup}>
           <Text style={styles.headerTitle}>Income Journey</Text>
-          {stateName && (
-            <Text style={styles.headerState}>📍 {stateName}</Text>
+          {stateName ? (
+            <TouchableOpacity onPress={() => router.push('/medicaid/select-state')} style={styles.changeStateRow}>
+              <Text style={styles.headerState}>📍 {stateName}</Text>
+              <Text style={styles.changeStateLink}> · Change</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity onPress={() => router.push('/medicaid/select-state')}>
+              <Text style={styles.changeStateLink}>Select your state →</Text>
+            </TouchableOpacity>
           )}
         </View>
       </View>
@@ -159,6 +166,8 @@ const styles = StyleSheet.create({
   headerTextGroup: { flex: 1 },
   headerTitle: { fontSize: FONT_SIZES.lg, fontWeight: '700', color: COLORS.text },
   headerState: { fontSize: FONT_SIZES.xs, color: COLORS.purple, marginTop: 2 },
+  changeStateRow: { flexDirection: 'row', alignItems: 'center', marginTop: 2 },
+  changeStateLink: { fontSize: FONT_SIZES.xs, color: COLORS.purple, marginTop: 2, textDecorationLine: 'underline' },
   progressContainer: {
     backgroundColor: COLORS.white, paddingHorizontal: SPACING.lg, paddingBottom: SPACING.md,
     borderBottomWidth: 1, borderBottomColor: COLORS.border,
