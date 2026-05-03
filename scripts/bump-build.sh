@@ -1,15 +1,16 @@
 #!/bin/bash
 # bump-build.sh
-# Usage: npm run bump-build
-# Reads the current buildNumber from app.json, increments it by 1,
-# writes it back, then runs expo prebuild to sync it into the native ios/ folder.
+# Usage: npm run bump-build (from project root)
+# Increments the iOS buildNumber in app.json by 1, then runs expo prebuild
+# to sync the new number into the native ios/ folder for Xcode.
 
 set -e
 
-APP_JSON="$(dirname "$0")/../app.json"
+# Always run from the project root regardless of where the script lives
+cd "$(dirname "$0")/.."
 
 # Read current build number
-CURRENT=$(node -e "const a=require('$APP_JSON'); console.log(a.expo.ios.buildNumber)")
+CURRENT=$(node -e "console.log(require('./app.json').expo.ios.buildNumber)")
 NEXT=$((CURRENT + 1))
 
 echo "📦 Bumping build number: $CURRENT → $NEXT"
@@ -17,16 +18,15 @@ echo "📦 Bumping build number: $CURRENT → $NEXT"
 # Write new build number back to app.json
 node -e "
 const fs = require('fs');
-const path = '$APP_JSON';
-const data = JSON.parse(fs.readFileSync(path, 'utf8'));
+const data = JSON.parse(fs.readFileSync('./app.json', 'utf8'));
 data.expo.ios.buildNumber = String($NEXT);
-fs.writeFileSync(path, JSON.stringify(data, null, 2) + '\n');
+fs.writeFileSync('./app.json', JSON.stringify(data, null, 2) + '\n');
 console.log('✅ app.json updated to build $NEXT');
 "
 
 # Regenerate native ios/ folder so Xcode picks up the new build number
 echo "🔄 Running expo prebuild to sync ios/ project files..."
-cd "$(dirname "$0")/.." && npx expo prebuild --platform ios --clean
+npx expo prebuild --platform ios --clean
 
 echo ""
 echo "✅ Done! Build number is now $NEXT."
