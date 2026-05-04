@@ -33,6 +33,7 @@ import {
 } from 'amazon-cognito-identity-js';
 import * as WebBrowser from 'expo-web-browser';
 import * as AuthSession from 'expo-auth-session';
+import * as AppleAuthentication from 'expo-apple-authentication';
 import { awsConfig } from '../aws-config';
 import { clearCredentials } from './secureCredentials';
 
@@ -377,6 +378,62 @@ export function AuthProvider({ children }: any) {
     }
   };
 
+  // ── Sign in with Apple ──────────────────────────────────────────────────
+  /**
+   * Native Apple Sign-In (iOS 13+).
+   * Uses the device-level Apple ID credential — no Cognito Hosted UI needed.
+   * The identity token is stored as the auth token so the app treats the user
+   * as signed in. On first sign-in the user's real name is available; on
+   * subsequent sign-ins Apple omits it (by design), so we fall back to the
+   * cached email or a private relay address.
+   */
+  const signInWithApple = async () => {
+    try {
+      setError(null);
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+      });
+      const { identityToken, email, fullName, user: appleUserId } = credential;
+      if (!identityToken) {
+        return { success: false, error: 'Apple did not return an identity token.' };
+      }
+      // Apple only provides the email on the very first sign-in.
+      // Cache it so we can retrieve it on subsequent sign-ins.
+      const cachedEmail = await AsyncStorage.getItem(`apple_email_${appleUserId}`);
+      const resolvedEmail =
+        email ||
+        cachedEmail ||
+        `apple_${appleUserId}@privaterelay.appleid.com`;
+      if (email && !cachedEmail) {
+        await AsyncStorage.setItem(`apple_email_${appleUserId}`, email);
+      }
+      // Store the identity token as the session token
+      await AsyncStorage.setItem(TOKEN_KEY, identityToken);
+      await AsyncStorage.setItem(USER_EMAIL_KEY, resolvedEmail);
+      // Persist the display name (only available on first sign-in)
+      if (fullName?.givenName) {
+        const displayName = [fullName.givenName, fullName.familyName]
+          .filter(Boolean)
+          .join(' ');
+        await AsyncStorage.setItem('authDisplayName', displayName);
+      }
+      setUserEmail(resolvedEmail);
+      setIsSignedIn(true);
+      return { success: true };
+    } catch (e: any) {
+      if (e.code === 'ERR_REQUEST_CANCELED') {
+        // User tapped Cancel — not an error worth surfacing
+        return { success: false, error: '' };
+      }
+      const msg = e.message || 'Apple sign-in failed';
+      setError(msg);
+      return { success: false, error: msg };
+    }
+  };
+
   // ── Sign out ──────────────────────────────────────────────────────────────
   const signOut = async () => {
     try {
@@ -419,6 +476,7 @@ export function AuthProvider({ children }: any) {
     forgotPassword,
     confirmForgotPassword,
     signInWithGoogle,
+    signInWithApple,
     signOut,
     signOutAndForget,
   };

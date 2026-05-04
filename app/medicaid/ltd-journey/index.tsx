@@ -82,6 +82,15 @@ export default function LtdJourneyIntro() {
               directly affects your child's eligibility determination.
             </Text>
           </View>
+
+          {/* Medical Citations */}
+          <View style={styles.citationsBox}>
+            <Text style={styles.citationsLabel}>SOURCES</Text>
+            <Text style={styles.citationItem}>• Medicaid.gov — Medicaid Functional Assessments and Level of Care Determinations</Text>
+            <Text style={styles.citationItem}>• Centers for Medicare & Medicaid Services (CMS) — HCBS Waiver Application and Renewal Process</Text>
+            <Text style={styles.citationItem}>• American Academy of Pediatrics — Documenting Functional Limitations in Children with Developmental Disabilities</Text>
+            <Text style={styles.citationItem}>• Autism Speaks — Medicaid Waiver Resource Guide for Families</Text>
+          </View>
         </View>
       </ScrollView>
 
@@ -169,4 +178,24 @@ const styles = StyleSheet.create({
   navButtonText: { fontSize: FONT_SIZES.md, fontWeight: '700' },
   navButtonTextPrimary: { color: COLORS.white },
   navButtonTextSecondary: { color: COLORS.purple },
+  // Citations
+  citationsBox: {
+    marginTop: SPACING.xl,
+    paddingTop: SPACING.lg,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+  },
+  citationsLabel: {
+    fontSize: FONT_SIZES.xs,
+    fontWeight: '700',
+    color: COLORS.textLight,
+    letterSpacing: 1,
+    marginBottom: SPACING.sm,
+  },
+  citationItem: {
+    fontSize: 11,
+    color: COLORS.textLight,
+    lineHeight: 17,
+    marginBottom: 4,
+  },
 });

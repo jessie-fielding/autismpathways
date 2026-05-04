@@ -143,6 +143,15 @@ export default function ApplyForLtd() {
               <Text style={styles.waiverButtonText}>Learn about Waiver Journey →</Text>
             </TouchableOpacity>
           </View>
+
+          {/* Medical Citations */}
+          <View style={styles.citationsBox}>
+            <Text style={styles.citationsLabel}>SOURCES</Text>
+            <Text style={styles.citationItem}>• Medicaid.gov — Home & Community-Based Services (HCBS) Waivers, Section 1915(c)</Text>
+            <Text style={styles.citationItem}>• Centers for Medicare & Medicaid Services (CMS) — Medicaid Eligibility for Children with Disabilities</Text>
+            <Text style={styles.citationItem}>• National Council on Disability — Medicaid Managed Care for People with Disabilities</Text>
+            <Text style={styles.citationItem}>• Autism Speaks — State Medicaid Waiver Programs for Autism</Text>
+          </View>
         </View>
       </ScrollView>
 
@@ -265,4 +274,24 @@ const styles = StyleSheet.create({
   navButtonText: { fontSize: FONT_SIZES.md, fontWeight: '700' },
   navButtonTextPrimary: { color: COLORS.white },
   navButtonTextSecondary: { color: COLORS.purple },
+  // Citations
+  citationsBox: {
+    marginTop: SPACING.xl,
+    paddingTop: SPACING.lg,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+  },
+  citationsLabel: {
+    fontSize: FONT_SIZES.xs,
+    fontWeight: '700',
+    color: COLORS.textLight,
+    letterSpacing: 1,
+    marginBottom: SPACING.sm,
+  },
+  citationItem: {
+    fontSize: 11,
+    color: COLORS.textLight,
+    lineHeight: 17,
+    marginBottom: 4,
+  },
 });

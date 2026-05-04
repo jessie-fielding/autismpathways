@@ -102,6 +102,15 @@ export default function WhyDiagnosisScreen() {
               Your answer helps us point you to the most relevant evaluators and give you better talking points for your first call.
             </Text>
           </View>
+
+          {/* Medical Citations */}
+          <View style={styles.citationsBox}>
+            <Text style={styles.citationsLabel}>SOURCES</Text>
+            <Text style={styles.citationItem}>• American Psychiatric Association — DSM-5-TR: Autism Spectrum Disorder Diagnostic Criteria</Text>
+            <Text style={styles.citationItem}>• CDC — Autism Spectrum Disorder: Data & Statistics (ADDM Network)</Text>
+            <Text style={styles.citationItem}>• American Academy of Pediatrics — Identification, Evaluation, and Management of Children with ASD</Text>
+            <Text style={styles.citationItem}>• IDEA (Individuals with Disabilities Education Act) — Early Intervention and Special Education Eligibility</Text>
+          </View>
         </View>
       </ScrollView>
 
@@ -237,4 +246,24 @@ const styles = StyleSheet.create({
   },
   primaryBtnDisabled: { opacity: 0.4 },
   primaryBtnText: { color: COLORS.white, fontWeight: '700', fontSize: FONT_SIZES.base },
+  // Citations
+  citationsBox: {
+    marginTop: SPACING.xl,
+    paddingTop: SPACING.lg,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+  },
+  citationsLabel: {
+    fontSize: FONT_SIZES.xs,
+    fontWeight: '700',
+    color: COLORS.textLight,
+    letterSpacing: 1,
+    marginBottom: SPACING.sm,
+  },
+  citationItem: {
+    fontSize: 11,
+    color: COLORS.textLight,
+    lineHeight: 17,
+    marginBottom: 4,
+  },
 });

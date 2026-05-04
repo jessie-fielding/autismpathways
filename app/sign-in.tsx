@@ -27,10 +27,11 @@ import {
   clearCredentials,
 } from '../services/secureCredentials';
 import { useBiometrics } from '../hooks/useBiometrics';
+import * as AppleAuthentication from 'expo-apple-authentication';
 
 export default function SignInScreen() {
   const router    = useRouter();
-  const { signIn, signInWithGoogle } = useAuth();
+  const { signIn, signInWithGoogle, signInWithApple } = useAuth();
   const biometrics = useBiometrics();
 
   const [email, setEmail]           = useState('');
@@ -154,7 +155,7 @@ export default function SignInScreen() {
     setBiometricLoading(false);
   };
 
-  // ── Google Sign-In ────────────────────────────────────────────────────────
+  // ── Google Sign-In ────────────────────────────────────────────
   const [googleLoading, setGoogleLoading] = useState(false);
 
   const handleGoogleSignIn = async () => {
@@ -168,6 +169,23 @@ export default function SignInScreen() {
       setError(result.error || 'Google sign-in failed. Please try again.');
     }
     setGoogleLoading(false);
+  };
+
+  // ── Apple Sign-In ───────────────────────────────────────────────
+  const [appleLoading, setAppleLoading] = useState(false);
+
+  const handleAppleSignIn = async () => {
+    setAppleLoading(true);
+    setError('');
+    const result = await signInWithApple();
+    if (result.success) {
+      const profile = await storage.getProfile();
+      router.replace(profile ? '/(tabs)/dashboard' : '/profile-setup');
+    } else if (result.error) {
+      // Empty string means user cancelled — don't show an error
+      setError(result.error || 'Apple sign-in failed. Please try again.');
+    }
+    setAppleLoading(false);
   };
 
   // ── Forgot password ─────────────────────────────────────────────────────────
@@ -349,6 +367,17 @@ export default function SignInScreen() {
                     </>
                 }
               </TouchableOpacity>
+
+              {/* Apple Sign-In — only renders on iOS where available */}
+              {Platform.OS === 'ios' && (
+                <AppleAuthentication.AppleAuthenticationButton
+                  buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
+                  buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+                  cornerRadius={RADIUS.sm}
+                  style={styles.appleBtn}
+                  onPress={handleAppleSignIn}
+                />
+              )}
 
               {/* Create account */}
               <TouchableOpacity
@@ -576,6 +605,13 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZES.sm,
     fontWeight: '700',
     color: '#444',
+  },
+
+  // Apple button
+  appleBtn: {
+    width: '100%',
+    height: 48,
+    marginBottom: SPACING.md,
   },
 
   // Security note
