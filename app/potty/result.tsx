@@ -308,6 +308,13 @@ export default function PottyResultScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* Medical disclaimer */}
+        <View style={styles.disclaimerCard}>
+          <Text style={styles.disclaimerText}>
+            ⚠️ Educational information only — not a substitute for professional medical advice. Always consult your child’s pediatrician or a qualified healthcare provider before starting any treatment. Content is informed by published guidelines from the American Academy of Pediatrics (AAP) and NASPGHAN.
+          </Text>
+        </View>
+
         <View style={styles.rainbowBar} />
       </ScrollView>
     </View>
@@ -526,5 +533,19 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     backgroundColor: COLORS.purple,
     opacity: 0.3,
+  },
+  disclaimerCard: {
+    marginHorizontal: SPACING.md,
+    marginTop: SPACING.lg,
+    backgroundColor: '#fffbea',
+    borderRadius: RADIUS.sm,
+    padding: SPACING.md,
+    borderWidth: 1,
+    borderColor: '#f0c040',
+  },
+  disclaimerText: {
+    fontSize: 11,
+    color: '#7a6200',
+    lineHeight: 16,
   },
 });

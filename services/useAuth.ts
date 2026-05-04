@@ -463,7 +463,49 @@ export function AuthProvider({ children }: any) {
     }
   };
 
-  // ─────────────────────────────────────────────────────────────────────────
+  // ── Account Deletion (Guideline 5.1.1) ────────────────────────────────────
+  // Permanently deletes the Cognito user account and all local data.
+  const deleteAccount = (): Promise<{ success: boolean; error?: string }> => {
+    return new Promise((resolve) => {
+      try {
+        const user = userPool.getCurrentUser();
+        if (!user) {
+          // No Cognito session — just clear local data
+          AsyncStorage.clear().then(async () => {
+            await clearCredentials();
+            setIsSignedIn(false);
+            setUserEmail(null);
+            resolve({ success: true });
+          });
+          return;
+        }
+        // Must have a valid session before calling deleteUser
+        user.getSession(async (sessionErr: any, session: CognitoUserSession | null) => {
+          if (sessionErr || !session) {
+            resolve({ success: false, error: 'Please sign in again before deleting your account.' });
+            return;
+          }
+          user.deleteUser(async (deleteErr: any) => {
+            if (deleteErr) {
+              resolve({ success: false, error: deleteErr.message || 'Account deletion failed. Please try again.' });
+              return;
+            }
+            // Wipe all local data after successful Cognito deletion
+            await AsyncStorage.clear();
+            await clearCredentials();
+            setIsSignedIn(false);
+            setUserEmail(null);
+            setError(null);
+            resolve({ success: true });
+          });
+        });
+      } catch (e: any) {
+        resolve({ success: false, error: e.message || 'An unexpected error occurred.' });
+      }
+    });
+  };
+
+  // ───────────────────────────────────────────────────────────────────────────
   const value = {
     isSignedIn,
     isLoading,
@@ -479,6 +521,7 @@ export function AuthProvider({ children }: any) {
     signInWithApple,
     signOut,
     signOutAndForget,
+    deleteAccount,
   };
 
   return React.createElement(AuthContext.Provider, { value }, children);

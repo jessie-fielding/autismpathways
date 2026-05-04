@@ -301,7 +301,7 @@ export default function PaywallScreen() {
           </TouchableOpacity>
 
           <Text style={styles.legalText}>
-            Payment will be charged to your Apple ID account. Subscription automatically renews unless cancelled at least 24 hours before the end of the current period.
+            Payment will be charged to your Apple ID account. Subscription automatically renews unless cancelled at least 24 hours before the end of the current period. Manage or cancel anytime in your Apple ID settings.
           </Text>
           <View style={styles.legalLinks}>
             <TouchableOpacity onPress={() => Linking.openURL('https://autismpathways.app/privacy')}>
@@ -310,6 +310,10 @@ export default function PaywallScreen() {
             <Text style={styles.legalSep}>·</Text>
             <TouchableOpacity onPress={() => Linking.openURL('https://autismpathways.app/terms')}>
               <Text style={styles.legalLink}>Terms of Use</Text>
+            </TouchableOpacity>
+            <Text style={styles.legalSep}>·</Text>
+            <TouchableOpacity onPress={() => Linking.openURL('https://apps.apple.com/account/subscriptions')}>
+              <Text style={styles.legalLink}>Manage</Text>
             </TouchableOpacity>
           </View>
         </View>

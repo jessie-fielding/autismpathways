@@ -4,13 +4,14 @@ import {
   ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView,
   StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
+import * as AppleAuthentication from 'expo-apple-authentication';
 import { useAuth } from '../services/useAuth';
 import { storage } from '../services/storage';
 import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '../lib/theme';
 
 export default function CreateAccountScreen() {
   const router = useRouter();
-  const { signUp, confirmSignUp, resendConfirmationCode, signInWithGoogle } = useAuth();
+  const { signUp, confirmSignUp, resendConfirmationCode, signInWithGoogle, signInWithApple } = useAuth();
 
   const [step, setStep] = useState<'form' | 'verify'>('form');
   const [email, setEmail] = useState('');
@@ -21,6 +22,7 @@ export default function CreateAccountScreen() {
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [appleLoading, setAppleLoading] = useState(false);
   const [error, setError] = useState('');
   const [resendMsg, setResendMsg] = useState('');
 
@@ -83,6 +85,19 @@ export default function CreateAccountScreen() {
     setGoogleLoading(false);
   };
 
+  const handleAppleSignIn = async () => {
+    setAppleLoading(true);
+    setError('');
+    const result = await signInWithApple();
+    if (result.success) {
+      const profile = await storage.getProfile();
+      router.replace(profile ? '/(tabs)/dashboard' : '/profile-setup');
+    } else if (result.error) {
+      setError(result.error);
+    }
+    setAppleLoading(false);
+  };
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -114,7 +129,7 @@ export default function CreateAccountScreen() {
                 {/* Google Sign-Up */}
                 <TouchableOpacity
                   onPress={handleGoogleSignIn}
-                  disabled={loading || googleLoading}
+                  disabled={loading || googleLoading || appleLoading}
                   style={[styles.googleBtn, (loading || googleLoading) && styles.disabled]}
                   activeOpacity={0.85}
                 >
@@ -126,6 +141,17 @@ export default function CreateAccountScreen() {
                       </>
                   }
                 </TouchableOpacity>
+
+                {/* Apple Sign-Up — iOS only, required by Guideline 4.8 */}
+                {Platform.OS === 'ios' && (
+                  <AppleAuthentication.AppleAuthenticationButton
+                    buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_UP}
+                    buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+                    cornerRadius={8}
+                    style={[styles.appleBtn, appleLoading && styles.disabled]}
+                    onPress={handleAppleSignIn}
+                  />
+                )}
 
                 {/* Divider */}
                 <View style={styles.dividerRow}>
@@ -315,6 +341,11 @@ const styles = StyleSheet.create({
   },
   googleIcon: { fontSize: 16, fontWeight: '800', color: '#4285F4' },
   googleBtnText: { fontSize: FONT_SIZES.sm, fontWeight: '700', color: '#444' },
+  appleBtn: {
+    width: '100%',
+    height: 48,
+    marginBottom: SPACING.md,
+  },
   dividerRow: {
     flexDirection: 'row',
     alignItems: 'center',

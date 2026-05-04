@@ -60,7 +60,7 @@ export default function SettingsScreen() {
   const router = useRouter();
   const { isPremium } = useIsPremium();
   const { scheduleAll } = useNotifications();
-  const { signOut, signOutAndForget } = useAuth();
+  const { signOut, signOutAndForget, deleteAccount } = useAuth();
 
   const [profile, setProfile] = useState<{ childName?: string; state?: string; email?: string } | null>(null);
   const [activeChild, setActiveChild] = useState<ChildProfile | null>(null);
@@ -130,17 +130,24 @@ export default function SettingsScreen() {
   const confirmDelete = async () => {
     setDeleting(true);
     try {
-      await AsyncStorage.multiRemove(ALL_DATA_KEYS);
-      // Anonymize: write a tombstone record so backend knows to purge if online
-      await AsyncStorage.setItem('ap_deletion_requested', JSON.stringify({
-        requestedAt: new Date().toISOString(),
-        anonymized: true,
-      }));
-      Alert.alert(
-        'Data Deleted',
-        'All your data has been removed from this device. If you have an account, your server data will be purged within 30 days in accordance with our Privacy Policy.',
-        [{ text: 'OK', onPress: () => router.replace('/') }]
-      );
+      // Delete the Cognito account (satisfies Apple Guideline 5.1.1)
+      const result = await deleteAccount();
+      if (!result.success && result.error) {
+        // If Cognito deletion fails, still clear local data but warn the user
+        await AsyncStorage.multiRemove(ALL_DATA_KEYS);
+        Alert.alert(
+          'Partial Deletion',
+          `Your local data has been removed, but we could not delete your account from our servers: ${result.error}\n\nPlease contact support@autismpathways.app to complete account deletion.`,
+          [{ text: 'OK', onPress: () => router.replace('/') }]
+        );
+      } else {
+        // Full success — deleteAccount already cleared AsyncStorage and credentials
+        Alert.alert(
+          'Account Deleted',
+          'Your account and all associated data have been permanently deleted.',
+          [{ text: 'OK', onPress: () => router.replace('/') }]
+        );
+      }
     } catch (e) {
       Alert.alert('Error', 'Something went wrong. Please try again.');
     } finally {
@@ -271,6 +278,12 @@ export default function SettingsScreen() {
               Thank you for supporting Autism Pathways. You have access to all features.
             </Text>
             <Text style={styles.premiumCheck}>✓ All features unlocked</Text>
+            <TouchableOpacity
+              onPress={() => Linking.openURL('https://apps.apple.com/account/subscriptions')}
+              style={styles.manageSubBtn}
+            >
+              <Text style={styles.manageSubText}>Manage Subscription</Text>
+            </TouchableOpacity>
           </View>
         ) : (
           <View style={[styles.premiumBanner, styles.freeBanner]}>
@@ -521,6 +534,17 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZES.sm,
     fontWeight: '700',
     color: COLORS.successText,
+  },
+  manageSubBtn: {
+    marginTop: SPACING.sm,
+    paddingVertical: SPACING.xs,
+    paddingHorizontal: SPACING.md,
+  },
+  manageSubText: {
+    fontSize: FONT_SIZES.xs,
+    color: COLORS.purple,
+    fontWeight: '600',
+    textDecorationLine: 'underline',
   },
 
   // Sections
