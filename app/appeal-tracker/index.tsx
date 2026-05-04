@@ -42,7 +42,7 @@ const STATUS_META: Record<AppealStatus, { label: string; color: string; bg: stri
   submitted:  { label: 'Submitted',  color: '#2C5F8A', bg: '#DCEEFF', icon: '📤' },
   pending:    { label: 'Pending',    color: '#a07800', bg: '#fff9c4', icon: '⏳' },
   approved:   { label: 'Approved',   color: '#2e7d32', bg: '#d4edda', icon: '✅' },
-  denied:     { label: '#c0392b', bg: '#ffe0e0', icon: '❌' },
+  denied:     { label: 'Denied',     color: '#c0392b', bg: '#ffe0e0', icon: '❌' },
   escalated:  { label: 'Escalated',  color: '#c45a00', bg: '#fff0e0', icon: '⚠️' },
 };
 
@@ -605,7 +605,7 @@ const styles = StyleSheet.create({
   },
   deadlineText: {
     fontSize: FONT_SIZES.sm,
-    color: COLORS.errorText
+    color: COLORS.errorText,
     marginTop: SPACING.xs / 2,
     fontWeight: 'bold',
   },
