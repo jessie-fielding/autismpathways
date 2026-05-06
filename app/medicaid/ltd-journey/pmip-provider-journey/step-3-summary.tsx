@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
-import { usePmipProviderStore } from '../pmipProviderStore';
+import { usePmipProviderStore } from '../../../../lib/pmip/pmipProviderStore';
 
 function SummaryCard(props: { title: string; description?: string; children: React.ReactNode }) {
   return (
