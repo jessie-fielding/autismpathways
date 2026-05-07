@@ -12,6 +12,7 @@ import {
 import { useRouter } from 'expo-router';
 import { COLORS, SPACING, FONT_SIZES, RADIUS } from '../lib/theme';
 import { storage } from '../services/storage';
+import { addChild, setActiveChildId, loadChildren } from '../services/childManager';
 
 const styles = StyleSheet.create({
   container: {
@@ -90,6 +91,14 @@ export default function ProfileSetupScreen() {
         state,
         createdAt: new Date().toISOString(),
       });
+
+      // Create a real childManager entry so this child appears in the
+      // Manage Children list and multi-child switching works from the start.
+      const existingChildren = await loadChildren();
+      if (existingChildren.length === 0) {
+        const newChild = await addChild({ name: childName.trim() });
+        await setActiveChildId(newChild.id);
+      }
 
       // Initialize default data
       await storage.setPathway('medicaid', {
