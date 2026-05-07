@@ -397,6 +397,9 @@ export default function IEPScreen() {
   return (
     <View style={s.container}>
       <View style={[s.header, { paddingTop: insets.top + 8 }]}>
+        <TouchableOpacity onPress={() => router.push('/(tabs)/dashboard')} style={{ padding: 8 }}>
+          <Text style={{ fontSize: 20 }}>🏠</Text>
+        </TouchableOpacity>
         <Text style={s.headerTitle}>IEP Pathway</Text>
         <TouchableOpacity style={s.setupBtn} onPress={() => { setDraftSetup(setup); setShowSetup(true); }}>
           <Text style={s.setupBtnText}>⚙️ Setup</Text>

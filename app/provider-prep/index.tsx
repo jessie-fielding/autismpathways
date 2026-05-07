@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 
 // ─── Storage Keys ─────────────────────────────────────────────────────────────
@@ -160,6 +161,7 @@ const EMPTY_SUMMARY: VisitSummary = {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function ProviderPrepScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'setup' | 'before' | 'questions' | 'saved'>('setup');
   const [draft, setDraft] = useState<PrepDraft>(EMPTY_DRAFT);
@@ -343,7 +345,7 @@ export default function ProviderPrepScreen() {
     header: {
       flexDirection: 'row',
       justifyContent: 'space-around',
-      paddingVertical: 15,
+      paddingBottom: 15,
       backgroundColor: '#fff',
       borderBottomWidth: 1,
       borderBottomColor: '#e0e0e0',
@@ -636,7 +638,7 @@ export default function ProviderPrepScreen() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <TouchableOpacity
           style={[styles.tabButton, activeTab === 'setup' && styles.tabButtonActive]}
           onPress={() => setActiveTab('setup')}

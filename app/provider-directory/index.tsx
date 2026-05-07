@@ -370,7 +370,7 @@ const styles = StyleSheet.create({
   backText: { fontSize: 14, color: COLORS.purple, fontWeight: '600' },
   headerTitle: { fontSize: 16, fontWeight: '700', color: COLORS.navy },
   searchBar: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.card,
+    flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.white,
     marginHorizontal: SPACING.lg, marginTop: SPACING.md, marginBottom: SPACING.sm,
     borderRadius: 12, borderWidth: 1, borderColor: COLORS.border,
     paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm,
@@ -384,20 +384,20 @@ const styles = StyleSheet.create({
   },
   stateBtn: {
     flexDirection: 'row', alignItems: 'center', gap: SPACING.xs,
-    backgroundColor: COLORS.card, borderRadius: 20, paddingHorizontal: SPACING.md,
+    backgroundColor: COLORS.white, borderRadius: 20, paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.sm, borderWidth: 1, borderColor: COLORS.border,
   },
   stateBtnText: { fontSize: 13, color: COLORS.navy, fontWeight: '600' },
   stateBtnChevron: { fontSize: 10, color: COLORS.textMid },
   medicaidToggle: {
-    backgroundColor: COLORS.card, borderRadius: 20, paddingHorizontal: SPACING.md,
+    backgroundColor: COLORS.white, borderRadius: 20, paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.sm, borderWidth: 1, borderColor: COLORS.border,
   },
   medicaidToggleOn: { backgroundColor: COLORS.teal, borderColor: COLORS.teal },
   medicaidToggleText: { fontSize: 13, color: COLORS.textMid, fontWeight: '600' },
   medicaidToggleTextOn: { color: COLORS.white },
   statePicker: {
-    backgroundColor: COLORS.card, borderBottomWidth: 1, borderBottomColor: COLORS.border,
+    backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.border,
     paddingVertical: SPACING.sm,
   },
   statePickerContent: { paddingHorizontal: SPACING.lg, gap: SPACING.sm },
@@ -412,9 +412,9 @@ const styles = StyleSheet.create({
   specialtyContent: { paddingHorizontal: SPACING.lg, gap: SPACING.sm, paddingVertical: SPACING.sm },
   specialtyChip: {
     paddingHorizontal: SPACING.lg, paddingVertical: SPACING.xs,
-    borderRadius: 20, backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border,
+    borderRadius: 20, backgroundColor: COLORS.white, borderWidth: 1, borderColor: COLORS.border,
   },
-  specialtyChipActive: { backgroundColor: COLORS.purpleDk, borderColor: COLORS.purpleDk },
+  specialtyChipActive: { backgroundColor: COLORS.purpleDark, borderColor: COLORS.purpleDark },
   specialtyChipText: { fontSize: 13, color: COLORS.textMid, fontWeight: '600' },
   specialtyChipTextActive: { color: COLORS.white },
   scrollContent: { padding: SPACING.lg, paddingBottom: 40 },
@@ -424,7 +424,7 @@ const styles = StyleSheet.create({
   emptyTitle: { fontSize: 16, fontWeight: '700', color: COLORS.navy, marginBottom: SPACING.sm },
   emptySub: { fontSize: 13, color: COLORS.textMid, textAlign: 'center' },
   providerCard: {
-    backgroundColor: COLORS.card, borderRadius: 14, padding: SPACING.lg,
+    backgroundColor: COLORS.white, borderRadius: 14, padding: SPACING.lg,
     marginBottom: SPACING.md, borderWidth: 1, borderColor: COLORS.border,
   },
   providerHeader: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: SPACING.md, gap: SPACING.md },
@@ -451,7 +451,7 @@ const styles = StyleSheet.create({
   tag: {
     backgroundColor: COLORS.purpleLt, borderRadius: 6, paddingHorizontal: SPACING.sm, paddingVertical: 2,
   },
-  tagText: { fontSize: 11, color: COLORS.purpleDk, fontWeight: '600' },
+  tagText: { fontSize: 11, color: COLORS.purpleDark, fontWeight: '600' },
   actionRow: { flexDirection: 'row', gap: SPACING.sm },
   actionBtn: {
     flex: 1, paddingVertical: SPACING.sm, borderRadius: 8,

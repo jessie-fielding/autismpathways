@@ -21,6 +21,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, SPACING, RADIUS, FONT_SIZES, SHADOWS } from '../../lib/theme';
 import { useIsPremium } from '../../hooks/useIsPremium';
@@ -341,7 +342,12 @@ export default function ContactsScreen() {
       </View>
 
       {/* Rainbow bar */}
-      <View style={styles.rainbow} />
+      <LinearGradient
+        colors={['#FF6B6B', '#FFA500', '#FFD93D', '#6BCB77', '#4D96FF', '#9D84B7']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.rainbow}
+      />
 
       {/* Search */}
       <View style={styles.searchWrap}>
@@ -603,7 +609,7 @@ const styles = StyleSheet.create({
   },
   headerBadgeText: { fontSize: 11, fontWeight: '700', color: '#7A6020' },
 
-  rainbow: { height: 4, backgroundColor: COLORS.purple },
+  rainbow: { height: 4 },
 
   // Search
   searchWrap: {

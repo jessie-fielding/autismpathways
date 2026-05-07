@@ -56,6 +56,9 @@ export default function MedicaidIndex() {
             A guided walkthrough based on exactly where you are right now — not a wall of information.
           </Text>
         </View>
+        <TouchableOpacity onPress={() => router.push('/(tabs)/dashboard')} style={{ padding: 8 }}>
+          <Text style={{ fontSize: 20 }}>🏠</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Progress Bar */}

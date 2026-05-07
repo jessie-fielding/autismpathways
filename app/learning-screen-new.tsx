@@ -303,6 +303,9 @@ export default function LearningScreen() {
         <Text style={styles.headerTitle}>
           Autism <Text style={styles.headerTitlePink}>Pathways</Text>
         </Text>
+        <TouchableOpacity onPress={() => router.push('/(tabs)/dashboard')} style={{ padding: 8 }}>
+          <Text style={{ fontSize: 20 }}>🏠</Text>
+        </TouchableOpacity>
       </View>
 
       <ScrollView
@@ -470,6 +473,9 @@ const styles = StyleSheet.create({
   // Header
   header: {
     backgroundColor: COLORS.white,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: SPACING.lg,
     paddingTop: 56,
     paddingBottom: SPACING.md,

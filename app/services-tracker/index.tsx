@@ -491,7 +491,7 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.sm, paddingHorizontal: SPACING.md, borderRadius: RADIUS.xl, 
     backgroundColor: COLORS.card, marginRight: SPACING.sm, borderWidth: 1, borderColor: COLORS.border
   },
-  filterChipOn: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  filterChipOn: { backgroundColor: COLORS.purple, borderColor: COLORS.purple },
   filterChipText: { color: COLORS.text, fontWeight: '500' },
   filterChipTextOn: { color: 'white' },
   emptyState: {

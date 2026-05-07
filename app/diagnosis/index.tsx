@@ -5,6 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '../../lib/theme';
 import { storage } from '../../services/storage';
 import { useActiveChild } from '../../services/childManager';
+import { onChildChanged } from '../../services/childEvents';
 
 const TOTAL_STEPS = 6;
 const CURRENT_STEP = 1;
@@ -14,9 +15,18 @@ export default function DiagnosisIntroScreen() {
   const { key: childKey } = useActiveChild();
   const [profile, setProfile] = useState<any>(null);
 
-  useEffect(() => {
-    storage.getProfile().then((p) => setProfile(p));
+  const loadProfile = useCallback(async () => {
+    const p = await storage.getProfile();
+    setProfile(p);
   }, []);
+
+  useEffect(() => { loadProfile(); }, [loadProfile]);
+
+  // Re-load when active child changes
+  useEffect(() => {
+    const unsub = onChildChanged(() => loadProfile());
+    return unsub;
+  }, [loadProfile]);
 
   const childName = profile?.childName || null;
   const state = profile?.state || null;

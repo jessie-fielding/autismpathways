@@ -10,6 +10,7 @@ import {
   loadChildren, addChild, updateChild, deleteChild,
   setActiveChildId, getActiveChildId, type ChildProfile,
 } from '../../services/childManager';
+import { emitChildChanged } from '../../services/childEvents';
 import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '../../lib/theme';
 
 // ── Diagnosis level labels ────────────────────────────────────────────────────
@@ -65,6 +66,7 @@ export default function ManageChildrenScreen() {
   const handleSwitch = async (id: string) => {
     await setActiveChildId(id);
     setActiveIdState(id);
+    emitChildChanged(id);
   };
 
   // ── Open add modal ──────────────────────────────────────────────────────────
