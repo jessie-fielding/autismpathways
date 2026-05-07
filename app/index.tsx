@@ -1,6 +1,7 @@
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Video } from 'expo-av';
+import { VideoView, useVideoPlayer } from 'expo-video';
+import React from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '../lib/theme';
 
@@ -15,6 +16,11 @@ const FEATURES = [
 
 export default function Index() {
   const router = useRouter();
+  const player = useVideoPlayer(require('../assets/family-walking.mp4'), (p) => {
+    p.loop = true;
+    p.muted = true;
+    p.play();
+  });
 
   return (
     <View style={styles.container}>
@@ -31,15 +37,11 @@ export default function Index() {
           {/* ── Video hero ─────────────────────────────────────────── */}
           <View style={styles.heroContainer}>
             <View style={styles.videoContainer}>
-              <Video
-                source={require('../assets/family-walking.mp4')}
-                rate={1}
-                volume={0}
-                isMuted
-                resizeMode="cover"
-                isLooping
-                shouldPlay
+              <VideoView
+                player={player}
+                contentFit="cover"
                 style={styles.video}
+                nativeControls={false}
               />
               {/* Rainbow tint overlay */}
               <LinearGradient

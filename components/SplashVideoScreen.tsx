@@ -8,7 +8,7 @@ import {
   Dimensions,
   Platform,
 } from 'react-native';
-import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
+import { VideoView, useVideoPlayer } from 'expo-video';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width: W, height: H } = Dimensions.get('window');
@@ -22,7 +22,11 @@ interface Props {
 
 export default function SplashVideoScreen({ onFinish }: Props) {
   const insets = useSafeAreaInsets();
-  const videoRef = useRef<Video>(null);
+  const player = useVideoPlayer(require('../assets/videos/TherapyVideo.mp4'), (p) => {
+    p.loop = false;
+    p.muted = false;
+    p.play();
+  });
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const skipOpacity = useRef(new Animated.Value(0)).current;
   const [secondsLeft, setSecondsLeft] = useState(AUTO_ADVANCE_SECONDS);
@@ -69,19 +73,12 @@ export default function SplashVideoScreen({ onFinish }: Props) {
 
   return (
     <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
-      <Video
-        ref={videoRef}
-        source={require('../assets/videos/TherapyVideo.mp4')}
+      <VideoView
+        player={player}
+        contentFit="cover"
         style={styles.video}
-        resizeMode={ResizeMode.COVER}
-        shouldPlay
-        isLooping={false}
-        isMuted={false}
-        onPlaybackStatusUpdate={(status: AVPlaybackStatus) => {
-          if (status.isLoaded && status.didJustFinish) {
-            finish();
-          }
-        }}
+        nativeControls={false}
+        onPlayToEnd={finish}
       />
 
       {/* Subtle gradient overlay at bottom */}
