@@ -8,16 +8,11 @@ import {
 import { COLORS, FONT_SIZES, RADIUS, SPACING } from '../../../lib/theme';
 import { useIsPremium } from '../../../hooks/useIsPremium';
 
+const TRACKER_KEY = 'ap_medicaid_tracker';
+
 export default function ApplicationTracker() {
   const router = useRouter();
   const { key: childKey } = useActiveChild();
-  useEffect(() => {
-    // Advance Medicaid dashboard progress to step 4
-    (async () => {
-      const cur = parseInt(await AsyncStorage.getItem(childKey('ap_medicaid_progress')) || '0', 10);
-      if (cur < 4) await AsyncStorage.setItem(childKey('ap_medicaid_progress'), '4');
-    })();
-  }, []);
   const { isPremium } = useIsPremium();
   const [applicationDate, setApplicationDate] = useState('');
   const [applicationMethod, setApplicationMethod] = useState('');
@@ -25,6 +20,35 @@ export default function ApplicationTracker() {
   const [agencyContact, setAgencyContact] = useState('');
   const [followUpDate, setFollowUpDate] = useState('');
   const [notes, setNotes] = useState('');
+
+  // Load persisted data on mount and advance progress
+  useEffect(() => {
+    (async () => {
+      const cur = parseInt(await AsyncStorage.getItem(childKey('ap_medicaid_progress')) || '0', 10);
+      if (cur < 4) await AsyncStorage.setItem(childKey('ap_medicaid_progress'), '4');
+      try {
+        const raw = await AsyncStorage.getItem(childKey(TRACKER_KEY));
+        if (raw) {
+          const saved = JSON.parse(raw);
+          if (saved.applicationDate)    setApplicationDate(saved.applicationDate);
+          if (saved.applicationMethod)  setApplicationMethod(saved.applicationMethod);
+          if (saved.confirmationNumber) setConfirmationNumber(saved.confirmationNumber);
+          if (saved.agencyContact)      setAgencyContact(saved.agencyContact);
+          if (saved.followUpDate)       setFollowUpDate(saved.followUpDate);
+          if (saved.notes)              setNotes(saved.notes);
+        }
+      } catch {}
+    })();
+  }, []);
+
+  // Persist a field change immediately
+  const persist = async (patch: Record<string, string>) => {
+    try {
+      const raw = await AsyncStorage.getItem(childKey(TRACKER_KEY));
+      const prev = raw ? JSON.parse(raw) : {};
+      await AsyncStorage.setItem(childKey(TRACKER_KEY), JSON.stringify({ ...prev, ...patch }));
+    } catch {}
+  };
 
   const METHODS = [
     { id: 'inperson', label: '🏢 In Person' },
@@ -74,7 +98,7 @@ export default function ApplicationTracker() {
               placeholder="MM/DD/YYYY"
               placeholderTextColor={COLORS.textLight}
               value={applicationDate}
-              onChangeText={setApplicationDate}
+              onChangeText={v => { setApplicationDate(v); persist({ applicationDate: v }); }}
             />
           </View>
 
@@ -86,7 +110,7 @@ export default function ApplicationTracker() {
                 <TouchableOpacity
                   key={m.id}
                   style={[styles.methodChip, applicationMethod === m.id && styles.methodChipActive]}
-                  onPress={() => setApplicationMethod(m.id)}
+                  onPress={() => { setApplicationMethod(m.id); persist({ applicationMethod: m.id }); }}
                 >
                   <Text style={[styles.methodChipText, applicationMethod === m.id && styles.methodChipTextActive]}>
                     {m.label}
@@ -104,7 +128,7 @@ export default function ApplicationTracker() {
               placeholder="e.g., MC-2024-123456"
               placeholderTextColor={COLORS.textLight}
               value={confirmationNumber}
-              onChangeText={setConfirmationNumber}
+              onChangeText={v => { setConfirmationNumber(v); persist({ confirmationNumber: v }); }}
             />
           </View>
 
@@ -116,7 +140,7 @@ export default function ApplicationTracker() {
               placeholder="e.g., (555) 123-4567"
               placeholderTextColor={COLORS.textLight}
               value={agencyContact}
-              onChangeText={setAgencyContact}
+              onChangeText={v => { setAgencyContact(v); persist({ agencyContact: v }); }}
               keyboardType="phone-pad"
             />
           </View>
@@ -129,7 +153,7 @@ export default function ApplicationTracker() {
               placeholder="MM/DD/YYYY (2 weeks from application)"
               placeholderTextColor={COLORS.textLight}
               value={followUpDate}
-              onChangeText={setFollowUpDate}
+              onChangeText={v => { setFollowUpDate(v); persist({ followUpDate: v }); }}
             />
             <Text style={styles.fieldHint}>
               Set a calendar reminder for this date to check on your application status.
@@ -144,7 +168,7 @@ export default function ApplicationTracker() {
               placeholder="e.g., Spoke with Maria at the downtown office. She said processing takes 30 days."
               placeholderTextColor={COLORS.textLight}
               value={notes}
-              onChangeText={setNotes}
+              onChangeText={v => { setNotes(v); persist({ notes: v }); }}
               multiline
               numberOfLines={4}
               textAlignVertical="top"

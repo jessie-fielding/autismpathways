@@ -283,7 +283,7 @@ export default function IEPScreen() {
     const goals = JSON.parse(await AsyncStorage.getItem(keyPrefix + 'goals') || '[]');
     const meetings = JSON.parse(await AsyncStorage.getItem(keyPrefix + 'meetings') || '[]');
     const setup = JSON.parse(await AsyncStorage.getItem(keyPrefix + 'setup') || 'null');
-    const flagged = JSON.parse(await AsyncStorage.getItem('flaggedObservations') || '[]').filter((f: any) => f.childId === activeChild.id);
+    const flagged = JSON.parse(await AsyncStorage.getItem('ap_iep_flagged_obs') || '[]');
     setGoals(goals.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
     setMeetings(meetings.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime()));
     setSetup(setup || { grade: '', status: '', district: '' });
@@ -342,9 +342,9 @@ export default function IEPScreen() {
       [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Clear Flags', style: 'destructive', onPress: async () => {
-          const allFlagged = JSON.parse(await AsyncStorage.getItem('flaggedObservations') || '[]');
+          const allFlagged = JSON.parse(await AsyncStorage.getItem('ap_iep_flagged_obs') || '[]');
           const remaining = allFlagged.filter((f: any) => f.childId !== activeChild.id);
-          await AsyncStorage.setItem('flaggedObservations', JSON.stringify(remaining));
+          await AsyncStorage.setItem('ap_iep_flagged_obs', JSON.stringify(remaining));
           setFlagged([]);
         }},
       ]

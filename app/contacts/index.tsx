@@ -256,9 +256,11 @@ export default function ContactsScreen() {
             <Text style={styles.cardName}>{c.name}</Text>
             {c.org ? <Text style={styles.cardOrg}>{c.org}</Text> : null}
             <View style={styles.cardCatRow}>
-              <Text style={[styles.cardCatBadge, { color, borderColor: color + '40', backgroundColor: color + '18' }]}>
-                {getCategoryLabel(c.category)}
-              </Text>
+              <View style={[styles.cardCatBadgeWrap, { borderColor: color + '40', backgroundColor: color + '18' }]}>
+                <Text style={[styles.cardCatBadge, { color }]}>
+                  {getCategoryLabel(c.category)}
+                </Text>
+              </View>
             </View>
           </View>
           <View style={styles.cardActions}>
@@ -740,12 +742,15 @@ const styles = StyleSheet.create({
   cardName: { fontSize: FONT_SIZES.sm, fontWeight: '700', color: COLORS.text },
   cardOrg: { fontSize: 11, color: COLORS.textMid, marginBottom: 4 },
   cardCatRow: { flexDirection: 'row' },
-  cardCatBadge: {
-    fontSize: 10, fontWeight: '700',
-    paddingHorizontal: 8, paddingVertical: 2,
+  cardCatBadgeWrap: {
+    paddingHorizontal: 8, paddingVertical: 3,
     borderRadius: RADIUS.pill,
     borderWidth: 1,
-    overflow: 'hidden',
+    alignSelf: 'flex-start',
+  },
+  cardCatBadge: {
+    fontSize: 10, fontWeight: '700',
+    lineHeight: 14,
   },
   cardActions: { flexDirection: 'row', gap: SPACING.xs },
   actionBtn: {

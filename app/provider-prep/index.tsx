@@ -7,13 +7,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
-
+import { LinearGradient } from 'expo-linear-gradient';
+import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '../../lib/theme';
 // ─── Storage Keys ─────────────────────────────────────────────────────────────
 const DRAFT_KEY   = 'ap_provider_prep_draft';
 const SAVED_KEY   = 'ap_provider_prep_saved';
 const OBS_KEY     = 'ap_observations';
 const PROFILE_KEY = 'profile';
-
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface PrepDraft {
   providerName: string; apptDate: string; visitType: string; childName: string;
@@ -30,10 +30,9 @@ interface SavedNote {
   id: number; title: string; date: string; savedAt: string;
   draft: PrepDraft; visitSummary?: VisitSummary;
 }
-
 // ─── Question Bank ────────────────────────────────────────────────────────────
 const QUESTION_BANK: Record<string, { label: string; color: string; questions: string[] }> = {
-  diagnosis: { label: 'Diagnosis & Evaluation', color: '#b8a9e8', questions: [
+  diagnosis: { label: 'Diagnosis & Evaluation', color: COLORS.purpleLight, questions: [
     "Based on what you're seeing, do you think an autism evaluation is appropriate?",
     "What does the autism evaluation process look like, and how long does it take?",
     "Which type of evaluation would you recommend — developmental pediatrician, neuropsychologist, or a multidisciplinary team?",
@@ -59,7 +58,7 @@ const QUESTION_BANK: Record<string, { label: string; color: string; questions: s
     "How can I create a sensory-friendly environment at home or school?",
     "What sensory tools or supports would you recommend?",
   ]},
-  sleep: { label: 'Sleep', color: '#b8a9e8', questions: [
+  sleep: { label: 'Sleep', color: COLORS.purpleLight, questions: [
     "Why do many autistic children struggle with sleep, and is this the case here?",
     "What are the safest options for helping my child sleep?",
     "Is melatonin appropriate, and what dose or form do you suggest?",
@@ -93,7 +92,7 @@ const QUESTION_BANK: Record<string, { label: string; color: string; questions: s
     "Should we request a 1:1 aide, and how do we make that case?",
     "How can we ensure consistency between school and home?",
   ]},
-  medication: { label: 'Medication', color: '#b8a9e8', questions: [
+  medication: { label: 'Medication', color: COLORS.purpleLight, questions: [
     "Are there medications that help with the challenges my child is having?",
     "What are the benefits vs. risks of the medications you're recommending?",
     "How will we know if the medication is working?",
@@ -120,20 +119,18 @@ const QUESTION_BANK: Record<string, { label: string; color: string; questions: s
     "Are there books, websites, or courses you recommend for parents?",
   ]},
 };
-
 const FOCUS_CHIPS = [
-  { key: 'diagnosis',   label: 'Diagnosis / Evaluation',   emoji: '🔍' },
-  { key: 'behavior',    label: 'Behavior & Communication', emoji: '💬' },
-  { key: 'sensory',     label: 'Sensory Sensitivities',    emoji: '🌊' },
-  { key: 'sleep',       label: 'Sleep',                    emoji: '🌙' },
-  { key: 'eating',      label: 'Eating & Feeding',         emoji: '🍎' },
-  { key: 'therapy',     label: 'Therapy Options',          emoji: '🧩' },
-  { key: 'school',      label: 'School & IEP',             emoji: '🏫' },
-  { key: 'medication',  label: 'Medication',               emoji: '💊' },
-  { key: 'development', label: 'Development & Milestones', emoji: '📈' },
-  { key: 'family',      label: 'Family Support',           emoji: '❤️' },
+  { key: 'diagnosis',   label: 'Diagnosis',       emoji: '🔍' },
+  { key: 'behavior',    label: 'Behavior',         emoji: '💬' },
+  { key: 'sensory',     label: 'Sensory',          emoji: '🌊' },
+  { key: 'sleep',       label: 'Sleep',            emoji: '🌙' },
+  { key: 'eating',      label: 'Eating',           emoji: '🍎' },
+  { key: 'therapy',     label: 'Therapy',          emoji: '🧩' },
+  { key: 'school',      label: 'School / IEP',     emoji: '🏫' },
+  { key: 'medication',  label: 'Medication',       emoji: '💊' },
+  { key: 'development', label: 'Development',      emoji: '📈' },
+  { key: 'family',      label: 'Family Support',   emoji: '❤️' },
 ];
-
 const VISIT_TYPES = [
   'Pediatrician / Well-child visit',
   'Developmental Pediatrician',
@@ -145,7 +142,6 @@ const VISIT_TYPES = [
   'School / IEP Meeting',
   'Other',
 ];
-
 const EMPTY_DRAFT: PrepDraft = {
   providerName: '', apptDate: '', visitType: VISIT_TYPES[0], childName: '',
   recentChanges: '', wins: '', challenges: '', therapies: '',
@@ -153,17 +149,26 @@ const EMPTY_DRAFT: PrepDraft = {
   worriedAbout: '', afterAppt: '',
   selectedFocus: [], checkedQuestions: [], customQuestions: [],
 };
-
 const EMPTY_SUMMARY: VisitSummary = {
   childBackground: '', currentTreatment: '', goalsForVisit: '',
   postApptNotes: '', whatProviderSaid: '', nextSteps: '', followUpDate: '',
 };
 
+// ─── Step definitions ─────────────────────────────────────────────────────────
+const STEPS = [
+  { key: 'setup',     label: 'Setup',        emoji: '📋' },
+  { key: 'before',    label: 'Before',       emoji: '📝' },
+  { key: 'questions', label: 'Questions',    emoji: '❓' },
+  { key: 'saved',     label: 'Saved Notes',  emoji: '💾' },
+] as const;
+type TabKey = typeof STEPS[number]['key'];
+
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function ProviderPrepScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'setup' | 'before' | 'questions' | 'saved'>('setup');
+
+  const [activeTab, setActiveTab] = useState<TabKey>('setup');
   const [draft, setDraft] = useState<PrepDraft>(EMPTY_DRAFT);
   const [savedNotes, setSavedNotes] = useState<SavedNote[]>([]);
   const [customQInput, setCustomQInput] = useState('');
@@ -197,6 +202,7 @@ export default function ProviderPrepScreen() {
     });
   }, []);
 
+  // ── SmartFill: reads real Observation objects ──────────────────────────────
   const smartFill = useCallback(async () => {
     setSmartFillLoading(true);
     try {
@@ -208,20 +214,38 @@ export default function ProviderPrepScreen() {
         return;
       }
       const cutoff = Date.now() - 14 * 24 * 60 * 60 * 1000;
-      const recent = obs.filter((o: any) => new Date(o.date).getTime() >= cutoff);
+      const recent = obs.filter((o: any) => new Date(o.savedAt || o.date).getTime() >= cutoff);
       const pool = recent.length > 0 ? recent : obs.slice(0, 10);
-      const wins = pool.filter((o: any) => o.type === 'win').map((o: any) => o.text).join('\n');
-      const challenges = pool.filter((o: any) => o.type === 'challenge').map((o: any) => o.text).join('\n');
-      const changes = pool.filter((o: any) => o.type === 'change').map((o: any) => o.text).join('\n');
 
-      updateDraft({ wins, challenges, recentChanges: changes });
+      const winEntries = pool
+        .filter((o: any) => o.mood === 'Happy' || o.mood === 'Calm')
+        .map((o: any) => `${o.summary}${o.helped ? ` (what helped: ${o.helped})` : ''}`)
+        .filter(Boolean);
+
+      const challengeEntries = pool
+        .filter((o: any) => o.mood === 'Frustrated' || o.mood === 'Dysregulated' || o.mood === 'Anxious')
+        .map((o: any) => `${o.summary}${o.triggers?.length ? ` (triggers: ${o.triggers.join(', ')})` : ''}`)
+        .filter(Boolean);
+
+      const recentSummaries = pool.slice(0, 3).map((o: any) => o.summary).filter(Boolean);
+
+      updateDraft({
+        wins: winEntries.length > 0 ? winEntries.join('\n') : draft.wins,
+        challenges: challengeEntries.length > 0 ? challengeEntries.join('\n') : draft.challenges,
+        recentChanges: recentSummaries.length > 0 ? recentSummaries.join('\n') : draft.recentChanges,
+      });
+
+      if (winEntries.length === 0 && challengeEntries.length === 0) {
+        Alert.alert('Filled from observations', 'Recent summaries added to Recent Changes. Log more observations with mood ratings to auto-fill Wins and Challenges!');
+      } else {
+        Alert.alert('Auto-filled!', `Pulled ${pool.length} recent observation${pool.length > 1 ? 's' : ''} into your prep notes.`);
+      }
     } catch (e) {
-      console.error('SmartFill error', e);
       Alert.alert('SmartFill Error', 'Could not auto-fill observations.');
     } finally {
       setSmartFillLoading(false);
     }
-  }, [updateDraft]);
+  }, [updateDraft, draft]);
 
   const saveNote = useCallback(async () => {
     if (!draft.providerName || !draft.apptDate) {
@@ -230,95 +254,61 @@ export default function ProviderPrepScreen() {
     }
     const newNote: SavedNote = {
       id: Date.now(),
-      title: `${draft.providerName} - ${draft.apptDate}`,
+      title: `${draft.providerName} — ${draft.apptDate}`,
       date: draft.apptDate,
       savedAt: new Date().toISOString(),
-      draft: draft,
+      draft: { ...draft },
     };
-    const updatedNotes = [...savedNotes, newNote];
+    const updatedNotes = [newNote, ...savedNotes];
     setSavedNotes(updatedNotes);
     await AsyncStorage.setItem(SAVED_KEY, JSON.stringify(updatedNotes));
-    Alert.alert('Note Saved', 'Your preparation note has been saved.');
-    setDraft(EMPTY_DRAFT); // Clear current draft after saving
+    Alert.alert('Note Saved!', 'Your preparation note has been saved. View it in Saved Notes or generate a report from Provider Report.');
+    setDraft(EMPTY_DRAFT);
+    await AsyncStorage.removeItem(DRAFT_KEY);
     setActiveTab('saved');
   }, [draft, savedNotes]);
 
   const deleteNote = useCallback(async (id: number) => {
-    Alert.alert(
-      'Delete Note',
-      'Are you sure you want to delete this saved note?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete', style: 'destructive', onPress: async () => {
-            const updatedNotes = savedNotes.filter(note => note.id !== id);
-            setSavedNotes(updatedNotes);
-            await AsyncStorage.setItem(SAVED_KEY, JSON.stringify(updatedNotes));
-          }
+    Alert.alert('Delete Note', 'Are you sure you want to delete this saved note?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete', style: 'destructive', onPress: async () => {
+          const updatedNotes = savedNotes.filter(note => note.id !== id);
+          setSavedNotes(updatedNotes);
+          await AsyncStorage.setItem(SAVED_KEY, JSON.stringify(updatedNotes));
         },
-      ]
-    );
+      },
+    ]);
   }, [savedNotes]);
 
   const shareNote = useCallback(async (note: SavedNote) => {
-    let shareContent = `Provider Prep Note: ${note.title}\n\n`;
-    shareContent += `Child: ${note.draft.childName}\n`;
-    shareContent += `Visit Type: ${note.draft.visitType}\n\n`;
-
-    shareContent += `Recent Changes: ${note.draft.recentChanges}\n\n`;
-    shareContent += `Wins: ${note.draft.wins}\n\n`;
-    shareContent += `Challenges: ${note.draft.challenges}\n\n`;
-    shareContent += `Therapies: ${note.draft.therapies}\n\n`;
-    shareContent += `Medications: ${note.draft.medications}\n\n`;
-    shareContent += `Last Evaluation: ${note.draft.lastEval}\n\n`;
-    shareContent += `Top Priority: ${note.draft.topPriority}\n\n`;
-    shareContent += `Hoping For: ${note.draft.hopingFor}\n\n`;
-    shareContent += `Worried About: ${note.draft.worriedAbout}\n\n`;
-    shareContent += `After Appointment: ${note.draft.afterAppt}\n\n`;
-
-    if (note.draft.selectedFocus.length > 0) {
-      shareContent += 'Areas of Focus:\n';
-      note.draft.selectedFocus.forEach(key => {
-        const focus = FOCUS_CHIPS.find(chip => chip.key === key);
-        if (focus) shareContent += `- ${focus.label}\n`;
-      });
-      shareContent += '\n';
-    }
-
-    if (note.draft.checkedQuestions.length > 0 || note.draft.customQuestions.length > 0) {
-      shareContent += 'Questions for Provider:\n';
-      note.draft.selectedFocus.forEach(focusKey => {
+    const d = note.draft;
+    let content = `Provider Prep Note: ${note.title}\n\n`;
+    if (d.childName) content += `Child: ${d.childName}\n`;
+    if (d.visitType) content += `Visit Type: ${d.visitType}\n\n`;
+    if (d.recentChanges) content += `Recent Changes:\n${d.recentChanges}\n\n`;
+    if (d.wins) content += `Wins / Progress:\n${d.wins}\n\n`;
+    if (d.challenges) content += `Challenges:\n${d.challenges}\n\n`;
+    if (d.topPriority) content += `Top Priority:\n${d.topPriority}\n\n`;
+    if (d.hopingFor) content += `Hoping For:\n${d.hopingFor}\n\n`;
+    if (d.worriedAbout) content += `Worried About:\n${d.worriedAbout}\n\n`;
+    if (d.checkedQuestions.length > 0 || d.customQuestions.length > 0) {
+      content += 'Questions for Provider:\n';
+      d.selectedFocus.forEach(focusKey => {
         const bank = QUESTION_BANK[focusKey];
-        if (bank) {
-          bank.questions.forEach(q => {
-            if (note.draft.checkedQuestions.includes(q)) {
-              shareContent += `- ${q}\n`;
-            }
-          });
-        }
+        if (bank) bank.questions.forEach(q => { if (d.checkedQuestions.includes(q)) content += `- ${q}\n`; });
       });
-      note.draft.customQuestions.forEach(q => {
-        shareContent += `- ${q}\n`;
-      });
-      shareContent += '\n';
+      d.customQuestions.forEach(q => { content += `- ${q}\n`; });
+      content += '\n';
     }
-
     if (note.visitSummary) {
-      shareContent += '--- Visit Summary ---\n\n';
-      shareContent += `Child Background: ${note.visitSummary.childBackground}\n\n`;
-      shareContent += `Current Treatment: ${note.visitSummary.currentTreatment}\n\n`;
-      shareContent += `Goals for Visit: ${note.visitSummary.goalsForVisit}\n\n`;
-      shareContent += `What Provider Said: ${note.visitSummary.whatProviderSaid}\n\n`;
-      shareContent += `Post-Appt Notes: ${note.visitSummary.postApptNotes}\n\n`;
-      shareContent += `Next Steps: ${note.visitSummary.nextSteps}\n\n`;
-      shareContent += `Follow-up Date: ${note.visitSummary.followUpDate}\n\n`;
+      content += '--- Visit Summary ---\n\n';
+      if (note.visitSummary.whatProviderSaid) content += `What Provider Said:\n${note.visitSummary.whatProviderSaid}\n\n`;
+      if (note.visitSummary.nextSteps) content += `Next Steps:\n${note.visitSummary.nextSteps}\n\n`;
+      if (note.visitSummary.followUpDate) content += `Follow-up Date: ${note.visitSummary.followUpDate}\n`;
     }
-
     try {
-      await Share.share({
-        message: shareContent,
-        title: `Provider Prep Note: ${note.title}`,
-      });
+      await Share.share({ message: content, title: `Provider Prep: ${note.title}` });
     } catch (error: any) {
       Alert.alert('Share Error', error.message);
     }
@@ -327,7 +317,6 @@ export default function ProviderPrepScreen() {
   const saveSummary = useCallback(async (noteId: number) => {
     const noteIndex = savedNotes.findIndex(n => n.id === noteId);
     if (noteIndex === -1) return;
-
     const updatedNotes = [...savedNotes];
     updatedNotes[noteIndex] = { ...updatedNotes[noteIndex], visitSummary: summaryDraft };
     setSavedNotes(updatedNotes);
@@ -337,758 +326,274 @@ export default function ProviderPrepScreen() {
     setSummaryDraft(EMPTY_SUMMARY);
   }, [savedNotes, summaryDraft]);
 
-  const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: '#f0f4f8',
-    },
-    header: {
-      flexDirection: 'row',
-      justifyContent: 'space-around',
-      paddingBottom: 15,
-      backgroundColor: '#fff',
-      borderBottomWidth: 1,
-      borderBottomColor: '#e0e0e0',
-    },
-    tabButton: {
-      paddingHorizontal: 15,
-      paddingVertical: 10,
-      borderRadius: 20,
-    },
-    tabButtonActive: {
-      backgroundColor: '#007AFF',
-    },
-    tabButtonText: {
-      fontSize: 16,
-      fontWeight: '500',
-      color: '#333',
-    },
-    tabButtonTextActive: {
-      color: '#fff',
-    },
-    content: {
-      flex: 1,
-      padding: 20,
-    },
-    card: {
-      backgroundColor: '#fff',
-      borderRadius: 10,
-      padding: 15,
-      marginBottom: 15,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.20,
-      shadowRadius: 1.41,
-      elevation: 2,
-    },
-    cardTitle: {
-      fontSize: 18,
-      fontWeight: '600',
-      marginBottom: 10,
-      color: '#333',
-    },
-    label: {
-      fontSize: 16,
-      fontWeight: '500',
-      marginBottom: 5,
-      color: '#555',
-    },
-    input: {
-      borderWidth: 1,
-      borderColor: '#ccc',
-      borderRadius: 8,
-      padding: 10,
-      fontSize: 16,
-      marginBottom: 15,
-      backgroundColor: '#f9f9f9',
-      color: '#333',
-    },
-    textArea: {
-      minHeight: 80,
-      textAlignVertical: 'top',
-    },
-    button: {
-      backgroundColor: '#007AFF',
-      padding: 12,
-      borderRadius: 8,
-      alignItems: 'center',
-      marginTop: 10,
-    },
-    buttonText: {
-      color: '#fff',
-      fontSize: 16,
-      fontWeight: '600',
-    },
-    smartFillButton: {
-      backgroundColor: '#4CAF50',
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: 10,
-      borderRadius: 8,
-      marginTop: 10,
-    },
-    smartFillButtonText: {
-      color: '#fff',
-      fontSize: 16,
-      fontWeight: '600',
-      marginLeft: 5,
-    },
-    chipContainer: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      marginBottom: 10,
-    },
-    chip: {
-      flexDirection: 'row',
-      backgroundColor: '#e0e0e0',
-      borderRadius: 20,
-      paddingVertical: 8,
-      paddingHorizontal: 12,
-      marginRight: 8,
-      marginBottom: 8,
-      alignItems: 'center',
-    },
-    chipSelected: {
-      backgroundColor: '#007AFF',
-    },
-    chipText: {
-      color: '#333',
-      fontSize: 14,
-      fontWeight: '500',
-    },
-    chipTextSelected: {
-      color: '#fff',
-    },
-    chipEmoji: {
-      fontSize: 16,
-      marginRight: 5,
-    },
-    questionBankContainer: {
-      marginBottom: 15,
-    },
-    questionBankTitle: {
-      fontSize: 17,
-      fontWeight: '600',
-      marginBottom: 8,
-      color: '#333',
-    },
-    questionItem: {
-      flexDirection: 'row',
-      alignItems: 'flex-start',
-      marginBottom: 10,
-    },
-    checkbox: {
-      width: 20,
-      height: 20,
-      borderRadius: 5,
-      borderWidth: 2,
-      borderColor: '#007AFF',
-      marginRight: 10,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    checkboxChecked: {
-      backgroundColor: '#007AFF',
-    },
-    checkboxInner: {
-      color: '#fff',
-      fontSize: 14,
-    },
-    questionText: {
-      flex: 1,
-      fontSize: 15,
-      color: '#333',
-    },
-    customQuestionInput: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginBottom: 15,
-    },
-    addQuestionButton: {
-      backgroundColor: '#4CAF50',
-      padding: 8,
-      borderRadius: 5,
-      marginLeft: 10,
-    },
-    addQuestionButtonText: {
-      color: '#fff',
-      fontSize: 14,
-    },
-    savedNoteItem: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      paddingVertical: 10,
-      borderBottomWidth: 1,
-      borderBottomColor: '#eee',
-    },
-    savedNoteTitle: {
-      fontSize: 16,
-      fontWeight: '500',
-      color: '#333',
-    },
-    savedNoteDate: {
-      fontSize: 14,
-      color: '#666',
-    },
-    savedNoteActions: {
-      flexDirection: 'row',
-      alignItems: 'center',
-    },
-    actionButton: {
-      marginLeft: 10,
-      padding: 5,
-    },
-    actionButtonText: {
-      color: '#007AFF',
-      fontSize: 14,
-    },
-    deleteButtonText: {
-      color: '#FF3B30',
-    },
-    modalContainer: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      backgroundColor: 'rgba(0,0,0,0.5)',
-    },
-    modalContent: {
-      backgroundColor: '#fff',
-      borderRadius: 10,
-      padding: 20,
-      width: '90%',
-      maxHeight: '80%',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.25,
-      shadowRadius: 3.84,
-      elevation: 5,
-    },
-    modalTitle: {
-      fontSize: 20,
-      fontWeight: 'bold',
-      marginBottom: 15,
-      color: '#333',
-    },
-    modalCloseButton: {
-      marginTop: 20,
-      backgroundColor: '#ccc',
-      padding: 10,
-      borderRadius: 8,
-      alignItems: 'center',
-    },
-    modalCloseButtonText: {
-      color: '#333',
-      fontSize: 16,
-      fontWeight: '600',
-    },
-    dropdownButton: {
-      borderWidth: 1,
-      borderColor: '#ccc',
-      borderRadius: 8,
-      padding: 10,
-      fontSize: 16,
-      marginBottom: 15,
-      backgroundColor: '#f9f9f9',
-      color: '#333',
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-    },
-    dropdownContainer: {
-      borderWidth: 1,
-      borderColor: '#ccc',
-      borderRadius: 8,
-      backgroundColor: '#f9f9f9',
-      position: 'absolute',
-      top: '100%',
-      left: 0,
-      right: 0,
-      zIndex: 1000,
-      maxHeight: 200,
-    },
-    dropdownItem: {
-      padding: 10,
-      borderBottomWidth: 1,
-      borderBottomColor: '#eee',
-    },
-    dropdownItemText: {
-      fontSize: 16,
-      color: '#333',
-    },
-    dropdownItemSelected: {
-      backgroundColor: '#e0e0e0',
-    },
-    arrowIcon: {
-      width: 10,
-      height: 10,
-      borderLeftWidth: 2,
-      borderBottomWidth: 2,
-      borderColor: '#888',
-      transform: [{ rotate: '45deg' }],
-    },
-    arrowIconOpen: {
-      transform: [{ rotate: '-135deg' }],
-    },
-  });
+  const currentStepIndex = STEPS.findIndex(s => s.key === activeTab);
 
   return (
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-        <TouchableOpacity
-          style={[styles.tabButton, activeTab === 'setup' && styles.tabButtonActive]}
-          onPress={() => setActiveTab('setup')}
-        >
-          <Text style={[styles.tabButtonText, activeTab === 'setup' && styles.tabButtonTextActive]}>Setup</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tabButton, activeTab === 'before' && styles.tabButtonActive]}
-          onPress={() => setActiveTab('before')}
-        >
-          <Text style={[styles.tabButtonText, activeTab === 'before' && styles.tabButtonTextActive]}>Before Appt</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tabButton, activeTab === 'questions' && styles.tabButtonActive]}
-          onPress={() => setActiveTab('questions')}
-        >
-          <Text style={[styles.tabButtonText, activeTab === 'questions' && styles.tabButtonTextActive]}>Questions</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tabButton, activeTab === 'saved' && styles.tabButtonActive]}
-          onPress={() => setActiveTab('saved')}
-        >
-          <Text style={[styles.tabButtonText, activeTab === 'saved' && styles.tabButtonTextActive]}>Saved Notes</Text>
-        </TouchableOpacity>
+      {/* ── AP-branded Header ── */}
+      <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
+        <View style={styles.headerTop}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+            <Text style={styles.backText}>← Back</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Provider Prep</Text>
+          <TouchableOpacity onPress={() => router.push('/')} style={styles.homeBtn}>
+            <Text style={styles.homeText}>🏠</Text>
+          </TouchableOpacity>
+        </View>
+        <LinearGradient
+          colors={['#FF6B6B', '#FFD93D', '#6BCB77', '#4D96FF', '#C77DFF']}
+          start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+          style={styles.rainbow}
+        />
       </View>
 
-      <ScrollView style={styles.content}>
+      {/* ── Pathway step tabs ── */}
+      <View style={styles.stepsRow}>
+        {STEPS.map((step, i) => {
+          const isActive = step.key === activeTab;
+          const isDone = i < currentStepIndex;
+          return (
+            <TouchableOpacity
+              key={step.key}
+              style={[styles.stepBtn, isActive && styles.stepBtnActive]}
+              onPress={() => setActiveTab(step.key)}
+            >
+              <Text style={styles.stepEmoji}>{isDone ? '✓' : step.emoji}</Text>
+              <Text style={[styles.stepLabel, isActive && styles.stepLabelActive]}>{step.label}</Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
+      <ScrollView style={styles.content} keyboardShouldPersistTaps="handled">
+
+        {/* ── SETUP TAB ── */}
         {activeTab === 'setup' && (
           <View>
+            <View style={styles.sectionIntro}>
+              <Text style={styles.sectionTitle}>Appointment Details</Text>
+              <Text style={styles.sectionSub}>Fill in the basics so your prep note is ready to share.</Text>
+            </View>
             <View style={styles.card}>
-              <Text style={styles.cardTitle}>Appointment Details</Text>
-              <Text style={styles.label}>Provider Name</Text>
-              <TextInput
-                style={styles.input}
-                value={draft.providerName}
-                onChangeText={text => updateDraft({ providerName: text })}
-                placeholder="e.g., Dr. Smith"
-              />
-
-              <Text style={styles.label}>Appointment Date</Text>
-              <TextInput
-                style={styles.input}
-                value={draft.apptDate}
-                onChangeText={text => updateDraft({ apptDate: text })}
-                placeholder="MM/DD/YYYY"
-              />
-
-              <Text style={styles.label}>Visit Type</Text>
-              <TouchableOpacity style={styles.dropdownButton} onPress={() => setVisitTypeOpen(!visitTypeOpen)}>
-                <Text style={styles.dropdownItemText}>{draft.visitType}</Text>
-                <View style={[styles.arrowIcon, visitTypeOpen && styles.arrowIconOpen]} />
+              <Text style={styles.fieldLabel}>Provider Name <Text style={styles.required}>*</Text></Text>
+              <TextInput style={styles.input} value={draft.providerName} onChangeText={text => updateDraft({ providerName: text })} placeholder="e.g. Dr. Smith" placeholderTextColor={COLORS.textLight} />
+              <Text style={styles.fieldLabel}>Appointment Date <Text style={styles.required}>*</Text></Text>
+              <TextInput style={styles.input} value={draft.apptDate} onChangeText={text => updateDraft({ apptDate: text })} placeholder="MM/DD/YYYY" placeholderTextColor={COLORS.textLight} />
+              <Text style={styles.fieldLabel}>Visit Type</Text>
+              <TouchableOpacity style={styles.dropdownBtn} onPress={() => setVisitTypeOpen(!visitTypeOpen)}>
+                <Text style={styles.dropdownBtnText}>{draft.visitType}</Text>
+                <Text style={styles.dropdownArrow}>{visitTypeOpen ? '▲' : '▼'}</Text>
               </TouchableOpacity>
               {visitTypeOpen && (
-                <View style={styles.dropdownContainer}>
-                  <ScrollView nestedScrollEnabled={true}>
-                    {VISIT_TYPES.map((type, index) => (
-                      <TouchableOpacity
-                        key={index}
-                        style={[styles.dropdownItem, draft.visitType === type && styles.dropdownItemSelected]}
-                        onPress={() => {
-                          updateDraft({ visitType: type });
-                          setVisitTypeOpen(false);
-                        }}
-                      >
-                        <Text style={styles.dropdownItemText}>{type}</Text>
-                      </TouchableOpacity>
-                    ))}
-                  </ScrollView>
+                <View style={styles.dropdownList}>
+                  {VISIT_TYPES.map((type) => (
+                    <TouchableOpacity key={type} style={[styles.dropdownItem, draft.visitType === type && styles.dropdownItemActive]} onPress={() => { updateDraft({ visitType: type }); setVisitTypeOpen(false); }}>
+                      <Text style={[styles.dropdownItemText, draft.visitType === type && styles.dropdownItemTextActive]}>{type}</Text>
+                    </TouchableOpacity>
+                  ))}
                 </View>
               )}
-
-              <Text style={styles.label}>Child's Name</Text>
-              <TextInput
-                style={styles.input}
-                value={draft.childName}
-                onChangeText={text => updateDraft({ childName: text })}
-                placeholder="e.g., Alex"
-              />
+              <Text style={styles.fieldLabel}>Child's Name</Text>
+              <TextInput style={styles.input} value={draft.childName} onChangeText={text => updateDraft({ childName: text })} placeholder="e.g. Alex" placeholderTextColor={COLORS.textLight} />
             </View>
-
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>Smart-Fill from Observations</Text>
-              <TouchableOpacity
-                style={styles.smartFillButton}
-                onPress={smartFill}
-                disabled={smartFillLoading}
-              >
-                {smartFillLoading ? (
-                  <Text style={styles.smartFillButtonText}>Loading...</Text>
-                ) : (
-                  <>
-                    <Text style={styles.smartFillButtonText}>Auto-fill Recent Observations</Text>
-                  </>
-                )}
-              </TouchableOpacity>
-            </View>
-
-            <TouchableOpacity style={styles.button} onPress={saveNote}>
-              <Text style={styles.buttonText}>Save Preparation Note</Text>
+            <TouchableOpacity style={styles.nextBtn} onPress={() => setActiveTab('before')}>
+              <Text style={styles.nextBtnText}>Next: Before Appointment →</Text>
             </TouchableOpacity>
           </View>
         )}
 
+        {/* ── BEFORE TAB ── */}
         {activeTab === 'before' && (
           <View>
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>Recent Changes / Updates</Text>
-              <TextInput
-                style={[styles.input, styles.textArea]}
-                value={draft.recentChanges}
-                onChangeText={text => updateDraft({ recentChanges: text })}
-                multiline
-                placeholder="Any new behaviors, skills, challenges, or changes since last visit?"
-              />
+            <View style={styles.sectionIntro}>
+              <Text style={styles.sectionTitle}>Before the Appointment</Text>
+              <Text style={styles.sectionSub}>Document what's been happening so you're ready to share the full picture.</Text>
             </View>
-
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>Wins / Progress</Text>
-              <TextInput
-                style={[styles.input, styles.textArea]}
-                value={draft.wins}
-                onChangeText={text => updateDraft({ wins: text })}
-                multiline
-                placeholder="What positive developments or progress have you seen?"
-              />
-            </View>
-
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>Challenges / Concerns</Text>
-              <TextInput
-                style={[styles.input, styles.textArea]}
-                value={draft.challenges}
-                onChangeText={text => updateDraft({ challenges: text })}
-                multiline
-                placeholder="What are the main difficulties or concerns you want to address?"
-              />
-            </View>
-
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>Current Therapies & Interventions</Text>
-              <TextInput
-                style={[styles.input, styles.textArea]}
-                value={draft.therapies}
-                onChangeText={text => updateDraft({ therapies: text })}
-                multiline
-                placeholder="List all current therapies (ABA, OT, SLP, etc.) and frequency."
-              />
-            </View>
-
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>Medications & Supplements</Text>
-              <TextInput
-                style={[styles.input, styles.textArea]}
-                value={draft.medications}
-                onChangeText={text => updateDraft({ medications: text })}
-                multiline
-                placeholder="List all medications, dosages, and any supplements."
-              />
-            </View>
-
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>Last Evaluation / Diagnosis</Text>
-              <TextInput
-                style={[styles.input, styles.textArea]}
-                value={draft.lastEval}
-                onChangeText={text => updateDraft({ lastEval: text })}
-                multiline
-                placeholder="Date and type of last evaluation or diagnosis."
-              />
-            </View>
-
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>Top Priority for this Visit</Text>
-              <TextInput
-                style={[styles.input, styles.textArea]}
-                value={draft.topPriority}
-                onChangeText={text => updateDraft({ topPriority: text })}
-                multiline
-                placeholder="What is the single most important thing you want to discuss?"
-              />
-            </View>
-
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>Hoping For / Goals</Text>
-              <TextInput
-                style={[styles.input, styles.textArea]}
-                value={draft.hopingFor}
-                onChangeText={text => updateDraft({ hopingFor: text })}
-                multiline
-                placeholder="What outcomes or insights are you hoping to get from this appointment?"
-              />
-            </View>
-
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>Worried About</Text>
-              <TextInput
-                style={[styles.input, styles.textArea]}
-                value={draft.worriedAbout}
-                onChangeText={text => updateDraft({ worriedAbout: text })}
-                multiline
-                placeholder="Any specific concerns or anxieties about the appointment or next steps?"
-              />
-            </View>
-
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>After the Appointment</Text>
-              <TextInput
-                style={[styles.input, styles.textArea]}
-                value={draft.afterAppt}
-                onChangeText={text => updateDraft({ afterAppt: text })}
-                multiline
-                placeholder="What do you plan to do after the appointment?"
-              />
-            </View>
+            <TouchableOpacity style={styles.smartFillBtn} onPress={smartFill} disabled={smartFillLoading}>
+              <Text style={styles.smartFillIcon}>✨</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.smartFillTitle}>{smartFillLoading ? 'Filling from observations…' : 'Auto-fill from Recent Observations'}</Text>
+                <Text style={styles.smartFillSub}>Pulls wins, challenges, and recent changes from your observation log</Text>
+              </View>
+            </TouchableOpacity>
+            {[
+              { key: 'recentChanges', label: 'Recent Changes / Updates', placeholder: 'Any new behaviors, skills, challenges, or changes since last visit?' },
+              { key: 'wins', label: 'Wins / Progress', placeholder: 'What positive developments or progress have you seen?' },
+              { key: 'challenges', label: 'Challenges / Concerns', placeholder: 'What are the main difficulties or concerns you want to address?' },
+              { key: 'therapies', label: 'Current Therapies', placeholder: 'List all current therapies (ABA, OT, SLP, etc.) and frequency.' },
+              { key: 'medications', label: 'Medications & Supplements', placeholder: 'List all medications, dosages, and any supplements.' },
+              { key: 'lastEval', label: 'Last Evaluation / Diagnosis', placeholder: 'Date and type of last evaluation or diagnosis.' },
+              { key: 'topPriority', label: 'Top Priority for this Visit', placeholder: 'What is the single most important thing you want to discuss?' },
+              { key: 'hopingFor', label: 'Hoping For / Goals', placeholder: 'What outcomes or insights are you hoping to get?' },
+              { key: 'worriedAbout', label: 'Worried About', placeholder: 'Any specific concerns or anxieties about the appointment?' },
+              { key: 'afterAppt', label: 'After the Appointment', placeholder: 'What do you plan to do after the appointment?' },
+            ].map(({ key, label, placeholder }) => (
+              <View key={key} style={styles.card}>
+                <Text style={styles.fieldLabel}>{label}</Text>
+                <TextInput style={[styles.input, styles.textarea]} value={(draft as any)[key]} onChangeText={text => updateDraft({ [key]: text } as any)} multiline placeholder={placeholder} placeholderTextColor={COLORS.textLight} />
+              </View>
+            ))}
+            <TouchableOpacity style={styles.nextBtn} onPress={() => setActiveTab('questions')}>
+              <Text style={styles.nextBtnText}>Next: Build Your Questions →</Text>
+            </TouchableOpacity>
           </View>
         )}
 
+        {/* ── QUESTIONS TAB ── */}
         {activeTab === 'questions' && (
           <View>
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>Areas of Focus</Text>
-              <View style={styles.chipContainer}>
-                {FOCUS_CHIPS.map(chip => (
-                  <TouchableOpacity
-                    key={chip.key}
-                    style={[
-                      styles.chip,
-                      draft.selectedFocus.includes(chip.key) && styles.chipSelected,
-                      { backgroundColor: draft.selectedFocus.includes(chip.key) ? chip.color : '#e0e0e0' }
-                    ]}
-                    onPress={() => {
-                      updateDraft({
-                        selectedFocus: draft.selectedFocus.includes(chip.key)
-                          ? draft.selectedFocus.filter(k => k !== chip.key)
-                          : [...draft.selectedFocus, chip.key],
-                      });
-                    }}
-                  >
-                    <Text style={styles.chipEmoji}>{chip.emoji}</Text>
-                    <Text style={[
-                      styles.chipText,
-                      draft.selectedFocus.includes(chip.key) && styles.chipTextSelected
-                    ]}>{chip.label}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
+            <View style={styles.sectionIntro}>
+              <Text style={styles.sectionTitle}>Questions for Your Provider</Text>
+              <Text style={styles.sectionSub}>Select focus areas, then check the questions you want to ask.</Text>
             </View>
-
-            {draft.selectedFocus.length > 0 && (
-              <View style={styles.card}>
-                <Text style={styles.cardTitle}>Suggested Questions</Text>
-                {draft.selectedFocus.map(focusKey => {
-                  const bank = QUESTION_BANK[focusKey];
-                  if (!bank) return null;
+            <View style={styles.card}>
+              <Text style={styles.fieldLabel}>Areas of Focus</Text>
+              <View style={styles.chipRow}>
+                {FOCUS_CHIPS.map(chip => {
+                  const isSelected = draft.selectedFocus.includes(chip.key);
                   return (
-                    <View key={focusKey} style={styles.questionBankContainer}>
-                      <Text style={[styles.questionBankTitle, { color: bank.color }]}>{bank.label}</Text>
-                      {bank.questions.map((question, qIndex) => (
-                        <TouchableOpacity
-                          key={qIndex}
-                          style={styles.questionItem}
-                          onPress={() => {
-                            updateDraft({
-                              checkedQuestions: draft.checkedQuestions.includes(question)
-                                ? draft.checkedQuestions.filter(q => q !== question)
-                                : [...draft.checkedQuestions, question],
-                            });
-                          }}
-                        >
-                          <View style={[
-                            styles.checkbox,
-                            draft.checkedQuestions.includes(question) && styles.checkboxChecked
-                          ]}>
-                            {draft.checkedQuestions.includes(question) && <Text style={styles.checkboxInner}>✓</Text>}
-                          </View>
-                          <Text style={styles.questionText}>{question}</Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
+                    <TouchableOpacity key={chip.key} style={[styles.focusChip, isSelected && styles.focusChipActive]} onPress={() => { updateDraft({ selectedFocus: isSelected ? draft.selectedFocus.filter(k => k !== chip.key) : [...draft.selectedFocus, chip.key] }); }}>
+                      <Text style={styles.focusChipEmoji}>{chip.emoji}</Text>
+                      <Text style={[styles.focusChipText, isSelected && styles.focusChipTextActive]}>{chip.label}</Text>
+                    </TouchableOpacity>
                   );
                 })}
               </View>
-            )}
-
+            </View>
+            {draft.selectedFocus.map(focusKey => {
+              const bank = QUESTION_BANK[focusKey];
+              if (!bank) return null;
+              return (
+                <View key={focusKey} style={styles.card}>
+                  <Text style={[styles.bankTitle, { color: bank.color }]}>{bank.label}</Text>
+                  {bank.questions.map((question, qIndex) => {
+                    const isChecked = draft.checkedQuestions.includes(question);
+                    return (
+                      <TouchableOpacity key={qIndex} style={styles.questionRow} onPress={() => { updateDraft({ checkedQuestions: isChecked ? draft.checkedQuestions.filter(q => q !== question) : [...draft.checkedQuestions, question] }); }}>
+                        <View style={[styles.checkbox, isChecked && styles.checkboxActive]}>
+                          {isChecked && <Text style={styles.checkmark}>✓</Text>}
+                        </View>
+                        <Text style={[styles.questionText, isChecked && styles.questionTextActive]}>{question}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              );
+            })}
             <View style={styles.card}>
-              <Text style={styles.cardTitle}>Custom Questions</Text>
-              {draft.customQuestions.map((question, index) => (
-                <View key={index} style={styles.questionItem}>
-                  <Text style={styles.questionText}>{question}</Text>
-                  <TouchableOpacity
-                    onPress={() => {
-                      updateDraft({
-                        customQuestions: draft.customQuestions.filter((_, i) => i !== index),
-                      });
-                    }}
-                  >
-                    <Text style={styles.deleteButtonText}>Delete</Text>
+              <Text style={styles.fieldLabel}>Your Own Questions</Text>
+              <View style={styles.customQRow}>
+                <TextInput style={[styles.input, { flex: 1, marginBottom: 0 }]} value={customQInput} onChangeText={setCustomQInput} placeholder="Add your own question" placeholderTextColor={COLORS.textLight} />
+                <TouchableOpacity style={styles.addQBtn} onPress={() => { if (customQInput.trim()) { updateDraft({ customQuestions: [...draft.customQuestions, customQInput.trim()] }); setCustomQInput(''); } }}>
+                  <Text style={styles.addQBtnText}>Add</Text>
+                </TouchableOpacity>
+              </View>
+              {draft.customQuestions.map((q, i) => (
+                <View key={i} style={styles.customQItem}>
+                  <Text style={styles.customQText}>• {q}</Text>
+                  <TouchableOpacity onPress={() => { updateDraft({ customQuestions: draft.customQuestions.filter((_, idx) => idx !== i) }); }}>
+                    <Text style={styles.customQRemove}>✕</Text>
                   </TouchableOpacity>
                 </View>
               ))}
-              <View style={styles.customQuestionInput}>
-                <TextInput
-                  style={[styles.input, { flex: 1, marginBottom: 0 }]}
-                  value={customQInput}
-                  onChangeText={setCustomQInput}
-                  placeholder="Add your own question"
-                />
-                <TouchableOpacity
-                  style={styles.addQuestionButton}
-                  onPress={() => {
-                    if (customQInput.trim()) {
-                      updateDraft({ customQuestions: [...draft.customQuestions, customQInput.trim()] });
-                      setCustomQInput('');
-                    }
-                  }}
-                >
-                  <Text style={styles.addQuestionButtonText}>Add</Text>
-                </TouchableOpacity>
-              </View>
             </View>
+            <TouchableOpacity style={styles.saveBtn} onPress={saveNote}>
+              <Text style={styles.saveBtnText}>💾 Save Preparation Note</Text>
+            </TouchableOpacity>
           </View>
         )}
 
+        {/* ── SAVED NOTES TAB ── */}
         {activeTab === 'saved' && (
           <View>
+            <View style={styles.sectionIntro}>
+              <Text style={styles.sectionTitle}>Saved Notes</Text>
+              <Text style={styles.sectionSub}>Your past visit preparation notes. Add a visit summary or generate a report.</Text>
+            </View>
+            <TouchableOpacity style={styles.reportBanner} onPress={() => router.push('/provider-report')}>
+              <Text style={styles.reportBannerIcon}>📄</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.reportBannerTitle}>Generate a Provider Report</Text>
+                <Text style={styles.reportBannerSub}>Turn your saved notes into a printable PDF report to share with providers</Text>
+              </View>
+              <Text style={styles.reportBannerArrow}>→</Text>
+            </TouchableOpacity>
             {savedNotes.length === 0 ? (
-              <Text style={{ textAlign: 'center', marginTop: 20, fontSize: 16, color: '#666' }}>
-                No saved notes yet. Go to 'Setup' to create one!
-              </Text>
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyIcon}>📋</Text>
+                <Text style={styles.emptyTitle}>No saved notes yet</Text>
+                <Text style={styles.emptySub}>Complete Setup and Questions, then tap Save to create your first prep note.</Text>
+                <TouchableOpacity style={styles.emptyBtn} onPress={() => setActiveTab('setup')}>
+                  <Text style={styles.emptyBtnText}>Start Prep →</Text>
+                </TouchableOpacity>
+              </View>
             ) : (
               savedNotes.map(note => (
-                <View key={note.id} style={styles.card}>
-                  <View style={styles.savedNoteItem}>
-                    <View>
-                      <Text style={styles.savedNoteTitle}>{note.title}</Text>
-                      <Text style={styles.savedNoteDate}>Saved: {new Date(note.savedAt).toLocaleDateString()}</Text>
-                    </View>
-                    <View style={styles.savedNoteActions}>
-                      <TouchableOpacity style={styles.actionButton} onPress={() => {
-                        setSummaryDraft(note.visitSummary || EMPTY_SUMMARY);
-                        setSummaryModal(note);
-                      }}>
-                        <Text style={styles.actionButtonText}>Summary</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity style={styles.actionButton} onPress={() => shareNote(note)}>
-                        <Text style={styles.actionButtonText}>Share</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity style={styles.actionButton} onPress={() => deleteNote(note.id)}>
-                        <Text style={[styles.actionButtonText, styles.deleteButtonText]}>Delete</Text>
-                      </TouchableOpacity>
+                <View key={note.id} style={styles.savedCard}>
+                  <View style={styles.savedCardHeader}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.savedCardTitle}>{note.title}</Text>
+                      <Text style={styles.savedCardDate}>Saved {new Date(note.savedAt).toLocaleDateString()}</Text>
                     </View>
                   </View>
-                  {note.visitSummary && (
-                    <View style={{ marginTop: 10, borderTopWidth: 1, borderTopColor: '#eee', paddingTop: 10 }}>
-                      <Text style={styles.label}>Visit Summary:</Text>
-                      <Text style={styles.questionText}>- What Provider Said: {note.visitSummary.whatProviderSaid}</Text>
-                      <Text style={styles.questionText}>- Next Steps: {note.visitSummary.nextSteps}</Text>
-                      {/* Add more summary details as needed */}
+                  {note.visitSummary?.whatProviderSaid ? (
+                    <View style={styles.summaryPreview}>
+                      <Text style={styles.summaryPreviewLabel}>Provider said:</Text>
+                      <Text style={styles.summaryPreviewText} numberOfLines={2}>{note.visitSummary.whatProviderSaid}</Text>
                     </View>
-                  )}
+                  ) : null}
+                  <View style={styles.savedCardActions}>
+                    <TouchableOpacity style={styles.savedActionBtn} onPress={() => { setSummaryDraft(note.visitSummary || EMPTY_SUMMARY); setSummaryModal(note); }}>
+                      <Text style={styles.savedActionBtnText}>+ Visit Summary</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.savedActionBtn} onPress={() => shareNote(note)}>
+                      <Text style={styles.savedActionBtnText}>Share</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={[styles.savedActionBtn, styles.savedActionBtnDanger]} onPress={() => deleteNote(note.id)}>
+                      <Text style={styles.savedActionBtnDangerText}>Delete</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
               ))
             )}
           </View>
         )}
+
+        <View style={{ height: 40 }} />
       </ScrollView>
 
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={!!summaryModal}
-        onRequestClose={() => setSummaryModal(null)}
-      >
-        <KeyboardAvoidingView
-          style={styles.modalContainer}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        >
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Visit Summary for {summaryModal?.title}</Text>
-
-            <ScrollView>
-              <Text style={styles.label}>Child Background</Text>
-              <TextInput
-                style={[styles.input, styles.textArea]}
-                value={summaryDraft.childBackground}
-                onChangeText={text => setSummaryDraft(prev => ({ ...prev, childBackground: text }))}
-                multiline
-                placeholder="Key background info shared with provider"
-              />
-
-              <Text style={styles.label}>Current Treatment</Text>
-              <TextInput
-                style={[styles.input, styles.textArea]}
-                value={summaryDraft.currentTreatment}
-                onChangeText={text => setSummaryDraft(prev => ({ ...prev, currentTreatment: text }))}
-                multiline
-                placeholder="Current therapies, medications, interventions"
-              />
-
-              <Text style={styles.label}>Goals for Visit</Text>
-              <TextInput
-                style={[styles.input, styles.textArea]}
-                value={summaryDraft.goalsForVisit}
-                onChangeText={text => setSummaryDraft(prev => ({ ...prev, goalsForVisit: text }))}
-                multiline
-                placeholder="What you hoped to achieve from this visit"
-              />
-
-              <Text style={styles.label}>What Provider Said</Text>
-              <TextInput
-                style={[styles.input, styles.textArea]}
-                value={summaryDraft.whatProviderSaid}
-                onChangeText={text => setSummaryDraft(prev => ({ ...prev, whatProviderSaid: text }))}
-                multiline
-                placeholder="Key takeaways, diagnoses, recommendations from provider"
-              />
-
-              <Text style={styles.label}>Post-Appointment Notes</Text>
-              <TextInput
-                style={[styles.input, styles.textArea]}
-                value={summaryDraft.postApptNotes}
-                onChangeText={text => setSummaryDraft(prev => ({ ...prev, postApptNotes: text }))}
-                multiline
-                placeholder="Your immediate thoughts, feelings, and reflections"
-              />
-
-              <Text style={styles.label}>Next Steps</Text>
-              <TextInput
-                style={[styles.input, styles.textArea]}
-                value={summaryDraft.nextSteps}
-                onChangeText={text => setSummaryDraft(prev => ({ ...prev, nextSteps: text }))}
-                multiline
-                placeholder="Actions to take, referrals, follow-up appointments"
-              />
-
-              <Text style={styles.label}>Follow-up Date</Text>
-              <TextInput
-                style={styles.input}
-                value={summaryDraft.followUpDate}
-                onChangeText={text => setSummaryDraft(prev => ({ ...prev, followUpDate: text }))}
-                placeholder="MM/DD/YYYY"
-              />
+      {/* ── Visit Summary Modal ── */}
+      <Modal visible={!!summaryModal} animationType="slide" transparent onRequestClose={() => setSummaryModal(null)}>
+        <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Visit Summary</Text>
+            <Text style={styles.modalSub}>{summaryModal?.title}</Text>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {[
+                { key: 'childBackground', label: 'Child Background', placeholder: 'Key background info shared with provider' },
+                { key: 'currentTreatment', label: 'Current Treatment', placeholder: 'Current therapies, medications, interventions' },
+                { key: 'goalsForVisit', label: 'Goals for Visit', placeholder: 'What you hoped to achieve' },
+                { key: 'whatProviderSaid', label: 'What Provider Said', placeholder: 'Key takeaways, diagnoses, recommendations' },
+                { key: 'postApptNotes', label: 'Post-Appointment Notes', placeholder: 'Your immediate thoughts and reflections' },
+                { key: 'nextSteps', label: 'Next Steps', placeholder: 'Actions to take, referrals, follow-up appointments' },
+              ].map(({ key, label, placeholder }) => (
+                <View key={key} style={{ marginBottom: SPACING.md }}>
+                  <Text style={styles.fieldLabel}>{label}</Text>
+                  <TextInput style={[styles.input, styles.textarea]} value={(summaryDraft as any)[key]} onChangeText={text => setSummaryDraft(prev => ({ ...prev, [key]: text }))} multiline placeholder={placeholder} placeholderTextColor={COLORS.textLight} />
+                </View>
+              ))}
+              <Text style={styles.fieldLabel}>Follow-up Date</Text>
+              <TextInput style={styles.input} value={summaryDraft.followUpDate} onChangeText={text => setSummaryDraft(prev => ({ ...prev, followUpDate: text }))} placeholder="MM/DD/YYYY" placeholderTextColor={COLORS.textLight} />
             </ScrollView>
-
-            <TouchableOpacity style={styles.button} onPress={() => summaryModal && saveSummary(summaryModal.id)}>
-              <Text style={styles.buttonText}>Save Summary</Text>
+            <TouchableOpacity style={styles.saveBtn} onPress={() => summaryModal && saveSummary(summaryModal.id)}>
+              <Text style={styles.saveBtnText}>Save Summary</Text>
             </TouchableOpacity>
-
-            <TouchableOpacity style={styles.modalCloseButton} onPress={() => setSummaryModal(null)}>
-              <Text style={styles.modalCloseButtonText}>Close</Text>
+            <TouchableOpacity style={styles.modalCloseBtn} onPress={() => setSummaryModal(null)}>
+              <Text style={styles.modalCloseBtnText}>Close</Text>
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
@@ -1096,3 +601,95 @@ export default function ProviderPrepScreen() {
     </KeyboardAvoidingView>
   );
 }
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: COLORS.bg },
+  header: { backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  headerTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: SPACING.lg, paddingBottom: SPACING.sm },
+  backBtn: { paddingVertical: SPACING.xs },
+  backText: { fontSize: FONT_SIZES.sm, fontWeight: '600', color: COLORS.purple },
+  headerTitle: { fontSize: FONT_SIZES.base, fontWeight: '700', color: COLORS.text },
+  homeBtn: { paddingVertical: SPACING.xs },
+  homeText: { fontSize: 20 },
+  rainbow: { height: 4 },
+  stepsRow: { flexDirection: 'row', backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  stepBtn: { flex: 1, alignItems: 'center', paddingVertical: SPACING.sm, borderBottomWidth: 3, borderBottomColor: 'transparent' },
+  stepBtnActive: { borderBottomColor: COLORS.purple },
+  stepEmoji: { fontSize: 16, marginBottom: 2 },
+  stepLabel: { fontSize: 10, fontWeight: '600', color: COLORS.textLight },
+  stepLabelActive: { color: COLORS.purple, fontWeight: '700' },
+  content: { flex: 1, paddingHorizontal: SPACING.lg, paddingTop: SPACING.xl },
+  sectionIntro: { marginBottom: SPACING.lg },
+  sectionTitle: { fontSize: FONT_SIZES.xl, fontWeight: '800', color: COLORS.text, marginBottom: SPACING.xs },
+  sectionSub: { fontSize: FONT_SIZES.sm, color: COLORS.textMid, lineHeight: 20 },
+  card: { backgroundColor: COLORS.white, borderRadius: RADIUS.md, borderWidth: 1.5, borderColor: COLORS.border, padding: SPACING.lg, marginBottom: SPACING.md, ...SHADOWS.sm },
+  fieldLabel: { fontSize: FONT_SIZES.sm, fontWeight: '700', color: COLORS.text, marginBottom: SPACING.sm, marginTop: SPACING.sm },
+  required: { color: COLORS.errorText },
+  input: { backgroundColor: COLORS.bg, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.sm, paddingHorizontal: SPACING.md, paddingVertical: SPACING.md, fontSize: FONT_SIZES.base, color: COLORS.text, marginBottom: SPACING.md },
+  textarea: { minHeight: 80, textAlignVertical: 'top' },
+  dropdownBtn: { backgroundColor: COLORS.bg, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.sm, paddingHorizontal: SPACING.md, paddingVertical: SPACING.md, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: SPACING.md },
+  dropdownBtnText: { fontSize: FONT_SIZES.base, color: COLORS.text },
+  dropdownArrow: { fontSize: FONT_SIZES.xs, color: COLORS.textLight },
+  dropdownList: { backgroundColor: COLORS.white, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.sm, marginBottom: SPACING.md, overflow: 'hidden' },
+  dropdownItem: { paddingHorizontal: SPACING.md, paddingVertical: SPACING.md, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  dropdownItemActive: { backgroundColor: COLORS.lavender },
+  dropdownItemText: { fontSize: FONT_SIZES.base, color: COLORS.text },
+  dropdownItemTextActive: { color: COLORS.purple, fontWeight: '700' },
+  smartFillBtn: { backgroundColor: COLORS.lavender, borderRadius: RADIUS.md, borderWidth: 1.5, borderColor: COLORS.lavenderAccent, padding: SPACING.lg, flexDirection: 'row', alignItems: 'center', gap: SPACING.md, marginBottom: SPACING.lg, ...SHADOWS.sm },
+  smartFillIcon: { fontSize: 24 },
+  smartFillTitle: { fontSize: FONT_SIZES.sm, fontWeight: '700', color: COLORS.purple },
+  smartFillSub: { fontSize: FONT_SIZES.xs, color: COLORS.textMid, marginTop: 2 },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm },
+  focusChip: { flexDirection: 'row', alignItems: 'center', gap: SPACING.xs, paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm, borderRadius: RADIUS.pill, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.bg },
+  focusChipActive: { backgroundColor: COLORS.lavender, borderColor: COLORS.lavenderAccent },
+  focusChipEmoji: { fontSize: 14 },
+  focusChipText: { fontSize: FONT_SIZES.xs, fontWeight: '600', color: COLORS.textMid },
+  focusChipTextActive: { color: COLORS.purple },
+  bankTitle: { fontSize: FONT_SIZES.sm, fontWeight: '700', marginBottom: SPACING.md },
+  questionRow: { flexDirection: 'row', alignItems: 'flex-start', gap: SPACING.md, marginBottom: SPACING.md },
+  checkbox: { width: 20, height: 20, borderRadius: 6, borderWidth: 2, borderColor: COLORS.border, backgroundColor: COLORS.bg, alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 },
+  checkboxActive: { backgroundColor: COLORS.purple, borderColor: COLORS.purple },
+  checkmark: { color: COLORS.white, fontSize: 11, fontWeight: '800' },
+  questionText: { flex: 1, fontSize: FONT_SIZES.sm, color: COLORS.textMid, lineHeight: 20 },
+  questionTextActive: { color: COLORS.text, fontWeight: '600' },
+  customQRow: { flexDirection: 'row', gap: SPACING.sm, alignItems: 'center', marginBottom: SPACING.sm },
+  addQBtn: { backgroundColor: COLORS.purple, borderRadius: RADIUS.sm, paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md },
+  addQBtnText: { color: COLORS.white, fontWeight: '700', fontSize: FONT_SIZES.sm },
+  customQItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingVertical: SPACING.xs },
+  customQText: { flex: 1, fontSize: FONT_SIZES.sm, color: COLORS.text, lineHeight: 20 },
+  customQRemove: { fontSize: 14, color: COLORS.textLight, paddingLeft: SPACING.sm },
+  nextBtn: { backgroundColor: COLORS.purple, borderRadius: RADIUS.pill, paddingVertical: SPACING.lg, alignItems: 'center', marginBottom: SPACING.xl, ...SHADOWS.md },
+  nextBtnText: { color: COLORS.white, fontWeight: '700', fontSize: FONT_SIZES.base },
+  saveBtn: { backgroundColor: COLORS.purple, borderRadius: RADIUS.pill, paddingVertical: SPACING.lg, alignItems: 'center', marginBottom: SPACING.md, ...SHADOWS.md },
+  saveBtnText: { color: COLORS.white, fontWeight: '700', fontSize: FONT_SIZES.base },
+  reportBanner: { backgroundColor: COLORS.mint, borderRadius: RADIUS.md, borderWidth: 1.5, borderColor: COLORS.mintAccent, padding: SPACING.lg, flexDirection: 'row', alignItems: 'center', gap: SPACING.md, marginBottom: SPACING.lg, ...SHADOWS.sm },
+  reportBannerIcon: { fontSize: 24 },
+  reportBannerTitle: { fontSize: FONT_SIZES.sm, fontWeight: '700', color: COLORS.successText },
+  reportBannerSub: { fontSize: FONT_SIZES.xs, color: COLORS.textMid, marginTop: 2 },
+  reportBannerArrow: { fontSize: FONT_SIZES.lg, color: COLORS.successText },
+  savedCard: { backgroundColor: COLORS.white, borderRadius: RADIUS.md, borderWidth: 1.5, borderColor: COLORS.border, marginBottom: SPACING.md, overflow: 'hidden', ...SHADOWS.sm },
+  savedCardHeader: { flexDirection: 'row', alignItems: 'flex-start', padding: SPACING.lg },
+  savedCardTitle: { fontSize: FONT_SIZES.sm, fontWeight: '700', color: COLORS.text },
+  savedCardDate: { fontSize: FONT_SIZES.xs, color: COLORS.textLight, marginTop: 2 },
+  summaryPreview: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.md },
+  summaryPreviewLabel: { fontSize: FONT_SIZES.xs, fontWeight: '700', color: COLORS.textLight, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 },
+  summaryPreviewText: { fontSize: FONT_SIZES.sm, color: COLORS.textMid, lineHeight: 18 },
+  savedCardActions: { flexDirection: 'row', borderTopWidth: 1, borderTopColor: COLORS.border },
+  savedActionBtn: { flex: 1, alignItems: 'center', paddingVertical: SPACING.md, borderRightWidth: 1, borderRightColor: COLORS.border },
+  savedActionBtnText: { fontSize: FONT_SIZES.xs, fontWeight: '600', color: COLORS.purple },
+  savedActionBtnDanger: { borderRightWidth: 0 },
+  savedActionBtnDangerText: { fontSize: FONT_SIZES.xs, fontWeight: '600', color: COLORS.errorText },
+  emptyState: { alignItems: 'center', paddingVertical: SPACING.xxxl },
+  emptyIcon: { fontSize: 40, marginBottom: SPACING.md },
+  emptyTitle: { fontSize: FONT_SIZES.lg, fontWeight: '700', color: COLORS.text, marginBottom: SPACING.xs },
+  emptySub: { fontSize: FONT_SIZES.sm, color: COLORS.textMid, textAlign: 'center', lineHeight: 20, maxWidth: 260, marginBottom: SPACING.xl },
+  emptyBtn: { backgroundColor: COLORS.purple, borderRadius: RADIUS.pill, paddingHorizontal: SPACING.xl, paddingVertical: SPACING.md },
+  emptyBtnText: { color: COLORS.white, fontWeight: '700', fontSize: FONT_SIZES.sm },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  modalCard: { backgroundColor: COLORS.white, borderTopLeftRadius: RADIUS.lg, borderTopRightRadius: RADIUS.lg, padding: SPACING.xl, maxHeight: '90%' },
+  modalTitle: { fontSize: FONT_SIZES.xl, fontWeight: '800', color: COLORS.text, marginBottom: SPACING.xs },
+  modalSub: { fontSize: FONT_SIZES.sm, color: COLORS.textMid, marginBottom: SPACING.lg },
+  modalCloseBtn: { backgroundColor: COLORS.bg, borderRadius: RADIUS.pill, paddingVertical: SPACING.md, alignItems: 'center', marginTop: SPACING.sm, borderWidth: 1, borderColor: COLORS.border },
+  modalCloseBtnText: { fontSize: FONT_SIZES.sm, fontWeight: '600', color: COLORS.textMid },
+});

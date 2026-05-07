@@ -10,6 +10,7 @@ import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
   Alert, Share, Platform,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as Clipboard from 'expo-clipboard';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
@@ -329,12 +330,28 @@ export default function TalkingPointsScreen() {
 
   return (
     <View style={styles.container}>
+      {/* AP-branded header */}
+      <View style={[styles.headerBar, { paddingTop: insets.top + SPACING.sm }]}>
+        <View style={styles.headerTop}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+            <Text style={styles.backText}>← Back</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerBarTitle}>Talking Points</Text>
+          <TouchableOpacity onPress={() => router.push('/')} style={styles.homeBtn}>
+            <Text style={styles.homeText}>🏠</Text>
+          </TouchableOpacity>
+        </View>
+        <LinearGradient
+          colors={['#FF6B6B', '#FFD93D', '#6BCB77', '#4D96FF', '#C77DFF']}
+          start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+          style={styles.rainbow}
+        />
+      </View>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollViewContent}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.header}>Talking Points</Text>
         <Text style={styles.subheader}>Scripts for advocating for your child</Text>
 
         {/* Audience Selector */}
@@ -487,19 +504,20 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.bg,
   },
+  headerBar: { backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  headerTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: SPACING.lg, paddingBottom: SPACING.sm },
+  backBtn: { paddingVertical: SPACING.xs },
+  backText: { fontSize: FONT_SIZES.sm, fontWeight: '600', color: COLORS.purple },
+  headerBarTitle: { fontSize: FONT_SIZES.base, fontWeight: '700', color: COLORS.text },
+  homeBtn: { paddingVertical: SPACING.xs },
+  homeText: { fontSize: 20 },
+  rainbow: { height: 4 },
   scrollView: {
     flex: 1,
   },
   scrollViewContent: {
     padding: SPACING.md,
-    paddingTop: SPACING.xl + 10,
-  },
-  header: {
-    fontSize: FONT_SIZES.h5,
-    fontWeight: '800',
-    color: COLORS.text,
-    marginBottom: SPACING.xs,
-    textAlign: 'center',
+    paddingTop: SPACING.lg,
   },
   subheader: {
     fontSize: FONT_SIZES.sm,
@@ -547,7 +565,7 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.xl,
   },
   pointsListTitle: {
-    fontSize: FONT_SIZES.h6,
+    fontSize: FONT_SIZES.lg,
     fontWeight: '800',
     color: COLORS.text,
     marginBottom: SPACING.xs,

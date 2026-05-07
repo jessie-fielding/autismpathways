@@ -7,6 +7,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { AuthProvider } from '../services/useAuth';
 import { PmipProviderStoreProvider } from '../lib/pmip/pmipProviderStore';
 import NotificationPermissionPrompt from '../components/NotificationPermissionPrompt';
+import DismissKeyboard from '../components/DismissKeyboard';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -19,11 +20,13 @@ export default function RootLayout() {
     <AuthProvider>
       <PmipProviderStoreProvider>
         <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="(tabs)" />
-          </Stack>
-          <StatusBar style="auto" />
-          <NotificationPermissionPrompt />
+          <DismissKeyboard>
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="(tabs)" />
+            </Stack>
+            <StatusBar style="auto" />
+            <NotificationPermissionPrompt />
+          </DismissKeyboard>
         </ThemeProvider>
       </PmipProviderStoreProvider>
     </AuthProvider>
