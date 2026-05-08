@@ -53,14 +53,19 @@ export default function LtdCheck() {
     if (!selected) return;
     if (selected === 'approved') {
       router.push('/waiver-journey/step-1-intro');
+    } else if (selected === 'submitted') {
+      router.push('/medicaid/income-journey/submitted-monitoring');
     } else {
+      // not_started, talked_provider, gathering, denied → start the LTD application journey
       router.push('/medicaid/ltd-journey');
     }
   };
 
   const getButtonLabel = () => {
     if (selected === 'approved') return 'Go to Waiver Journey →';
-    if (selected) return 'Prepare for provider →';
+    if (selected === 'submitted') return 'See What to Do Now →';
+    if (selected === 'denied') return 'See Next Steps →';
+    if (selected) return 'Start the Application →';
     return 'Continue →';
   };
 
@@ -125,13 +130,24 @@ export default function LtdCheck() {
             </View>
           )}
 
-          {selected && selected !== 'approved' && (
+          {selected === 'submitted' && (
+            <View style={styles.infoBox}>
+              <Text style={styles.infoLabel}>📬 WHAT'S NEXT</Text>
+              <Text style={styles.infoText}>
+                Great — submitting is a huge step. Now the key is staying active. We'll walk you
+                through exactly how to follow up, who to call, and how to keep your case moving
+                so you're not waiting longer than you have to.
+              </Text>
+            </View>
+          )}
+
+          {selected && selected !== 'approved' && selected !== 'submitted' && (
             <View style={styles.infoBox}>
               <Text style={styles.infoLabel}>📋 WHAT'S NEXT</Text>
               <Text style={styles.infoText}>
-                No problem — we'll walk you through how to prepare for the provider visit. This
-                includes what to bring, what to say, and how to make sure the provider has everything
-                they need to complete the documentation.
+                We'll walk you through the disability-based Medicaid application process step by
+                step — including what documentation you need, how to work with your provider, and
+                how to submit a strong application.
               </Text>
             </View>
           )}
