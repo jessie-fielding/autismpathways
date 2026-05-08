@@ -19,6 +19,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, FONT_SIZES, RADIUS, SHADOWS, SPACING } from '../../lib/theme';
 import { useChildChanged } from '../../hooks/useChildChanged';
+import { PathwayDisclaimer } from '../../components/PathwayDisclaimer';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface IEPGoal {
@@ -715,7 +716,9 @@ export default function IEPScreen() {
               <TouchableOpacity style={s.primaryBtn} onPress={saveMeeting}>
                 <Text style={s.primaryBtnText}>Save Meeting</Text>
               </TouchableOpacity>
-            </ScrollView>
+      
+        <PathwayDisclaimer type="educational" />
+      </ScrollView>
           </View>
         </KeyboardAvoidingView>
       </Modal>

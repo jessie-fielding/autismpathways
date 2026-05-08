@@ -6,6 +6,7 @@ import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '../../lib/theme';
 import { storage } from '../../services/storage';
 import { useActiveChild } from '../../services/childManager';
 import { useChildChanged } from '../../hooks/useChildChanged';
+import { PathwayDisclaimer } from '../../components/PathwayDisclaimer';
 
 const TOTAL_STEPS = 6;
 const CURRENT_STEP = 1;
@@ -174,6 +175,8 @@ export default function DiagnosisIntroScreen() {
           ))}
         </View>
 
+
+        <PathwayDisclaimer type="medical" />
       </ScrollView>
 
       {/* Footer CTA */}

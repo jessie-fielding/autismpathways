@@ -6,6 +6,7 @@ import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, FONT_SIZES, RADIUS, SHADOWS, SPACING } from '../../lib/theme';
 import waiverData from '../../data/waiver-data.json';
+import { PathwayDisclaimer } from '../../components/PathwayDisclaimer';
 
 const ALL_STATES = Object.entries(waiverData as Record<string, { stateName: string }>)
   .map(([abbr, data]) => ({ abbr, name: data.stateName }))
@@ -129,6 +130,7 @@ export default function WaiverStatePickerScreen() {
             <Text style={styles.emptyText}>No states match "{search}"</Text>
           </View>
         }
+        ListFooterComponent={<PathwayDisclaimer type="legal" />}
       />
 
       <View style={styles.rainbowBar} />

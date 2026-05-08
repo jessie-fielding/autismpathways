@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { COLORS, FONT_SIZES, RADIUS, SPACING } from '../../../lib/theme';
+import { PathwayDisclaimer } from '../../../components/PathwayDisclaimer';
 
 export default function IncomeJourneyIntroScreen() {
   const router = useRouter();
@@ -34,10 +35,12 @@ export default function IncomeJourneyIntroScreen() {
           <View style={styles.infoBox}>
             <Text style={styles.infoTitle}>NEXT QUESTION</Text>
             <Text style={styles.infoText}>
-              Next, we’ll figure out whether your child has already been approved for long-term
+              Next, we'll figure out whether your child has already been approved for long-term
               disability so we can guide you to the right path.
             </Text>
           </View>
+
+          <PathwayDisclaimer type="legal" />
         </View>
       </ScrollView>
 

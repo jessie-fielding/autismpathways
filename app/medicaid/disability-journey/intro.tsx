@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { COLORS, FONT_SIZES, RADIUS, SPACING } from '../../../lib/theme';
+import { PathwayDisclaimer } from '../../../components/PathwayDisclaimer';
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
@@ -33,6 +34,7 @@ export default function DisabilityIntroScreen() {
         <View style={styles.infoBox}>
           <Text style={styles.infoText}>If denied based on income, you may still qualify using disability status with different eligibility rules.</Text>
         </View>
+        <PathwayDisclaimer type="legal" />
       </ScrollView>
       <View style={styles.navButtons}>
         <TouchableOpacity style={styles.navButton} onPress={() => router.back()}>

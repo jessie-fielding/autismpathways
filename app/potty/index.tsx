@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-nati
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '../../lib/theme';
+import { PathwayDisclaimer } from '../../components/PathwayDisclaimer';
 
 export default function PottyIntroScreen() {
   const router = useRouter();
@@ -81,8 +82,9 @@ export default function PottyIntroScreen() {
 
         {/* Rainbow bar */}
         <View style={styles.rainbowBar} />
+        <PathwayDisclaimer type="medical" />
       </ScrollView>
-    </View>
+      <View style={styles.navigationButtons}>    </View>
   );
 }
 

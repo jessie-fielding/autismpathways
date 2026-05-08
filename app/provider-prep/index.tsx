@@ -9,6 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '../../lib/theme';
+import { PathwayDisclaimer } from '../../components/PathwayDisclaimer';
 // ─── Storage Keys ─────────────────────────────────────────────────────────────
 const DRAFT_KEY   = 'ap_provider_prep_draft';
 const SAVED_KEY   = 'ap_provider_prep_saved';
@@ -588,7 +589,9 @@ export default function ProviderPrepScreen() {
               ))}
               <Text style={styles.fieldLabel}>Follow-up Date</Text>
               <TextInput style={styles.input} value={summaryDraft.followUpDate} onChangeText={text => setSummaryDraft(prev => ({ ...prev, followUpDate: text }))} placeholder="MM/DD/YYYY" placeholderTextColor={COLORS.textLight} />
-            </ScrollView>
+      
+        <PathwayDisclaimer type="medical" />
+      </ScrollView>
             <TouchableOpacity style={styles.saveBtn} onPress={() => summaryModal && saveSummary(summaryModal.id)}>
               <Text style={styles.saveBtnText}>Save Summary</Text>
             </TouchableOpacity>

@@ -442,6 +442,13 @@ export default function SettingsScreen() {
         <Text style={styles.sectionLabel}>ABOUT</Text>
         <View style={styles.card}>
           <Row
+            icon="📚"
+            title="Sources & Citations"
+            subtitle="All sources used in this app"
+            onPress={() => router.push('/settings/sources')}
+          />
+          <View style={styles.divider} />
+          <Row
             icon="🌐"
             title="Blog & Resources"
             subtitle="info.autismpathways.app"

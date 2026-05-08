@@ -8,6 +8,7 @@ import {
   View,
 } from 'react-native';
 import { COLORS, FONT_SIZES, RADIUS, SPACING } from '../../lib/theme';
+import { PathwayDisclaimer } from '../../components/PathwayDisclaimer';
 
 const TABS = [
   { number: 1, label: 'Overview', active: true, completed: false },
@@ -147,9 +148,9 @@ export default function MedicaidIndex() {
               </View>
             </View>
           ))}
+          <PathwayDisclaimer type="legal" />
         </View>
       </ScrollView>
-
       {/* Navigation */}
       <View style={styles.navigationButtons}>
         <TouchableOpacity

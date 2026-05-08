@@ -3,6 +3,7 @@ import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useMedicaidState } from '../../../lib/MedicaidStateContext';
 import { COLORS, FONT_SIZES, RADIUS, SPACING } from '../../../lib/theme';
+import { PathwayDisclaimer } from '../../../components/PathwayDisclaimer';
 
 export default function LtdJourneyIntro() {
   const router = useRouter();
@@ -92,6 +93,7 @@ export default function LtdJourneyIntro() {
             <Text style={styles.citationItem}>• Autism Speaks — Medicaid Waiver Resource Guide for Families</Text>
           </View>
         </View>
+        <PathwayDisclaimer type="legal" />
       </ScrollView>
 
       <View style={styles.navigationButtons}>
