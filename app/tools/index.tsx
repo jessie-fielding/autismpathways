@@ -221,7 +221,7 @@ export default function AllToolsScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* Hero */}
         <View style={styles.hero}>
           <Text style={styles.heroIcon}>🧰</Text>
@@ -293,8 +293,8 @@ const styles = StyleSheet.create({
   },
   backBtn: { paddingVertical: 6, paddingRight: 12 },
   backText: { color: COLORS.purple, fontSize: FONT_SIZES.sm, fontWeight: '600' },
-  scroll: {
-    flex: 1, paddingHorizontal: SPACING.lg },
+  scrollContainer: { flex: 1 },
+  scroll: { paddingHorizontal: SPACING.lg },
   hero: {
     alignItems: 'center',
     paddingVertical: SPACING.xl,

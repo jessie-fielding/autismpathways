@@ -309,6 +309,7 @@ export default function LearningScreen() {
       </View>
 
       <ScrollView
+        style={styles.scrollView}
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -489,8 +490,9 @@ const styles = StyleSheet.create({
   },
   headerTitlePink: { color: '#c47ab8' },
 
+  scrollView: { flex: 1 },
   scroll: {
-    flex: 1, paddingBottom: 40 },
+    paddingBottom: 40 },
 
   // Hero
   hero: {

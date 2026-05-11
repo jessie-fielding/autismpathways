@@ -54,7 +54,7 @@ export default function CCBToolScreen() {
         ))}
       </ScrollView>
 
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.scroll}>
         {active === 'what' && <WhatSection />}
         {active === 'eligibility' && <EligibilitySection />}
         {active === 'apply' && <ApplySection />}
@@ -388,8 +388,8 @@ const styles = StyleSheet.create({
   tabIcon: { fontSize: 14 },
   tabText: { fontSize: FONT_SIZES.xs, fontWeight: '600', color: COLORS.textMid },
   tabTextOn: { color: COLORS.purpleDark },
-  scroll: {
-    flex: 1, padding: SPACING.lg },
+  scrollContainer: { flex: 1 },
+  scroll: { padding: SPACING.lg },
   infoCard: {
     borderRadius: RADIUS.md, padding: SPACING.lg, marginBottom: SPACING.md,
     borderWidth: 1, borderColor: COLORS.border, borderTopWidth: 4, ...SHADOWS.sm,

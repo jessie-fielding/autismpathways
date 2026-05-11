@@ -58,7 +58,7 @@ export default function WaiverWhatToExpectScreen() {
         <View style={{ width: 60 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* Hero */}
         <View style={styles.heroCard}>
           <Text style={styles.heroEmoji}>⏳</Text>
@@ -138,8 +138,8 @@ const styles = StyleSheet.create({
   backBtn: { padding: SPACING.xs },
   backText: { color: COLORS.white, fontSize: FONT_SIZES.sm, fontWeight: '600' },
   headerTitle: { color: COLORS.white, fontSize: FONT_SIZES.md, fontWeight: '700' },
-  scroll: {
-    flex: 1, paddingBottom: SPACING.xl },
+  scrollContainer: { flex: 1 },
+  scroll: { paddingBottom: SPACING.xl },
   heroCard: {
     margin: SPACING.md,
     padding: SPACING.lg,

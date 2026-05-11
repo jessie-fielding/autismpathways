@@ -377,7 +377,7 @@ export default function ICDQuizScreen() {
           <Text style={styles.headerTitle}>ICD Support Quiz</Text>
           <View style={{ width: 60 }} />
         </View>
-        <ScrollView contentContainerStyle={styles.scroll}>
+        <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.scroll}>
           <View style={styles.heroCard}>
             <Text style={styles.heroIcon}>🔍</Text>
             <Text style={styles.heroTitle}>Find the Right ICD-10 Codes for Your PMIP Visit</Text>
@@ -438,7 +438,7 @@ export default function ICDQuizScreen() {
           <View style={[styles.progressBarFill, { width: `${progress}%` as any }]} />
         </View>
 
-        <ScrollView contentContainerStyle={styles.scroll}>
+        <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.scroll}>
           {isMulti && (
             <View style={styles.multiChip}>
               <Text style={styles.multiChipText}>Select all that apply</Text>
@@ -510,7 +510,7 @@ export default function ICDQuizScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.scroll}>
         {/* Summary */}
         <View style={styles.summaryCard}>
           <Text style={styles.summaryIcon}>🔍</Text>
@@ -630,8 +630,8 @@ const styles = StyleSheet.create({
   progressBarBg: { height: 4, backgroundColor: COLORS.border },
   progressBarFill: { height: '100%', backgroundColor: COLORS.purple },
 
-  scroll: {
-    flex: 1, padding: SPACING.lg },
+  scrollContainer: { flex: 1 },
+  scroll: { padding: SPACING.lg },
 
   heroCard: {
     backgroundColor: COLORS.blue,

@@ -264,7 +264,7 @@ export default function SettingsScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* Title */}
         <Text style={styles.title}>Settings</Text>
         {profile?.email && <Text style={styles.email}>{profile.email}</Text>}
@@ -495,8 +495,8 @@ const styles = StyleSheet.create({
   },
   backBtn: { paddingVertical: 6 },
   backText: { color: COLORS.purple, fontSize: FONT_SIZES.sm, fontWeight: '600' },
-  scroll: {
-    flex: 1, paddingHorizontal: SPACING.lg, paddingBottom: 40 },
+  scrollContainer: { flex: 1 },
+  scroll: { paddingHorizontal: SPACING.lg, paddingBottom: 40 },
   title: {
     fontSize: FONT_SIZES.xxl,
     fontWeight: '700',

@@ -90,7 +90,7 @@ export default function WaiverNextStepsScreen() {
         <View style={{ width: 60 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* Progress bar */}
         <View style={styles.progressContainer}>
           <View style={styles.progressRow}>
@@ -184,8 +184,8 @@ const styles = StyleSheet.create({
   backBtn: { padding: SPACING.xs },
   backText: { color: COLORS.white, fontSize: FONT_SIZES.sm, fontWeight: '600' },
   headerTitle: { color: COLORS.white, fontSize: FONT_SIZES.md, fontWeight: '700' },
-  scroll: {
-    flex: 1, paddingBottom: SPACING.xl },
+  scrollContainer: { flex: 1 },
+  scroll: { paddingBottom: SPACING.xl },
   progressContainer: {
     margin: SPACING.md,
     padding: SPACING.md,

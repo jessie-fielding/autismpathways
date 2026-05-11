@@ -186,8 +186,8 @@ const styles = StyleSheet.create({
   backBtn: { paddingRight: SPACING.sm },
   backText: { fontSize: FONT_SIZES.sm, color: COLORS.purple, fontWeight: '600' },
   headerTitle: { fontSize: FONT_SIZES.lg, fontWeight: '700', color: COLORS.text },
-  scroll: {
-    flex: 1, padding: SPACING.lg, paddingBottom: 40 },
+  scrollContainer: { flex: 1 },
+  scroll: { padding: SPACING.lg, paddingBottom: 40 },
   intro: {
     backgroundColor: COLORS.white,
     borderRadius: RADIUS.lg,

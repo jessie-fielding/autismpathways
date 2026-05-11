@@ -102,7 +102,7 @@ export default function WaiverTrackerScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* Info card */}
         <View style={styles.infoCard}>
           <Text style={styles.infoEmoji}>📋</Text>
@@ -204,8 +204,8 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.sm,
   },
   editBtnText: { color: COLORS.white, fontSize: FONT_SIZES.sm, fontWeight: '700' },
-  scroll: {
-    flex: 1, paddingBottom: SPACING.xl },
+  scrollContainer: { flex: 1 },
+  scroll: { paddingBottom: SPACING.xl },
   infoCard: {
     flexDirection: 'row',
     margin: SPACING.md,

@@ -477,7 +477,7 @@ export default function ProviderReportScreen() {
 
       {/* Session picker */}
       {savedNotes.length > 0 && !selected && (
-        <ScrollView contentContainerStyle={styles.scroll}>
+        <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.scroll}>
           <Text style={styles.pickTitle}>Select a prep session to generate a report</Text>
           {savedNotes.map((note) => (
             <TouchableOpacity
@@ -512,7 +512,7 @@ export default function ProviderReportScreen() {
 
       {/* Report view */}
       {selected && d && (
-        <ScrollView contentContainerStyle={styles.scroll}>
+        <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.scroll}>
           {/* Back to list */}
           <TouchableOpacity onPress={() => setSelected(null)} style={styles.backToList}>
             <Text style={styles.backToListText}>← All sessions</Text>
@@ -675,8 +675,8 @@ const styles = StyleSheet.create({
   headerActionPrimary: { backgroundColor: PURPLE, borderColor: PURPLE },
   headerActionText: { fontSize: 13, fontWeight: '700', color: PURPLE },
 
-  scroll: {
-    flex: 1, padding: 20 },
+  scrollContainer: { flex: 1 },
+  scroll: { padding: 20 },
 
   emptyState: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 40 },
   emptyIcon: { fontSize: 52, marginBottom: 16, opacity: 0.5 },

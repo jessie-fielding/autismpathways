@@ -13,7 +13,7 @@ const CURRENT_STEP = 1;
 
 export default function DiagnosisIntroScreen() {
   const router = useRouter();
-  const { key: childKey } = useActiveChild();
+  const { key: childKey, child } = useActiveChild();
   const [profile, setProfile] = useState<any>(null);
 
   const loadProfile = useCallback(async () => {
@@ -26,7 +26,7 @@ export default function DiagnosisIntroScreen() {
   // Re-load when active child changes (uses ref-based hook to avoid stale closures)
   useChildChanged(() => loadProfile());
 
-  const childName = profile?.childName || null;
+  const childName = child?.name || profile?.childName || null;
   const state = profile?.state || null;
   const diagnosisStatus = profile?.diagnosis || null;
   const concerns = profile?.concerns || [];

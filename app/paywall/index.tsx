@@ -215,7 +215,7 @@ export default function PaywallScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView
+      <ScrollView style={styles.scrollContainer}
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
         bounces={true}
@@ -377,8 +377,8 @@ const styles = StyleSheet.create({
   },
   backBtn: { paddingVertical: 6 },
   backText: { color: COLORS.purple, fontSize: FONT_SIZES.sm, fontWeight: '600' },
-  scroll: {
-    flex: 1, paddingBottom: 60 },
+  scrollContainer: { flex: 1 },
+  scroll: { paddingBottom: 60 },
 
   // Hero
   hero: {

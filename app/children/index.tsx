@@ -155,7 +155,7 @@ export default function ManageChildrenScreen() {
       {loading ? (
         <ActivityIndicator style={{ marginTop: 60 }} color={COLORS.purple} />
       ) : (
-        <ScrollView contentContainerStyle={styles.scroll}>
+        <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.scroll}>
           {/* Intro */}
           <Text style={styles.intro}>
             Each child has their own separate pathway progress, IEP notes, observations, and data.
@@ -343,8 +343,8 @@ const styles = StyleSheet.create({
   backText: { fontSize: FONT_SIZES.base, color: COLORS.purple, fontWeight: '600' },
   headerTitle: { fontSize: FONT_SIZES.lg, fontWeight: '700', color: COLORS.text },
 
-  scroll: {
-    flex: 1, padding: SPACING.lg, paddingBottom: 60 },
+  scrollContainer: { flex: 1 },
+  scroll: { padding: SPACING.lg, paddingBottom: 60 },
 
   intro: {
     fontSize: FONT_SIZES.sm, color: COLORS.textMid, lineHeight: 20,

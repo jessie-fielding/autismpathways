@@ -182,7 +182,7 @@ export default function ServicesTrackerScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.scroll}>
         {/* Stats row */}
         <View style={styles.statsRow}>
           <View style={[styles.statCard, { borderTopColor: COLORS.mintAccent }]}>
@@ -465,8 +465,8 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: FONT_SIZES.lg, fontWeight: 'bold', color: COLORS.text },
   addBtn: { backgroundColor: COLORS.primary, paddingVertical: SPACING.sm, paddingHorizontal: SPACING.md, borderRadius: RADIUS.md },
   addBtnText: { color: 'white', fontWeight: 'bold' },
-  scroll: {
-    flex: 1, padding: SPACING.md, paddingBottom: 100 },
+  scrollContainer: { flex: 1 },
+  scroll: { padding: SPACING.md, paddingBottom: 100 },
   statsRow: { flexDirection: 'row', justifyContent: 'space-around', marginBottom: SPACING.lg },
   statCard: {
     flex: 1, backgroundColor: COLORS.card, padding: SPACING.md, borderRadius: RADIUS.lg,

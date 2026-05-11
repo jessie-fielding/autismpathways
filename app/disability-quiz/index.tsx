@@ -385,7 +385,7 @@ export default function DisabilityQuizScreen() {
           <Text style={styles.headerTitle}>Developmental Quiz</Text>
           <View style={{ width: 60 }} />
         </View>
-        <ScrollView contentContainerStyle={styles.scroll}>
+        <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.scroll}>
           <View style={styles.heroCard}>
             <Text style={styles.heroIcon}>🧩</Text>
             <Text style={styles.heroTitle}>Understand Your Child's Full Profile</Text>
@@ -437,7 +437,7 @@ export default function DisabilityQuizScreen() {
           <View style={[styles.progressBarFill, { width: `${progress}%` as any }]} />
         </View>
 
-        <ScrollView contentContainerStyle={styles.scroll}>
+        <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.scroll}>
           <View style={styles.categoryChip}>
             <Text style={styles.categoryChipText}>{q.category}</Text>
           </View>
@@ -484,7 +484,7 @@ export default function DisabilityQuizScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.scroll}>
         {flags.length === 0 ? (
           <View style={styles.noFlagsCard}>
             <Text style={styles.noFlagsIcon}>✅</Text>
@@ -592,8 +592,8 @@ const styles = StyleSheet.create({
   progressBarBg: { height: 4, backgroundColor: COLORS.border },
   progressBarFill: { height: '100%', backgroundColor: COLORS.purple },
 
-  scroll: {
-    flex: 1, padding: SPACING.lg },
+  scrollContainer: { flex: 1 },
+  scroll: { padding: SPACING.lg },
 
   heroCard: {
     backgroundColor: COLORS.lavender,

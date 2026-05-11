@@ -287,7 +287,7 @@ export default function DocumentVaultScreen() {
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* Progress bar */}
         <View style={styles.progressCard}>
           <View style={styles.progressRow}>
@@ -443,8 +443,8 @@ const styles = StyleSheet.create({
   },
   headerBadgeText: { fontSize: FONT_SIZES.xs, fontWeight: '700', color: '#8B6914' },
 
-  scroll: {
-    flex: 1, paddingHorizontal: SPACING.lg, paddingTop: SPACING.lg },
+  scrollContainer: { flex: 1 },
+  scroll: { paddingHorizontal: SPACING.lg, paddingTop: SPACING.lg },
 
   progressCard: {
     backgroundColor: COLORS.white,
