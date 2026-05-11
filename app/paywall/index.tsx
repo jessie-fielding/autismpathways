@@ -80,7 +80,14 @@ export default function PaywallScreen() {
     if (!BETA_MODE && IAP) {
       initIAP();
     }
+    // Fallback: if StoreKit doesn't return a price within 5s, show hardcoded price
+    // so the spinner doesn't show forever (happens when sandbox/metadata not yet live)
+    const fallbackTimer = setTimeout(() => {
+      setPrice(prev => prev ?? '$29.99');
+      setIapReady(true);
+    }, 5000);
     return () => {
+      clearTimeout(fallbackTimer);
       if (!BETA_MODE && IAP) {
         IAP.disconnectAsync().catch(() => {});
       }
