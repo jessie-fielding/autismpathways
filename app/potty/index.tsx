@@ -84,7 +84,8 @@ export default function PottyIntroScreen() {
         <View style={styles.rainbowBar} />
         <PathwayDisclaimer type="medical" />
       </ScrollView>
-      <View style={styles.navigationButtons}>    </View>
+      <View style={styles.navigationButtons} />
+    </View>
   );
 }
 
