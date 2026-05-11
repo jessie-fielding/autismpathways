@@ -1,32 +1,36 @@
 /**
- * Paywall / Upgrade Screen
- *
- * Handles Apple In-App Purchase for Autism Pathways Premium.
+ * Paywall screen — Premium subscription purchase.
+ * Uses react-native-iap for both iOS (StoreKit) and Android (Google Play Billing).
  * Supports both monthly ($9.99) and annual ($79.99) subscriptions.
  */
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  ActivityIndicator, Alert, Linking,
+  ActivityIndicator, Alert, Linking, Platform,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
+import {
+  initConnection,
+  endConnection,
+  getSubscriptions,
+  requestSubscription,
+  getAvailablePurchases,
+  finishTransaction,
+  purchaseErrorListener,
+  purchaseUpdatedListener,
+  type Subscription,
+  type Purchase,
+  type PurchaseError,
+} from 'react-native-iap';
 import { COLORS, SPACING, RADIUS, FONT_SIZES, SHADOWS } from '../../lib/theme';
 import { BETA_MODE, IAP_PURCHASED_KEY } from '../../hooks/useIsPremium';
 
 // ── IAP Product IDs ───────────────────────────────────────────────────────────
+// These must match EXACTLY what is set up in App Store Connect AND Google Play Console
 const PRODUCT_ID_ANNUAL  = 'app.autismpathways.premium.annual';
 const PRODUCT_ID_MONTHLY = 'app.autismpathways.premium.monthly';
-
-// ── Conditional import ────────────────────────────────────────────────────────
-let IAP: typeof import('expo-in-app-purchases') | null = null;
-try {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  IAP = require('expo-in-app-purchases');
-} catch {
-  // expo-in-app-purchases not installed — IAP will be disabled
-}
+const PRODUCT_IDS = [PRODUCT_ID_ANNUAL, PRODUCT_ID_MONTHLY];
 
 // ── Feature list ──────────────────────────────────────────────────────────────
 const FEATURES = [
@@ -40,87 +44,111 @@ const FEATURES = [
   { icon: '📰', title: 'Full Article Library',           sub: 'Unlimited access to all guides and explainers' },
 ];
 
-
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function PaywallScreen() {
   const router = useRouter();
-
   const [selectedPlan, setSelectedPlan] = useState<'annual' | 'monthly'>('annual');
+  const [annualProduct, setAnnualProduct]   = useState<Subscription | null>(null);
+  const [monthlyProduct, setMonthlyProduct] = useState<Subscription | null>(null);
   const [annualPrice, setAnnualPrice]   = useState<string | null>(null);
   const [monthlyPrice, setMonthlyPrice] = useState<string | null>(null);
-  const [purchasing, setPurchasing]     = useState(false);
-  const [restoring, setRestoring]       = useState(false);
-  const [iapReady, setIapReady]         = useState(false);
+  const [purchasing, setPurchasing] = useState(false);
+  const [restoring, setRestoring]   = useState(false);
+  const [iapReady, setIapReady]     = useState(false);
+
+  const onPurchaseSuccess = useCallback(async () => {
+    await AsyncStorage.setItem(IAP_PURCHASED_KEY, 'true');
+    setPurchasing(false);
+    Alert.alert(
+      '🎉 Welcome to Premium!',
+      'You now have full access to all Autism Pathways features. Thank you for supporting families navigating the autism journey.',
+      [{ text: 'Start Exploring', onPress: () => router.replace('/(tabs)/dashboard') }]
+    );
+  }, [router]);
 
   useEffect(() => {
-    if (!BETA_MODE && IAP) {
-      initIAP();
-    }
-    // Fallback: if StoreKit doesn't return prices within 5s, show hardcoded prices
+    if (BETA_MODE) return;
+
+    let purchaseUpdateSub: ReturnType<typeof purchaseUpdatedListener> | null = null;
+    let purchaseErrorSub: ReturnType<typeof purchaseErrorListener> | null = null;
+
+    const setup = async () => {
+      try {
+        await initConnection();
+
+        // Listen for successful purchases
+        purchaseUpdateSub = purchaseUpdatedListener(async (purchase: Purchase) => {
+          try {
+            await finishTransaction({ purchase, isConsumable: false });
+            await onPurchaseSuccess();
+          } catch (e) {
+            console.log('finishTransaction error', e);
+            setPurchasing(false);
+          }
+        });
+
+        // Listen for purchase errors
+        purchaseErrorSub = purchaseErrorListener((error: PurchaseError) => {
+          setPurchasing(false);
+          if (error.code !== 'E_USER_CANCELLED') {
+            Alert.alert('Purchase Failed', error.message || 'Something went wrong. Please try again.');
+          }
+        });
+
+        // Fetch subscription products
+        const subs = await getSubscriptions({ skus: PRODUCT_IDS });
+        subs.forEach((sub) => {
+          if (sub.productId === PRODUCT_ID_ANNUAL) {
+            setAnnualProduct(sub);
+            setAnnualPrice(sub.localizedPrice ?? '$79.99');
+          }
+          if (sub.productId === PRODUCT_ID_MONTHLY) {
+            setMonthlyProduct(sub);
+            setMonthlyPrice(sub.localizedPrice ?? '$9.99');
+          }
+        });
+
+        setIapReady(true);
+      } catch (e) {
+        console.log('IAP setup error', e);
+        // Fallback to hardcoded prices if store is unavailable
+        setAnnualPrice('$79.99');
+        setMonthlyPrice('$9.99');
+        setIapReady(true);
+      }
+    };
+
+    setup();
+
+    // Fallback timer — show hardcoded prices if store takes too long
     const fallbackTimer = setTimeout(() => {
       setAnnualPrice(prev => prev ?? '$79.99');
       setMonthlyPrice(prev => prev ?? '$9.99');
       setIapReady(true);
-    }, 5000);
+    }, 6000);
+
     return () => {
       clearTimeout(fallbackTimer);
-      if (!BETA_MODE && IAP) {
-        IAP.disconnectAsync().catch(() => {});
-      }
+      purchaseUpdateSub?.remove();
+      purchaseErrorSub?.remove();
+      endConnection();
     };
-  }, []);
-
-  const initIAP = async () => {
-    if (!IAP) return;
-    try {
-      await IAP.connectAsync();
-
-      // Listen for purchase updates
-      IAP.setPurchaseListener(({ responseCode, results, errorCode }) => {
-        if (responseCode === IAP.IAPResponseCode.OK && results) {
-          results.forEach(async (purchase) => {
-            if (!purchase.acknowledged) {
-              await IAP!.finishTransactionAsync(purchase, true);
-            }
-            await AsyncStorage.setItem(IAP_PURCHASED_KEY, 'true');
-            setPurchasing(false);
-            Alert.alert(
-              '🎉 Welcome to Premium!',
-              'You now have full access to all Autism Pathways features. Thank you for supporting families navigating the autism journey.',
-              [{ text: 'Start Exploring', onPress: () => router.replace('/(tabs)/dashboard') }]
-            );
-          });
-        } else if (responseCode === IAP.IAPResponseCode.USER_CANCELED) {
-          setPurchasing(false);
-        } else {
-          setPurchasing(false);
-          Alert.alert('Purchase Failed', `Something went wrong (code: ${errorCode}). Please try again.`);
-        }
-      });
-
-      // Fetch both products
-      const { responseCode, results } = await IAP.getProductsAsync([PRODUCT_ID_ANNUAL, PRODUCT_ID_MONTHLY]);
-      if (responseCode === IAP.IAPResponseCode.OK && results?.length) {
-        results.forEach(p => {
-          if (p.productId === PRODUCT_ID_ANNUAL)  setAnnualPrice(p.priceString);
-          if (p.productId === PRODUCT_ID_MONTHLY) setMonthlyPrice(p.priceString);
-        });
-      }
-      setIapReady(true);
-    } catch (e) {
-      console.log('IAP init error', e);
-    }
-  };
+  }, [onPurchaseSuccess]);
 
   const handlePurchase = async () => {
-    if (!IAP || !iapReady) {
-      Alert.alert('Not Available', 'In-app purchases are not available on this device.');
+    if (!iapReady) {
+      Alert.alert('Not Ready', 'Store connection is still loading. Please try again in a moment.');
+      return;
+    }
+    const product = selectedPlan === 'annual' ? annualProduct : monthlyProduct;
+    if (!product) {
+      Alert.alert('Not Available', 'This subscription is not available on your device right now.');
       return;
     }
     setPurchasing(true);
     try {
-      const productId = selectedPlan === 'annual' ? PRODUCT_ID_ANNUAL : PRODUCT_ID_MONTHLY;
-      await IAP.purchaseItemAsync(productId);
+      await requestSubscription({ sku: product.productId });
+      // Result handled by purchaseUpdatedListener
     } catch (e) {
       setPurchasing(false);
       Alert.alert('Error', 'Could not start purchase. Please try again.');
@@ -128,28 +156,24 @@ export default function PaywallScreen() {
   };
 
   const handleRestore = async () => {
-    if (!IAP) return;
     setRestoring(true);
     try {
-      const { responseCode, results } = await IAP.getPurchaseHistoryAsync();
-      if (responseCode === IAP.IAPResponseCode.OK && results?.length) {
-        const hasPremium = results.some(
-          p => p.productId === PRODUCT_ID_ANNUAL || p.productId === PRODUCT_ID_MONTHLY
+      const purchases = await getAvailablePurchases();
+      const hasPremium = purchases.some(
+        p => p.productId === PRODUCT_ID_ANNUAL || p.productId === PRODUCT_ID_MONTHLY
+      );
+      if (hasPremium) {
+        await AsyncStorage.setItem(IAP_PURCHASED_KEY, 'true');
+        Alert.alert(
+          'Purchase Restored',
+          'Your premium access has been restored.',
+          [{ text: 'Continue', onPress: () => router.replace('/(tabs)/dashboard') }]
         );
-        if (hasPremium) {
-          await AsyncStorage.setItem(IAP_PURCHASED_KEY, 'true');
-          Alert.alert(
-            'Purchase Restored',
-            'Your premium access has been restored.',
-            [{ text: 'Continue', onPress: () => router.replace('/(tabs)/dashboard') }]
-          );
-        } else {
-          Alert.alert('No Purchase Found', 'We could not find a previous premium purchase on this Apple ID.');
-        }
       } else {
-        Alert.alert('Nothing to Restore', 'No previous purchases found for this Apple ID.');
+        const storeName = Platform.OS === 'android' ? 'Google Play account' : 'Apple ID';
+        Alert.alert('No Purchase Found', `We could not find a previous premium purchase on this ${storeName}.`);
       }
-    } catch {
+    } catch (e) {
       Alert.alert('Error', 'Could not restore purchases. Please try again.');
     } finally {
       setRestoring(false);
@@ -198,18 +222,18 @@ export default function PaywallScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.scrollContainer}
+      <ScrollView
+        style={styles.scrollContainer}
         contentContainerStyle={styles.scroll}
+        keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
-        bounces={true}
-        alwaysBounceVertical={true}
       >
         {/* Hero */}
         <View style={styles.hero}>
           <Text style={styles.heroIcon}>🌟</Text>
           <Text style={styles.heroTitle}>Autism Pathways Premium</Text>
           <Text style={styles.heroSub}>
-            Everything a family needs to navigate the autism system — in one place.
+            Everything you need to navigate the system — diagnosis, Medicaid, IEP, and beyond.
           </Text>
 
           {/* Plan Toggle */}
@@ -217,34 +241,48 @@ export default function PaywallScreen() {
             <TouchableOpacity
               style={[styles.planOption, selectedPlan === 'annual' && styles.planOptionActive]}
               onPress={() => setSelectedPlan('annual')}
-              activeOpacity={0.8}
+              activeOpacity={0.85}
             >
               <View style={styles.planBadgeRow}>
                 <Text style={[styles.planLabel, selectedPlan === 'annual' && styles.planLabelActive]}>Annual</Text>
-                <View style={styles.saveBadge}>
-                  <Text style={styles.saveBadgeText}>Save 33%</Text>
-                </View>
+                <View style={styles.saveBadge}><Text style={styles.saveBadgeText}>SAVE 33%</Text></View>
               </View>
-              {annualPrice
-                ? <Text style={[styles.planPrice, selectedPlan === 'annual' && styles.planPriceActive]}>{annualPrice}/yr</Text>
-                : <ActivityIndicator size="small" color={selectedPlan === 'annual' ? COLORS.white : COLORS.purple} />
-              }
+              <Text style={[styles.planPrice, selectedPlan === 'annual' && styles.planPriceActive]}>
+                {annualPrice ?? '—'}
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[styles.planOption, selectedPlan === 'monthly' && styles.planOptionActive]}
               onPress={() => setSelectedPlan('monthly')}
-              activeOpacity={0.8}
+              activeOpacity={0.85}
             >
               <Text style={[styles.planLabel, selectedPlan === 'monthly' && styles.planLabelActive]}>Monthly</Text>
-              {monthlyPrice
-                ? <Text style={[styles.planPrice, selectedPlan === 'monthly' && styles.planPriceActive]}>{monthlyPrice}/mo</Text>
-                : <ActivityIndicator size="small" color={selectedPlan === 'monthly' ? COLORS.white : COLORS.purple} />
-              }
+              <Text style={[styles.planPrice, selectedPlan === 'monthly' && styles.planPriceActive]}>
+                {monthlyPrice ?? '—'}
+              </Text>
             </TouchableOpacity>
           </View>
 
-          <Text style={styles.priceNote}>Less than one therapy co-pay</Text>
+          <TouchableOpacity
+            style={[styles.purchaseBtn, (!iapReady || purchasing) && styles.purchaseBtnDisabled]}
+            onPress={handlePurchase}
+            disabled={!iapReady || purchasing}
+            activeOpacity={0.85}
+          >
+            {purchasing ? (
+              <ActivityIndicator color={COLORS.white} />
+            ) : (
+              <Text style={styles.purchaseBtnText}>
+                {priceLoaded ? `Get Premium — ${currentPrice}` : 'Loading…'}
+              </Text>
+            )}
+          </TouchableOpacity>
+          <Text style={styles.priceNote}>
+            {selectedPlan === 'annual'
+              ? `Billed annually · ~$6.67/mo`
+              : 'Billed monthly · cancel anytime'}
+          </Text>
         </View>
 
         {/* Features */}
@@ -269,19 +307,27 @@ export default function PaywallScreen() {
           <Text style={styles.sectionTitle}>Questions</Text>
           <View style={styles.faqCard}>
             <Text style={styles.faqQ}>Can I cancel anytime?</Text>
-            <Text style={styles.faqA}>Yes. Cancel through your iPhone Settings → Apple ID → Subscriptions at any time. No questions asked.</Text>
+            <Text style={styles.faqA}>
+              {Platform.OS === 'android'
+                ? 'Yes. Cancel through Google Play → Subscriptions at any time. No questions asked.'
+                : 'Yes. Cancel through your iPhone Settings → Apple ID → Subscriptions at any time. No questions asked.'}
+            </Text>
           </View>
           <View style={styles.faqCard}>
             <Text style={styles.faqQ}>Is my data safe?</Text>
             <Text style={styles.faqA}>All your data is stored locally on your device. We never sell your information. See our Privacy Policy for details.</Text>
           </View>
           <View style={styles.faqCard}>
-            <Text style={styles.faqQ}>What if I get a new phone?</Text>
-            <Text style={styles.faqA}>Tap "Restore Purchases" below and your premium access will be restored on your new device using the same Apple ID.</Text>
+            <Text style={styles.faqQ}>Can I use it on multiple devices?</Text>
+            <Text style={styles.faqA}>
+              {Platform.OS === 'android'
+                ? 'Yes — tap "Restore Purchase" on any Android device signed in to the same Google account.'
+                : 'Yes — tap "Restore Purchase" on any iPhone signed in to the same Apple ID.'}
+            </Text>
           </View>
         </View>
 
-        {/* CTA */}
+        {/* Bottom CTA */}
         <View style={styles.ctaSection}>
           <TouchableOpacity
             style={[styles.purchaseBtn, (!iapReady || purchasing) && styles.purchaseBtnDisabled]}
@@ -289,14 +335,13 @@ export default function PaywallScreen() {
             disabled={!iapReady || purchasing}
             activeOpacity={0.85}
           >
-            {purchasing
-              ? <ActivityIndicator color={COLORS.white} />
-              : <Text style={styles.purchaseBtnText}>
-                  {currentPrice
-                    ? `Get Premium — ${currentPrice}/${selectedPlan === 'annual' ? 'year' : 'month'}`
-                    : 'Get Premium'}
-                </Text>
-            }
+            {purchasing ? (
+              <ActivityIndicator color={COLORS.white} />
+            ) : (
+              <Text style={styles.purchaseBtnText}>
+                {priceLoaded ? `Get Premium — ${currentPrice}` : 'Loading…'}
+              </Text>
+            )}
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -307,12 +352,15 @@ export default function PaywallScreen() {
           >
             {restoring
               ? <ActivityIndicator color={COLORS.purple} size="small" />
-              : <Text style={styles.restoreBtnText}>Restore Purchases</Text>
+              : <Text style={styles.restoreBtnText}>Restore Purchase</Text>
             }
           </TouchableOpacity>
 
           <Text style={styles.legalText}>
-            Payment will be charged to your Apple ID account. Subscription automatically renews unless cancelled at least 24 hours before the end of the current period. Manage or cancel anytime in your Apple ID settings.
+            {selectedPlan === 'annual'
+              ? `Subscription auto-renews annually at ${annualPrice ?? '$79.99'} unless cancelled at least 24 hours before the renewal date.`
+              : `Subscription auto-renews monthly at ${monthlyPrice ?? '$9.99'} unless cancelled at least 24 hours before the renewal date.`
+            }
           </Text>
           <View style={styles.legalLinks}>
             <TouchableOpacity onPress={() => Linking.openURL('https://autismpathways.app/privacy')}>
@@ -322,14 +370,8 @@ export default function PaywallScreen() {
             <TouchableOpacity onPress={() => Linking.openURL('https://autismpathways.app/terms')}>
               <Text style={styles.legalLink}>Terms of Use</Text>
             </TouchableOpacity>
-            <Text style={styles.legalSep}>·</Text>
-            <TouchableOpacity onPress={() => Linking.openURL('https://apps.apple.com/account/subscriptions')}>
-              <Text style={styles.legalLink}>Manage</Text>
-            </TouchableOpacity>
           </View>
         </View>
-
-        <View style={{ height: 60 }} />
       </ScrollView>
     </View>
   );
@@ -337,24 +379,20 @@ export default function PaywallScreen() {
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bg },
+  container: { flex: 1, backgroundColor: COLORS.background },
   header: {
     paddingHorizontal: SPACING.lg,
-    paddingTop: 56,
+    paddingTop: SPACING.lg,
     paddingBottom: SPACING.sm,
-    backgroundColor: COLORS.white,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
   },
-  backBtn: { paddingVertical: 6 },
+  backBtn: { alignSelf: 'flex-start', padding: SPACING.sm },
   backText: { color: COLORS.purple, fontSize: FONT_SIZES.sm, fontWeight: '600' },
   scrollContainer: { flex: 1 },
-  scroll: { paddingBottom: 60 },
-
+  scroll: { paddingBottom: SPACING.xxxl },
   // Hero
   hero: {
-    backgroundColor: COLORS.purpleDark,
-    paddingHorizontal: SPACING.xl,
+    backgroundColor: COLORS.purple,
+    paddingHorizontal: SPACING.lg,
     paddingTop: SPACING.xxxl,
     paddingBottom: SPACING.xl,
     alignItems: 'center',
@@ -379,7 +417,6 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.55)',
     marginTop: SPACING.sm,
   },
-
   // Plan Toggle
   planToggle: {
     flexDirection: 'row',
@@ -434,7 +471,6 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: COLORS.white,
   },
-
   // Sections
   section: {
     paddingHorizontal: SPACING.lg,
@@ -446,7 +482,6 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     marginBottom: SPACING.lg,
   },
-
   // Features
   featureRow: {
     flexDirection: 'row',
@@ -467,7 +502,6 @@ const styles = StyleSheet.create({
   featureTitle: { fontSize: FONT_SIZES.sm, fontWeight: '700', color: COLORS.text, marginBottom: 2 },
   featureSub: { fontSize: FONT_SIZES.xs, color: COLORS.textMid, lineHeight: 17 },
   featureCheck: { fontSize: 18, color: COLORS.successText, fontWeight: '700', marginTop: 2 },
-
   // FAQ
   faqCard: {
     backgroundColor: COLORS.white,
@@ -479,7 +513,6 @@ const styles = StyleSheet.create({
   },
   faqQ: { fontSize: FONT_SIZES.sm, fontWeight: '700', color: COLORS.text, marginBottom: SPACING.xs },
   faqA: { fontSize: FONT_SIZES.sm, color: COLORS.textMid, lineHeight: 19 },
-
   // CTA
   ctaSection: {
     paddingHorizontal: SPACING.lg,
@@ -517,7 +550,6 @@ const styles = StyleSheet.create({
   },
   legalLink: { fontSize: 11, color: COLORS.purple, fontWeight: '600' },
   legalSep: { fontSize: 11, color: COLORS.textLight },
-
   // Beta state
   betaContainer: {
     flex: 1,
