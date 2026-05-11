@@ -83,7 +83,7 @@ export default function PaywallScreen() {
     // Fallback: if StoreKit doesn't return a price within 5s, show hardcoded price
     // so the spinner doesn't show forever (happens when sandbox/metadata not yet live)
     const fallbackTimer = setTimeout(() => {
-      setPrice(prev => prev ?? '$29.99');
+      setPrice(prev => prev ?? '$79.99');
       setIapReady(true);
     }, 5000);
     return () => {
