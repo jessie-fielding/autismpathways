@@ -13,13 +13,14 @@ import { useRouter } from 'expo-router';
 import {
   initConnection,
   endConnection,
-  getSubscriptions,
-  requestSubscription,
+  fetchProducts,
+  requestPurchase,
+
   getAvailablePurchases,
   finishTransaction,
   purchaseErrorListener,
   purchaseUpdatedListener,
-  type Subscription,
+  type ProductSubscription,
   type Purchase,
   type PurchaseError,
 } from 'react-native-iap';
@@ -48,8 +49,8 @@ const FEATURES = [
 export default function PaywallScreen() {
   const router = useRouter();
   const [selectedPlan, setSelectedPlan] = useState<'annual' | 'monthly'>('annual');
-  const [annualProduct, setAnnualProduct]   = useState<Subscription | null>(null);
-  const [monthlyProduct, setMonthlyProduct] = useState<Subscription | null>(null);
+  const [annualProduct, setAnnualProduct]   = useState<ProductSubscription | null>(null);
+  const [monthlyProduct, setMonthlyProduct] = useState<ProductSubscription | null>(null);
   const [annualPrice, setAnnualPrice]   = useState<string | null>(null);
   const [monthlyPrice, setMonthlyPrice] = useState<string | null>(null);
   const [purchasing, setPurchasing] = useState(false);
@@ -96,7 +97,7 @@ export default function PaywallScreen() {
         });
 
         // Fetch subscription products
-        const subs = await getSubscriptions({ skus: PRODUCT_IDS });
+        const subs = await fetchProducts({ skus: PRODUCT_IDS, type: 'subs' });
         subs.forEach((sub) => {
           if (sub.productId === PRODUCT_ID_ANNUAL) {
             setAnnualProduct(sub);
@@ -147,7 +148,7 @@ export default function PaywallScreen() {
     }
     setPurchasing(true);
     try {
-      await requestSubscription({ sku: product.productId });
+      await requestPurchase({ type: 'subs', request: { apple: { sku: product.productId }, google: { skus: [product.productId] } } });
       // Result handled by purchaseUpdatedListener
     } catch (e) {
       setPurchasing(false);
