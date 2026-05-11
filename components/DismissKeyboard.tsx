@@ -1,8 +1,10 @@
 /**
  * DismissKeyboard.tsx
  *
- * Wrap any screen (or the root layout) with this component to allow users to
- * dismiss the keyboard by tapping anywhere outside a text input.
+ * Wraps the app to allow dismissing the keyboard by tapping anywhere outside
+ * a text input. Uses Pressable instead of TouchableWithoutFeedback because
+ * TouchableWithoutFeedback intercepts scroll gestures on iOS and prevents
+ * ScrollViews from scrolling.
  *
  * Usage:
  *   import DismissKeyboard from '../../components/DismissKeyboard';
@@ -12,7 +14,7 @@
  */
 
 import React from 'react';
-import { Keyboard, TouchableWithoutFeedback, View, StyleSheet } from 'react-native';
+import { Keyboard, Pressable, StyleSheet } from 'react-native';
 
 interface Props {
   children: React.ReactNode;
@@ -20,11 +22,13 @@ interface Props {
 
 export default function DismissKeyboard({ children }: Props) {
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-      <View style={styles.container}>
-        {children}
-      </View>
-    </TouchableWithoutFeedback>
+    <Pressable
+      style={styles.container}
+      onPress={Keyboard.dismiss}
+      accessible={false}
+    >
+      {children}
+    </Pressable>
   );
 }
 
