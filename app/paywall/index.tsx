@@ -2,17 +2,7 @@
  * Paywall / Upgrade Screen
  *
  * Handles Apple In-App Purchase for Autism Pathways Premium.
- *
- * ── Setup required ────────────────────────────────────────────────────────────
- * 1. Install: npx expo install expo-in-app-purchases
- * 2. Add to app.json:
- *    "plugins": [["expo-in-app-purchases", { "usesStoreKit2": true }]]
- * 3. In App Store Connect, create a product with ID: com.autismpathways.premium.annual
- * 4. Set BETA_MODE = false in hooks/useIsPremium.ts before App Store submission
- * ──────────────────────────────────────────────────────────────────────────────
- *
- * During beta (BETA_MODE = true), this screen shows a "Beta Access" state
- * and skips all IAP calls.
+ * Supports both monthly ($9.99) and annual ($79.99) subscriptions.
  */
 
 import React, { useState, useEffect } from 'react';
@@ -25,8 +15,9 @@ import { useRouter } from 'expo-router';
 import { COLORS, SPACING, RADIUS, FONT_SIZES, SHADOWS } from '../../lib/theme';
 import { BETA_MODE, IAP_PURCHASED_KEY } from '../../hooks/useIsPremium';
 
-// ── IAP Product ID ────────────────────────────────────────────────────────────
-const PRODUCT_ID = 'app.autismpathways.premium.annual';
+// ── IAP Product IDs ───────────────────────────────────────────────────────────
+const PRODUCT_ID_ANNUAL  = 'app.autismpathways.premium.annual';
+const PRODUCT_ID_MONTHLY = 'app.autismpathways.premium.monthly';
 
 // ── Conditional import ────────────────────────────────────────────────────────
 let IAP: typeof import('expo-in-app-purchases') | null = null;
@@ -71,19 +62,21 @@ const TESTIMONIALS = [
 export default function PaywallScreen() {
   const router = useRouter();
 
-  const [price, setPrice]           = useState<string | null>(null);
-  const [purchasing, setPurchasing] = useState(false);
-  const [restoring, setRestoring]   = useState(false);
-  const [iapReady, setIapReady]     = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<'annual' | 'monthly'>('annual');
+  const [annualPrice, setAnnualPrice]   = useState<string | null>(null);
+  const [monthlyPrice, setMonthlyPrice] = useState<string | null>(null);
+  const [purchasing, setPurchasing]     = useState(false);
+  const [restoring, setRestoring]       = useState(false);
+  const [iapReady, setIapReady]         = useState(false);
 
   useEffect(() => {
     if (!BETA_MODE && IAP) {
       initIAP();
     }
-    // Fallback: if StoreKit doesn't return a price within 5s, show hardcoded price
-    // so the spinner doesn't show forever (happens when sandbox/metadata not yet live)
+    // Fallback: if StoreKit doesn't return prices within 5s, show hardcoded prices
     const fallbackTimer = setTimeout(() => {
-      setPrice(prev => prev ?? '$79.99');
+      setAnnualPrice(prev => prev ?? '$79.99');
+      setMonthlyPrice(prev => prev ?? '$9.99');
       setIapReady(true);
     }, 5000);
     return () => {
@@ -106,7 +99,6 @@ export default function PaywallScreen() {
             if (!purchase.acknowledged) {
               await IAP!.finishTransactionAsync(purchase, true);
             }
-            // Mark as purchased locally
             await AsyncStorage.setItem(IAP_PURCHASED_KEY, 'true');
             setPurchasing(false);
             Alert.alert(
@@ -123,10 +115,13 @@ export default function PaywallScreen() {
         }
       });
 
-      // Fetch product info
-      const { responseCode, results } = await IAP.getProductsAsync([PRODUCT_ID]);
+      // Fetch both products
+      const { responseCode, results } = await IAP.getProductsAsync([PRODUCT_ID_ANNUAL, PRODUCT_ID_MONTHLY]);
       if (responseCode === IAP.IAPResponseCode.OK && results?.length) {
-        setPrice(results[0].priceString);
+        results.forEach(p => {
+          if (p.productId === PRODUCT_ID_ANNUAL)  setAnnualPrice(p.priceString);
+          if (p.productId === PRODUCT_ID_MONTHLY) setMonthlyPrice(p.priceString);
+        });
       }
       setIapReady(true);
     } catch (e) {
@@ -141,8 +136,8 @@ export default function PaywallScreen() {
     }
     setPurchasing(true);
     try {
-      await IAP.purchaseItemAsync(PRODUCT_ID);
-      // Result handled by setPurchaseListener above
+      const productId = selectedPlan === 'annual' ? PRODUCT_ID_ANNUAL : PRODUCT_ID_MONTHLY;
+      await IAP.purchaseItemAsync(productId);
     } catch (e) {
       setPurchasing(false);
       Alert.alert('Error', 'Could not start purchase. Please try again.');
@@ -155,7 +150,9 @@ export default function PaywallScreen() {
     try {
       const { responseCode, results } = await IAP.getPurchaseHistoryAsync();
       if (responseCode === IAP.IAPResponseCode.OK && results?.length) {
-        const hasPremium = results.some(p => p.productId === PRODUCT_ID);
+        const hasPremium = results.some(
+          p => p.productId === PRODUCT_ID_ANNUAL || p.productId === PRODUCT_ID_MONTHLY
+        );
         if (hasPremium) {
           await AsyncStorage.setItem(IAP_PURCHASED_KEY, 'true');
           Alert.alert(
@@ -206,6 +203,9 @@ export default function PaywallScreen() {
     );
   }
 
+  const currentPrice = selectedPlan === 'annual' ? annualPrice : monthlyPrice;
+  const priceLoaded  = annualPrice !== null && monthlyPrice !== null;
+
   // ── Full paywall ──────────────────────────────────────────────────────────
   return (
     <View style={styles.container}>
@@ -215,7 +215,12 @@ export default function PaywallScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+        bounces={true}
+        alwaysBounceVertical={true}
+      >
         {/* Hero */}
         <View style={styles.hero}>
           <Text style={styles.heroIcon}>🌟</Text>
@@ -223,14 +228,40 @@ export default function PaywallScreen() {
           <Text style={styles.heroSub}>
             Everything a family needs to navigate the autism system — in one place.
           </Text>
-          {price ? (
-            <View style={styles.pricePill}>
-              <Text style={styles.priceText}>{price} / year</Text>
-              <Text style={styles.priceNote}>Less than one therapy co-pay</Text>
-            </View>
-          ) : (
-            <ActivityIndicator color={COLORS.purple} style={{ marginTop: SPACING.md }} />
-          )}
+
+          {/* Plan Toggle */}
+          <View style={styles.planToggle}>
+            <TouchableOpacity
+              style={[styles.planOption, selectedPlan === 'annual' && styles.planOptionActive]}
+              onPress={() => setSelectedPlan('annual')}
+              activeOpacity={0.8}
+            >
+              <View style={styles.planBadgeRow}>
+                <Text style={[styles.planLabel, selectedPlan === 'annual' && styles.planLabelActive]}>Annual</Text>
+                <View style={styles.saveBadge}>
+                  <Text style={styles.saveBadgeText}>Save 33%</Text>
+                </View>
+              </View>
+              {annualPrice
+                ? <Text style={[styles.planPrice, selectedPlan === 'annual' && styles.planPriceActive]}>{annualPrice}/yr</Text>
+                : <ActivityIndicator size="small" color={selectedPlan === 'annual' ? COLORS.white : COLORS.purple} />
+              }
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.planOption, selectedPlan === 'monthly' && styles.planOptionActive]}
+              onPress={() => setSelectedPlan('monthly')}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.planLabel, selectedPlan === 'monthly' && styles.planLabelActive]}>Monthly</Text>
+              {monthlyPrice
+                ? <Text style={[styles.planPrice, selectedPlan === 'monthly' && styles.planPriceActive]}>{monthlyPrice}/mo</Text>
+                : <ActivityIndicator size="small" color={selectedPlan === 'monthly' ? COLORS.white : COLORS.purple} />
+              }
+            </TouchableOpacity>
+          </View>
+
+          <Text style={styles.priceNote}>Less than one therapy co-pay</Text>
         </View>
 
         {/* Features */}
@@ -290,7 +321,9 @@ export default function PaywallScreen() {
             {purchasing
               ? <ActivityIndicator color={COLORS.white} />
               : <Text style={styles.purchaseBtnText}>
-                  {price ? `Get Premium — ${price}/year` : 'Get Premium'}
+                  {currentPrice
+                    ? `Get Premium — ${currentPrice}/${selectedPlan === 'annual' ? 'year' : 'month'}`
+                    : 'Get Premium'}
                 </Text>
             }
           </TouchableOpacity>
@@ -325,7 +358,7 @@ export default function PaywallScreen() {
           </View>
         </View>
 
-        <View style={{ height: 40 }} />
+        <View style={{ height: 60 }} />
       </ScrollView>
     </View>
   );
@@ -344,13 +377,14 @@ const styles = StyleSheet.create({
   },
   backBtn: { paddingVertical: 6 },
   backText: { color: COLORS.purple, fontSize: FONT_SIZES.sm, fontWeight: '600' },
-  scroll: { paddingBottom: 40 },
+  scroll: { paddingBottom: 60 },
 
   // Hero
   hero: {
     backgroundColor: COLORS.purpleDark,
     paddingHorizontal: SPACING.xl,
-    paddingVertical: SPACING.xxxl,
+    paddingTop: SPACING.xxxl,
+    paddingBottom: SPACING.xl,
     alignItems: 'center',
   },
   heroIcon: { fontSize: 48, marginBottom: SPACING.md },
@@ -368,16 +402,66 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     marginBottom: SPACING.lg,
   },
-  pricePill: {
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    borderRadius: RADIUS.pill,
-    paddingHorizontal: SPACING.xl,
-    paddingVertical: SPACING.md,
-    alignItems: 'center',
+  priceNote: {
+    fontSize: FONT_SIZES.xs,
+    color: 'rgba(255,255,255,0.55)',
     marginTop: SPACING.sm,
   },
-  priceText: { fontSize: FONT_SIZES.xl, fontWeight: '800', color: COLORS.white },
-  priceNote: { fontSize: FONT_SIZES.xs, color: 'rgba(255,255,255,0.6)', marginTop: 2 },
+
+  // Plan Toggle
+  planToggle: {
+    flexDirection: 'row',
+    gap: SPACING.sm,
+    width: '100%',
+    marginTop: SPACING.sm,
+  },
+  planOption: {
+    flex: 1,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderRadius: RADIUS.md,
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.sm,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  planOptionActive: {
+    backgroundColor: COLORS.white,
+    borderColor: COLORS.white,
+  },
+  planBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 4,
+  },
+  planLabel: {
+    fontSize: FONT_SIZES.sm,
+    fontWeight: '700',
+    color: 'rgba(255,255,255,0.85)',
+  },
+  planLabelActive: {
+    color: COLORS.purpleDark,
+  },
+  planPrice: {
+    fontSize: FONT_SIZES.lg,
+    fontWeight: '800',
+    color: COLORS.white,
+  },
+  planPriceActive: {
+    color: COLORS.purpleDark,
+  },
+  saveBadge: {
+    backgroundColor: '#22c55e',
+    borderRadius: 6,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+  },
+  saveBadgeText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: COLORS.white,
+  },
 
   // Sections
   section: {
