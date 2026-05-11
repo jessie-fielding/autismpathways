@@ -307,7 +307,7 @@ export default function MedicaidPathwayScreen() {
         ))}
       </ScrollView>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         {/* Content Header */}
         <View style={styles.contentHeader}>
           <View style={styles.sectionNumber}>
