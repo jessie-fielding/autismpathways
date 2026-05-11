@@ -40,23 +40,6 @@ const FEATURES = [
   { icon: '📰', title: 'Full Article Library',           sub: 'Unlimited access to all guides and explainers' },
 ];
 
-const TESTIMONIALS = [
-  {
-    quote: "This app helped me get my son's waiver approved after two denials. The appeal scripts are gold.",
-    name: 'Sarah M., Texas',
-    icon: '⭐⭐⭐⭐⭐',
-  },
-  {
-    quote: "I finally feel organized going into IEP meetings. The goal tracker and meeting log are everything.",
-    name: 'Jennifer K., Ohio',
-    icon: '⭐⭐⭐⭐⭐',
-  },
-  {
-    quote: "The provider prep tool saved me so much time. My doctor actually commented on how prepared I was.",
-    name: 'Marcus T., California',
-    icon: '⭐⭐⭐⭐⭐',
-  },
-];
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function PaywallScreen() {
@@ -281,18 +264,6 @@ export default function PaywallScreen() {
           ))}
         </View>
 
-        {/* Testimonials */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>What families are saying</Text>
-          {TESTIMONIALS.map((t, i) => (
-            <View key={i} style={styles.testimonialCard}>
-              <Text style={styles.testimonialStars}>{t.icon}</Text>
-              <Text style={styles.testimonialQuote}>"{t.quote}"</Text>
-              <Text style={styles.testimonialName}>— {t.name}</Text>
-            </View>
-          ))}
-        </View>
-
         {/* FAQ */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Questions</Text>
@@ -496,26 +467,6 @@ const styles = StyleSheet.create({
   featureTitle: { fontSize: FONT_SIZES.sm, fontWeight: '700', color: COLORS.text, marginBottom: 2 },
   featureSub: { fontSize: FONT_SIZES.xs, color: COLORS.textMid, lineHeight: 17 },
   featureCheck: { fontSize: 18, color: COLORS.successText, fontWeight: '700', marginTop: 2 },
-
-  // Testimonials
-  testimonialCard: {
-    backgroundColor: COLORS.white,
-    borderRadius: RADIUS.md,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    padding: SPACING.lg,
-    marginBottom: SPACING.md,
-    ...SHADOWS.sm,
-  },
-  testimonialStars: { fontSize: 14, marginBottom: SPACING.sm },
-  testimonialQuote: {
-    fontSize: FONT_SIZES.sm,
-    color: COLORS.text,
-    lineHeight: 20,
-    fontStyle: 'italic',
-    marginBottom: SPACING.sm,
-  },
-  testimonialName: { fontSize: FONT_SIZES.xs, color: COLORS.textLight, fontWeight: '600' },
 
   // FAQ
   faqCard: {

@@ -1,5 +1,6 @@
+import { useRouter } from 'expo-router';
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { COLORS, FONT_SIZES, RADIUS, SPACING } from '../lib/theme';
 
 interface PathwayDisclaimerProps {
@@ -18,10 +19,18 @@ const MESSAGES: Record<string, string> = {
 };
 
 export function PathwayDisclaimer({ type = 'general' }: PathwayDisclaimerProps) {
+  const router = useRouter();
   return (
     <View style={styles.container}>
       <Text style={styles.label}>ℹ️ INFORMATIONAL USE ONLY</Text>
       <Text style={styles.text}>{MESSAGES[type]}</Text>
+      <TouchableOpacity
+        style={styles.citationsBtn}
+        onPress={() => router.push('/settings/sources')}
+        activeOpacity={0.7}
+      >
+        <Text style={styles.citationsText}>📚 View Sources & Citations →</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -46,5 +55,16 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZES.xs,
     color: '#5D4037',
     lineHeight: 18,
+  },
+  citationsBtn: {
+    marginTop: SPACING.md,
+    paddingTop: SPACING.sm,
+    borderTopWidth: 1,
+    borderTopColor: '#FFE082',
+  },
+  citationsText: {
+    fontSize: FONT_SIZES.xs,
+    fontWeight: '700',
+    color: '#7B6000',
   },
 });
