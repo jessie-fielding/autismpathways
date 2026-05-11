@@ -157,6 +157,14 @@ export default function WaiverNextStepsScreen() {
           <Text style={styles.nextBtnText}>What to Expect While Waiting →</Text>
         </TouchableOpacity>
 
+        {/* Citations */}
+        <View style={styles.citationsBox}>
+          <Text style={styles.citationsLabel}>SOURCES</Text>
+          <Text style={styles.citationItem}>• Medicaid.gov — Home and Community-Based Services (HCBS) Waivers, Section 1915(c)</Text>
+          <Text style={styles.citationItem}>• Centers for Medicare and Medicaid Services (CMS) — Medicaid Eligibility and Enrollment</Text>
+          <Text style={styles.citationItem}>• Autism Speaks — State Medicaid Waiver Programs for Autism Resource Guide</Text>
+          <Text style={styles.citationItem}>• Social Security Administration — Supplemental Security Income (SSI) for Children</Text>
+        </View>
         <View style={{ height: 40 }} />
       </ScrollView>
     </View>
@@ -265,4 +273,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   nextBtnText: { color: COLORS.white, fontSize: FONT_SIZES.md, fontWeight: '700' },
+  citationsBox: {
+    marginHorizontal: SPACING.md,
+    marginTop: SPACING.sm,
+    backgroundColor: '#f0f4ff',
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
+    borderWidth: 1,
+    borderColor: '#c5cef0',
+  },
+  citationsLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#3a4a8a',
+    letterSpacing: 1,
+    marginBottom: 4,
+    textTransform: 'uppercase',
+  },
+  citationItem: {
+    fontSize: 11,
+    color: '#3a4a8a',
+    lineHeight: 17,
+    marginBottom: 3,
+  },
 });

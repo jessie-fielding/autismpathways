@@ -61,6 +61,29 @@ const styles = StyleSheet.create({
   buttonPrimary: { backgroundColor: COLORS.purple, borderColor: COLORS.purple },
   buttonText: { fontSize: FONT_SIZES.sm, fontWeight: '700', color: COLORS.text },
   buttonTextWhite: { color: COLORS.white },
+  citationsBox: {
+    marginTop: 8,
+    backgroundColor: '#f0f4ff',
+    borderRadius: 10,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#c5cef0',
+    marginBottom: SPACING.lg,
+  },
+  citationsLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#3a4a8a',
+    letterSpacing: 1,
+    marginBottom: 4,
+    textTransform: 'uppercase',
+  },
+  citationItem: {
+    fontSize: 11,
+    color: '#3a4a8a',
+    lineHeight: 17,
+    marginBottom: 3,
+  },
 });
 
 export default function Step3WaiverTypes() {
@@ -78,6 +101,13 @@ export default function Step3WaiverTypes() {
       <ScrollView style={styles.content}>
         <Text style={styles.heading}>Types of Waivers</Text>
         <Text style={styles.text}>Different states offer different waiver programs.</Text>
+        <View style={styles.citationsBox}>
+          <Text style={styles.citationsLabel}>SOURCES</Text>
+          <Text style={styles.citationItem}>• Medicaid.gov — Home and Community-Based Services (HCBS) Waivers, Section 1915(c)</Text>
+          <Text style={styles.citationItem}>• Kaiser Family Foundation — Medicaid Home and Community-Based Services Enrollment and Spending</Text>
+          <Text style={styles.citationItem}>• Autism Speaks — State Medicaid Waiver Programs for Autism Resource Guide</Text>
+          <Text style={styles.citationItem}>• National Council on Disability — Home and Community-Based Services: A Guide for People with Disabilities</Text>
+        </View>
       </ScrollView>
 
       <View style={styles.buttons}>

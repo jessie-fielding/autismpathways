@@ -308,13 +308,21 @@ export default function PottyResultScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Medical disclaimer */}
+         {/* Medical disclaimer */}
         <View style={styles.disclaimerCard}>
           <Text style={styles.disclaimerText}>
-            ⚠️ Educational information only — not a substitute for professional medical advice. Always consult your child’s pediatrician or a qualified healthcare provider before starting any treatment. Content is informed by published guidelines from the American Academy of Pediatrics (AAP) and NASPGHAN.
+            ⚠️ Educational information only — not a substitute for professional medical advice. Always consult your child's pediatrician or a qualified healthcare provider before starting any treatment. Content is informed by published guidelines from the American Academy of Pediatrics (AAP) and NASPGHAN.
           </Text>
         </View>
-
+        {/* Citations */}
+        <View style={styles.citationsBox}>
+          <Text style={styles.citationsLabel}>SOURCES</Text>
+          <Text style={styles.citationItem}>• American Academy of Pediatrics (AAP) — Toilet Training Guidelines for Children with Developmental Disabilities</Text>
+          <Text style={styles.citationItem}>• NASPGHAN — Clinical Practice Guidelines for Functional Constipation in Children</Text>
+          <Text style={styles.citationItem}>• Mahler, K. — Interoception: The Eighth Sensory System (2017)</Text>
+          <Text style={styles.citationItem}>• AOTA — Occupational Therapy Practice Framework: Sensory Integration and Toilet Training</Text>
+          <Text style={styles.citationItem}>• CDC — Autism Spectrum Disorder: Data and Statistics (ADDM Network)</Text>
+        </View>
         <View style={styles.rainbowBar} />
       </ScrollView>
     </View>
@@ -547,5 +555,29 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#7a6200',
     lineHeight: 16,
+  },
+  citationsBox: {
+    marginHorizontal: SPACING.md,
+    marginTop: SPACING.sm,
+    marginBottom: SPACING.md,
+    backgroundColor: '#f0f4ff',
+    borderRadius: RADIUS.sm,
+    padding: SPACING.md,
+    borderWidth: 1,
+    borderColor: '#c5cef0',
+  },
+  citationsLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#3a4a8a',
+    letterSpacing: 1,
+    marginBottom: 4,
+    textTransform: 'uppercase',
+  },
+  citationItem: {
+    fontSize: 11,
+    color: '#3a4a8a',
+    lineHeight: 17,
+    marginBottom: 3,
   },
 });

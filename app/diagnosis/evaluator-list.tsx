@@ -237,11 +237,19 @@ export default function EvaluatorListScreen() {
             </TouchableOpacity>
           );
         })}
+
+        {/* Citations */}
+        <View style={styles.citationsBox}>
+          <Text style={styles.citationsLabel}>SOURCES</Text>
+          <Text style={styles.citationItem}>• American Academy of Pediatrics (AAP) — Identifying Infants and Young Children with Developmental Disorders in the Medical Home</Text>
+          <Text style={styles.citationItem}>• American Speech-Language-Hearing Association (ASHA) — Autism Spectrum Disorder: Assessment and Treatment</Text>
+          <Text style={styles.citationItem}>• Autism Speaks — Diagnosis and Evaluation Resource Guide</Text>
+          <Text style={styles.citationItem}>• Centers for Disease Control and Prevention (CDC) — Autism Spectrum Disorder: Screening and Diagnosis</Text>
+        </View>
       </ScrollView>
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
   header: {
@@ -398,4 +406,28 @@ const styles = StyleSheet.create({
     marginTop: SPACING.xs,
   },
   selectBtnText: { color: COLORS.white, fontWeight: '700', fontSize: FONT_SIZES.sm },
+  citationsBox: {
+    marginHorizontal: SPACING.md,
+    marginTop: SPACING.md,
+    marginBottom: SPACING.md,
+    backgroundColor: '#f0f4ff',
+    borderRadius: 10,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#c5cef0',
+  },
+  citationsLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#3a4a8a',
+    letterSpacing: 1,
+    marginBottom: 4,
+    textTransform: 'uppercase',
+  },
+  citationItem: {
+    fontSize: 11,
+    color: '#3a4a8a',
+    lineHeight: 17,
+    marginBottom: 3,
+  },
 });

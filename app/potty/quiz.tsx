@@ -227,6 +227,15 @@ export default function PottyQuizScreen() {
             </TouchableOpacity>
           ))}
         </View>
+
+        {/* Citations */}
+        <View style={styles.citationsBox}>
+          <Text style={styles.citationsLabel}>SOURCES</Text>
+          <Text style={styles.citationItem}>• American Academy of Pediatrics (AAP) — Toilet Training: Guidelines for Parents</Text>
+          <Text style={styles.citationItem}>• North American Society for Pediatric Gastroenterology, Hepatology and Nutrition (NASPGHAN) — Constipation and Toilet Training in Children</Text>
+          <Text style={styles.citationItem}>• Autism Speaks — Toilet Training and Autism Spectrum Disorder</Text>
+          <Text style={styles.citationItem}>• Journal of Developmental and Behavioral Pediatrics — Toilet Training Children with Developmental Disabilities</Text>
+        </View>
       </ScrollView>
 
       {/* Buttons */}
@@ -355,5 +364,29 @@ const styles = StyleSheet.create({
     height: 4,
     backgroundColor: COLORS.purple,
     opacity: 0.3,
+  },
+  citationsBox: {
+    marginHorizontal: SPACING.lg,
+    marginTop: SPACING.md,
+    marginBottom: SPACING.md,
+    backgroundColor: '#f0f4ff',
+    borderRadius: 10,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#c5cef0',
+  },
+  citationsLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#3a4a8a',
+    letterSpacing: 1,
+    marginBottom: 4,
+    textTransform: 'uppercase',
+  },
+  citationItem: {
+    fontSize: 11,
+    color: '#3a4a8a',
+    lineHeight: 17,
+    marginBottom: 3,
   },
 });
