@@ -675,7 +675,8 @@ const styles = StyleSheet.create({
   headerActionPrimary: { backgroundColor: PURPLE, borderColor: PURPLE },
   headerActionText: { fontSize: 13, fontWeight: '700', color: PURPLE },
 
-  scroll: { padding: 20 },
+  scroll: {
+    flex: 1, padding: 20 },
 
   emptyState: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 40 },
   emptyIcon: { fontSize: 52, marginBottom: 16, opacity: 0.5 },

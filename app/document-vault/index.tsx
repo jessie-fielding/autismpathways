@@ -443,7 +443,8 @@ const styles = StyleSheet.create({
   },
   headerBadgeText: { fontSize: FONT_SIZES.xs, fontWeight: '700', color: '#8B6914' },
 
-  scroll: { paddingHorizontal: SPACING.lg, paddingTop: SPACING.lg },
+  scroll: {
+    flex: 1, paddingHorizontal: SPACING.lg, paddingTop: SPACING.lg },
 
   progressCard: {
     backgroundColor: COLORS.white,

@@ -204,7 +204,8 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.sm,
   },
   editBtnText: { color: COLORS.white, fontSize: FONT_SIZES.sm, fontWeight: '700' },
-  scroll: { paddingBottom: SPACING.xl },
+  scroll: {
+    flex: 1, paddingBottom: SPACING.xl },
   infoCard: {
     flexDirection: 'row',
     margin: SPACING.md,

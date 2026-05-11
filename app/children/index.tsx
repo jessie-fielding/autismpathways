@@ -343,7 +343,8 @@ const styles = StyleSheet.create({
   backText: { fontSize: FONT_SIZES.base, color: COLORS.purple, fontWeight: '600' },
   headerTitle: { fontSize: FONT_SIZES.lg, fontWeight: '700', color: COLORS.text },
 
-  scroll: { padding: SPACING.lg, paddingBottom: 60 },
+  scroll: {
+    flex: 1, padding: SPACING.lg, paddingBottom: 60 },
 
   intro: {
     fontSize: FONT_SIZES.sm, color: COLORS.textMid, lineHeight: 20,

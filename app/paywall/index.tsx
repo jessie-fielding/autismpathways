@@ -377,7 +377,8 @@ const styles = StyleSheet.create({
   },
   backBtn: { paddingVertical: 6 },
   backText: { color: COLORS.purple, fontSize: FONT_SIZES.sm, fontWeight: '600' },
-  scroll: { paddingBottom: 60 },
+  scroll: {
+    flex: 1, paddingBottom: 60 },
 
   // Hero
   hero: {

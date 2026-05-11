@@ -388,7 +388,8 @@ const styles = StyleSheet.create({
   tabIcon: { fontSize: 14 },
   tabText: { fontSize: FONT_SIZES.xs, fontWeight: '600', color: COLORS.textMid },
   tabTextOn: { color: COLORS.purpleDark },
-  scroll: { padding: SPACING.lg },
+  scroll: {
+    flex: 1, padding: SPACING.lg },
   infoCard: {
     borderRadius: RADIUS.md, padding: SPACING.lg, marginBottom: SPACING.md,
     borderWidth: 1, borderColor: COLORS.border, borderTopWidth: 4, ...SHADOWS.sm,

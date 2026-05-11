@@ -483,7 +483,8 @@ const styles = StyleSheet.create({
   },
   headerTitlePink: { color: '#c47ab8' },
 
-  scroll: { paddingBottom: 40 },
+  scroll: {
+    flex: 1, paddingBottom: 40 },
 
   // Hero
   hero: {

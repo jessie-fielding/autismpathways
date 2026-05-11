@@ -293,7 +293,8 @@ const styles = StyleSheet.create({
   },
   backBtn: { paddingVertical: 6, paddingRight: 12 },
   backText: { color: COLORS.purple, fontSize: FONT_SIZES.sm, fontWeight: '600' },
-  scroll: { paddingHorizontal: SPACING.lg },
+  scroll: {
+    flex: 1, paddingHorizontal: SPACING.lg },
   hero: {
     alignItems: 'center',
     paddingVertical: SPACING.xl,

@@ -592,7 +592,8 @@ const styles = StyleSheet.create({
   progressBarBg: { height: 4, backgroundColor: COLORS.border },
   progressBarFill: { height: '100%', backgroundColor: COLORS.purple },
 
-  scroll: { padding: SPACING.lg },
+  scroll: {
+    flex: 1, padding: SPACING.lg },
 
   heroCard: {
     backgroundColor: COLORS.lavender,

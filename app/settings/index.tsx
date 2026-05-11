@@ -495,7 +495,8 @@ const styles = StyleSheet.create({
   },
   backBtn: { paddingVertical: 6 },
   backText: { color: COLORS.purple, fontSize: FONT_SIZES.sm, fontWeight: '600' },
-  scroll: { paddingHorizontal: SPACING.lg, paddingBottom: 40 },
+  scroll: {
+    flex: 1, paddingHorizontal: SPACING.lg, paddingBottom: 40 },
   title: {
     fontSize: FONT_SIZES.xxl,
     fontWeight: '700',

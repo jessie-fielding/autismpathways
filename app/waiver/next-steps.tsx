@@ -184,7 +184,8 @@ const styles = StyleSheet.create({
   backBtn: { padding: SPACING.xs },
   backText: { color: COLORS.white, fontSize: FONT_SIZES.sm, fontWeight: '600' },
   headerTitle: { color: COLORS.white, fontSize: FONT_SIZES.md, fontWeight: '700' },
-  scroll: { paddingBottom: SPACING.xl },
+  scroll: {
+    flex: 1, paddingBottom: SPACING.xl },
   progressContainer: {
     margin: SPACING.md,
     padding: SPACING.md,
