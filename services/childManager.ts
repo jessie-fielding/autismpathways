@@ -15,7 +15,7 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useState, useEffect, useCallback } from 'react';
-import { emitChildChanged } from './childEvents';
+import { emitChildChanged, onChildChanged } from './childEvents';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -195,6 +195,16 @@ export function useActiveChild(): ActiveChildState {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  // Re-sync whenever any part of the app switches the active child
+  // (e.g. switching from /children screen updates all hook instances)
+  useEffect(() => {
+    const unsub = onChildChanged((newId) => {
+      setActiveId(newId);
+      load();
+    });
+    return unsub;
+  }, [load]);
 
   const switchChild = useCallback(async (id: string) => {
     await setActiveChildId(id);
