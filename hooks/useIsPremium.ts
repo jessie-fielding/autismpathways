@@ -18,7 +18,7 @@ const API_BASE = 'https://autismpathways.app';
  * ──────────────────────────────────────────────────────────────────────────────
  */
 
-export const BETA_MODE = true; // set to false AFTER Apple approval — reviewers need full access
+export const BETA_MODE = false; // set to false AFTER Apple approval — reviewers need full access
 
 // AsyncStorage key where IAP purchase confirmation is stored
 export const IAP_PURCHASED_KEY = 'ap_iap_purchased';
