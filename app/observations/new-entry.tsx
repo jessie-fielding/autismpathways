@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import {
   Alert, ScrollView, StyleSheet, Text, TextInput,
-  TouchableOpacity, View,
-} from 'react-native';
+  TouchableOpacity, View, KeyboardAvoidingView, Platform} from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, FONT_SIZES, RADIUS, SHADOWS, SPACING } from '../../lib/theme';
@@ -131,7 +130,8 @@ export default function NewEntryScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+      <View style={styles.container}>
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
@@ -376,7 +376,7 @@ export default function NewEntryScreen() {
 
         <View style={styles.rainbowBar} />
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

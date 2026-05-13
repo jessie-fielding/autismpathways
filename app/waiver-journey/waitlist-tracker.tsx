@@ -10,6 +10,7 @@ import {
     View,
 } from 'react-native';
 import { COLORS, FONT_SIZES, SPACING } from '../../lib/theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
@@ -105,6 +106,7 @@ interface WaitlistApplication {
 
 export default function WaitlistTrackerScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [applications, setApplications] = useState<WaitlistApplication[]>([]);
 
   useEffect(() => {
@@ -155,7 +157,7 @@ export default function WaitlistTrackerScreen() {
           text: 'Confirm',
           onPress: async () => {
             await AsyncStorage.setItem('off_waitlist_date', new Date().toISOString());
-            router.push('/waiver-journey/off-waitlist-celebration');
+            router.replace('/(tabs)/dashboard');
           },
         },
       ]
@@ -164,7 +166,7 @@ export default function WaitlistTrackerScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
         <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
           <Text style={styles.backButton}>Back</Text>
         </TouchableOpacity>

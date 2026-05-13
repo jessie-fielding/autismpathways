@@ -1,7 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import {
-  ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, Alert
-} from 'react-native';
+  ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, Alert, KeyboardAvoidingView, Platform} from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -80,11 +79,12 @@ export default function WaiverTrackerScreen() {
           {(data[key] as string) || placeholder}
         </Text>
       )}
-    </View>
+    </KeyboardAvoidingView>
   );
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+      <View style={styles.container}>
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>

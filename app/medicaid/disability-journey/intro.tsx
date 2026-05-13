@@ -1,4 +1,5 @@
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { COLORS, FONT_SIZES, RADIUS, SPACING } from '../../../lib/theme';
 import { PathwayDisclaimer } from '../../../components/PathwayDisclaimer';
@@ -21,9 +22,10 @@ const styles = StyleSheet.create({
 
 export default function DisabilityIntroScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
           <Text style={styles.backButton}>Back</Text>
         </TouchableOpacity>

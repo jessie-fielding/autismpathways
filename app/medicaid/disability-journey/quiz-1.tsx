@@ -1,4 +1,5 @@
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { COLORS, FONT_SIZES, RADIUS, SPACING } from '../../../lib/theme';
@@ -22,11 +23,12 @@ const styles = StyleSheet.create({
 
 export default function DisabilityQuiz1Screen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [selected, setSelected] = useState(null);
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
           <Text style={styles.backButton}>Back</Text>
         </TouchableOpacity>

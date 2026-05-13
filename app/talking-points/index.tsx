@@ -322,7 +322,7 @@ export default function TalkingPointsScreen() {
       <Text style={styles.premiumGateSub}>
         Go Premium to access all 5 audience types, unlimited scripts, pushback responses, and follow-up plans.
       </Text>
-      <TouchableOpacity style={styles.premiumGateBtn} onPress={() => router.push('/(app)/premium/')}>
+      <TouchableOpacity style={styles.premiumGateBtn} onPress={() => router.push('/paywall')}>
         <Text style={styles.premiumGateBtnText}>Go Premium</Text>
       </TouchableOpacity>
     </View>
@@ -464,7 +464,7 @@ export default function TalkingPointsScreen() {
                 <Text style={styles.followupTeaserSub}>
                   Go Premium to access detailed follow-up plans for every audience, ensuring you never miss a step.
                 </Text>
-                <TouchableOpacity style={styles.premiumGateBtn} onPress={() => router.push('/(app)/premium/')}>
+                <TouchableOpacity style={styles.premiumGateBtn} onPress={() => router.push('/paywall')}>
                   <Text style={styles.premiumGateBtnText}>Go Premium</Text>
                 </TouchableOpacity>
               </View>

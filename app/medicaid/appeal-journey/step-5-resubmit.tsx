@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, KeyboardAvoidingView, Platform} from 'react-native';
 import { COLORS, FONT_SIZES, RADIUS, SPACING } from '../../../lib/theme';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -18,7 +18,8 @@ export default function Step5Resubmit() {
   ];
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+      <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
           <Text style={styles.backButton}>←</Text>
@@ -114,7 +115,7 @@ export default function Step5Resubmit() {
           <Text style={[styles.navButtonText, styles.navButtonTextPrimary]}>I've submitted ✓</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

@@ -52,7 +52,7 @@ export default function IncomeJourneyIntroScreen() {
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.navButton, styles.navButtonPrimary]}
-          onPress={() => router.push('/medicaid/income-journey/quiz-ltd')}
+          onPress={() => router.push('/medicaid/income-journey')}
         >
           <Text style={[styles.navButtonText, styles.navButtonTextPrimary]}>Continue →</Text>
         </TouchableOpacity>

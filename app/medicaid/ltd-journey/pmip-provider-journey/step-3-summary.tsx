@@ -252,7 +252,7 @@ export default function Step3Summary() {
           </Text>
 
           <TouchableOpacity
-            onPress={() => router.push('/pmip-provider-journey/step-2-quiz')}
+            onPress={() => router.back()}
             style={{
               paddingVertical: 12,
               borderRadius: 999,

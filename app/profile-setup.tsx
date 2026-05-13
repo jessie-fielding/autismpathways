@@ -10,6 +10,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, SPACING, FONT_SIZES, RADIUS } from '../lib/theme';
 import { storage } from '../services/storage';
 import { addChild, setActiveChildId, loadChildren } from '../services/childManager';
@@ -72,6 +73,7 @@ const styles = StyleSheet.create({
 
 export default function ProfileSetupScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [childName, setChildName] = useState('');
   const [childAge, setChildAge] = useState('');
   const [state, setState] = useState('');
@@ -136,7 +138,7 @@ export default function ProfileSetupScreen() {
       style={styles.container}
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.header}>
+        <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
           <Text style={styles.title}>Let's get started</Text>
           <Text style={styles.subtitle}>
             Tell us a bit about your child so we can personalize your journey.

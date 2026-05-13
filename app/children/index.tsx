@@ -1,8 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  TextInput, Modal, Alert, ActivityIndicator,
-} from 'react-native';
+  TextInput, Modal, Alert, ActivityIndicator, KeyboardAvoidingView, Platform} from 'react-native';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -219,8 +218,8 @@ export default function ManageChildrenScreen() {
                       </TouchableOpacity>
                     )}
                   </View>
-                </View>
-              );
+    </KeyboardAvoidingView>
+  );
             })
           )}
 
