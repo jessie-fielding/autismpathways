@@ -65,7 +65,7 @@ export const MEDICAID_STATES: Record<string, MedicaidStateData> = {
     stateTip:
       'Colorado uses the PMIP form specifically — ask your provider for it by name. Once your child has LTD approval, you can apply for the CES Waiver through your county.',
     phoneScript:
-      '"I'd like to submit an LTD application for my child. They have a completed PMIP form from their provider. Can you tell me the process and where to submit?"',
+      `"I'd like to submit an LTD application for my child. They have a completed PMIP form from their provider. Can you tell me the process and where to submit?"`,
   },
 
   TX: {
@@ -112,7 +112,7 @@ export const MEDICAID_STATES: Record<string, MedicaidStateData> = {
     stateTip:
       'Texas waiver waitlists can be extremely long — sometimes over a decade. Apply to all applicable interest lists as early as possible, even before your child is fully approved.',
     phoneScript:
-      '"I'd like to submit a disability-based Medicaid application for my child. I have provider documentation of their needs (Form 3052). Can you tell me the process and where to submit?"',
+      `"I'd like to submit a disability-based Medicaid application for my child. I have provider documentation of their needs (Form 3052). Can you tell me the process and where to submit?"`,
   },
 
   VA: {
@@ -153,7 +153,7 @@ export const MEDICAID_STATES: Record<string, MedicaidStateData> = {
     stateTip:
       'Virginia assigns waiver slots based on urgency of need. The VIDES assessment is a key step — contact your local Community Services Board (CSB) to get started, as they manage the eligibility and waitlist process.',
     phoneScript:
-      '"I'd like to start the process for my child's developmental disability eligibility determination for Medicaid waiver services. Can you tell me how to get the VIDES assessment scheduled?"',
+      `"I'd like to start the process for my child's developmental disability eligibility determination for Medicaid waiver services. Can you tell me how to get the VIDES assessment scheduled?"`,
   },
 
   DE: {
@@ -188,7 +188,7 @@ export const MEDICAID_STATES: Record<string, MedicaidStateData> = {
     stateTip:
       "Delaware's CCADP was formerly called the Disabled Children's Program. Initial approval is generally for up to one year and must be renewed. The DDDS Lifespan Waiver is available starting at age 12.",
     phoneScript:
-      '"I'd like to apply for the Children's Community Alternative Disability Program (CCADP) for my child. Can you tell me what documentation I need and how to get started?"',
+      `"I'd like to apply for the Children's Community Alternative Disability Program (CCADP) for my child. Can you tell me what documentation I need and how to get started?"`,
   },
   AK: {
     stateCode: 'AK',
@@ -225,7 +225,7 @@ export const MEDICAID_STATES: Record<string, MedicaidStateData> = {
     stateTip:
       'Alaska\'s TEFRA program requires both a general Medicaid application (Med 4) and specific medical forms (Med 1) to be submitted, and the medical review is conducted by Comagine Health.',
     phoneScript:
-      '"I am calling to apply for the TEFRA Medicaid program for my child with a disability. Can you help me start the application process and tell me where to send the Med 1 and Med 4 forms?"',
+      `"I am calling to apply for the TEFRA Medicaid program for my child with a disability. Can you help me start the application process and tell me where to send the Med 1 and Med 4 forms?"`,
   },
   AL: {
     stateCode: 'AL',
@@ -262,7 +262,7 @@ export const MEDICAID_STATES: Record<string, MedicaidStateData> = {
     stateTip:
       'Waiver program enrollment is limited and a waiting period may be necessary for some programs. Contact the Department of Mental Health Call Center early to inquire about waitlists.',
     phoneScript:
-      '"I am calling to inquire about the Intellectual Disabilities Waiver for my child with autism/developmental disabilities. Can you guide me through the application process and explain the eligibility requirements?"',
+      `"I am calling to inquire about the Intellectual Disabilities Waiver for my child with autism/developmental disabilities. Can you guide me through the application process and explain the eligibility requirements?"`,
   },
   AR: {
     stateCode: 'AR',
@@ -294,7 +294,7 @@ export const MEDICAID_STATES: Record<string, MedicaidStateData> = {
     stateTip:
       'DHS has up to 90 days to determine eligibility if your child\'s disability has not already been established by the Social Security Administration.',
     phoneScript:
-      '"I would like to apply for the TEFRA Medicaid program for my child with a disability."',
+      `"I would like to apply for the TEFRA Medicaid program for my child with a disability."`,
   },
   AZ: {
     stateCode: 'AZ',
@@ -321,7 +321,7 @@ export const MEDICAID_STATES: Record<string, MedicaidStateData> = {
     stateTip:
       'Arizona operates an 1115 demonstration waiver that allows for parental income to be excluded for disability-based Medicaid. Be aware that there may be waiting lists for some services, so it is advisable to apply as early as possible.',
     phoneScript:
-      '"I am calling to inquire about applying for Medicaid for my child with a developmental disability, specifically regarding the Arizona Long Term Care System (ALTCS) and Division of Developmental Disabilities (DDD) programs, where parental income is not counted."',
+      `"I am calling to inquire about applying for Medicaid for my child with a developmental disability, specifically regarding the Arizona Long Term Care System (ALTCS) and Division of Developmental Disabilities (DDD) programs, where parental income is not counted."`,
   },
   CA: {
     stateCode: 'CA',
@@ -358,7 +358,7 @@ export const MEDICAID_STATES: Record<string, MedicaidStateData> = {
     stateTip:
       'While the DDS HCBS Waiver does not have a waiting list, the application process can take 90 to 180 days due to bottlenecks at Regional Center intake, LOC assessment, and county Medi-Cal enrollment.',
     phoneScript:
-      '"I am calling to inquire about applying for Medi-Cal for my child with a developmental disability under the DDS HCBS Waiver, where parental income is not counted. Can you guide me through the process?"',
+      `"I am calling to inquire about applying for Medi-Cal for my child with a developmental disability under the DDS HCBS Waiver, where parental income is not counted. Can you guide me through the process?"`,
   },
   CT: {
     stateCode: 'CT',
@@ -395,7 +395,7 @@ export const MEDICAID_STATES: Record<string, MedicaidStateData> = {
     stateTip:
       'Due to limited slots, applicants may be placed on a waiting list. Contact the DSS Community Options Unit to be placed on the waiting list.',
     phoneScript:
-      '"I am calling to inquire about the Katie Beckett Waiver program for my child with a disability and to be placed on the waiting list. Can you please guide me through the initial steps?"',
+      `"I am calling to inquire about the Katie Beckett Waiver program for my child with a disability and to be placed on the waiting list. Can you please guide me through the initial steps?"`,
   },
   FL: {
     stateCode: 'FL',
@@ -432,7 +432,7 @@ export const MEDICAID_STATES: Record<string, MedicaidStateData> = {
     stateTip:
       'Florida\'s iBudget Waiver historically has a very long waiting list, so it is advisable to apply as early as possible.',
     phoneScript:
-      '"I am calling to inquire about applying for Medicaid services for my child with a developmental disability, specifically the iBudget Waiver. Can you guide me through the application process and any specific forms required?"',
+      `"I am calling to inquire about applying for Medicaid services for my child with a developmental disability, specifically the iBudget Waiver. Can you guide me through the application process and any specific forms required?"`,
   },
   GA: {
     stateCode: 'GA',
@@ -469,7 +469,7 @@ export const MEDICAID_STATES: Record<string, MedicaidStateData> = {
     stateTip:
       'Effective immediately, all medical level of care determinations for Katie Beckett approval will be authorized for a period of no less than two years.',
     phoneScript:
-      '"I am calling to inquire about applying for the Katie Beckett Medicaid Program for my child with a disability. Could you please guide me through the application process and any required forms?"',
+      `"I am calling to inquire about applying for the Katie Beckett Medicaid Program for my child with a disability. Could you please guide me through the application process and any required forms?"`,
   },
   HI: {
     stateCode: 'HI',
@@ -501,7 +501,7 @@ export const MEDICAID_STATES: Record<string, MedicaidStateData> = {
     stateTip:
       'Contact the Developmental Disabilities Division (DDD) case manager to initiate the application process for the I/DD Waiver.',
     phoneScript:
-      '"I am calling to inquire about the Medicaid I/DD Waiver for my child with a developmental disability. Can you connect me with someone who can help me with the application process?"',
+      `"I am calling to inquire about the Medicaid I/DD Waiver for my child with a developmental disability. Can you connect me with someone who can help me with the application process?"`,
   },
   IA: {
     stateCode: 'IA',
@@ -538,7 +538,7 @@ export const MEDICAID_STATES: Record<string, MedicaidStateData> = {
     stateTip:
       'The Children and Youth waiver has a waitlist. Completing the optional Waiver Priority Needs Assessment (WPNA) form can help prioritize a child based on their unmet needs for a waiver slot.',
     phoneScript:
-      '"I am calling to inquire about applying for the Children and Youth Waiver for my child with a disability, and I would like to understand the application process and any required forms, including the Waiver Priority Needs Assessment."',
+      `"I am calling to inquire about applying for the Children and Youth Waiver for my child with a disability, and I would like to understand the application process and any required forms, including the Waiver Priority Needs Assessment."`,
   },
   ID: {
     stateCode: 'ID',
@@ -565,7 +565,7 @@ export const MEDICAID_STATES: Record<string, MedicaidStateData> = {
     stateTip:
       'When applying for Medicaid, write "Katie Beckett" at the top of the application form to indicate interest in this specific program.',
     phoneScript:
-      '"I am calling to apply for the Katie Beckett Medicaid program for my child with a disability. Can you guide me through the application process and explain the next steps for the program packet and Level of Care Determination?"',
+      `"I am calling to apply for the Katie Beckett Medicaid program for my child with a disability. Can you guide me through the application process and explain the next steps for the program packet and Level of Care Determination?"`,
   },
   IL: {
     stateCode: 'IL',
@@ -602,7 +602,7 @@ export const MEDICAID_STATES: Record<string, MedicaidStateData> = {
     stateTip:
       'Families interested in the DD Waivers (Support or Residential) should register their child on the PUNS waiting list through their Independent Service Coordination (ISC) agency.',
     phoneScript:
-      '"I am calling to inquire about the disability-based Medicaid programs for children, specifically those where parental income is not considered, such as the Medically Fragile Technology Dependent Waiver or the Developmental Disabilities Waivers. Can you guide me on how to start the application process?"',
+      `"I am calling to inquire about the disability-based Medicaid programs for children, specifically those where parental income is not considered, such as the Medically Fragile Technology Dependent Waiver or the Developmental Disabilities Waivers. Can you guide me on how to start the application process?"`,
   },
   IN: {
     stateCode: 'IN',
@@ -639,7 +639,7 @@ export const MEDICAID_STATES: Record<string, MedicaidStateData> = {
     stateTip:
       'Contact The Arc of Indiana for assistance from a family advocate, and confirm which waiver program is most appropriate for your child\'s specific needs, especially considering the recent split of the Aged and Disabled Waiver into the Health and Wellness Waiver and Pathways for Aging Waiver.',
     phoneScript:
-      '"I am calling to inquire about applying for Medicaid for my child with a disability, specifically regarding programs that waive parental income, such as the TEFRA option or other Home and Community-Based Services waivers."',
+      `"I am calling to inquire about applying for Medicaid for my child with a disability, specifically regarding programs that waive parental income, such as the TEFRA option or other Home and Community-Based Services waivers."`,
   },
   KS: {
     stateCode: 'KS',
@@ -676,7 +676,7 @@ export const MEDICAID_STATES: Record<string, MedicaidStateData> = {
     stateTip:
       'The Autism (AU) waiver services are limited to three years, with a possible one-year extension based on a review process and demonstrated need.',
     phoneScript:
-      '"I am calling to inquire about applying for Medicaid for my child with a disability, specifically through a program that does not count parental income, such as the Autism waiver or a Katie Beckett-style program."',
+      `"I am calling to inquire about applying for Medicaid for my child with a disability, specifically through a program that does not count parental income, such as the Autism waiver or a Katie Beckett-style program."`,
   },
   KY: {
     stateCode: 'KY',
@@ -713,7 +713,7 @@ export const MEDICAID_STATES: Record<string, MedicaidStateData> = {
     stateTip:
       'Kentucky has a significant waiting list for some waiver programs, particularly the Michelle P. Waiver and Supports for Community Living Waiver, with over 13,000 individuals waiting for services.',
     phoneScript:
-      '"I am calling to inquire about applying for Medicaid for my child with a disability, specifically the Community Health for Improved Lives and Development (CHILD) Waiver. Can you guide me through the application process and explain the disability assessment requirements?"',
+      `"I am calling to inquire about applying for Medicaid for my child with a disability, specifically the Community Health for Improved Lives and Development (CHILD) Waiver. Can you guide me through the application process and explain the disability assessment requirements?"`,
   },
   LA: {
     stateCode: 'LA',
@@ -750,7 +750,7 @@ export const MEDICAID_STATES: Record<string, MedicaidStateData> = {
     stateTip:
       'While the Children\'s Choice Waiver has not recently had a waiting list, be aware that there are over 14,000 people with intellectual and developmental disabilities on waiting lists for other programs in Louisiana.',
     phoneScript:
-      '"I am calling to inquire about the Act 421 Children\'s Medicaid Option (TEFRA) for my child with a disability. Could you please guide me through the application process and explain the required forms?"',
+      `"I am calling to inquire about the Act 421 Children's Medicaid Option (TEFRA) for my child with a disability. Could you please guide me through the application process and explain the required forms?"`,
   },
   MA: {
     stateCode: 'MA',
@@ -787,7 +787,7 @@ export const MEDICAID_STATES: Record<string, MedicaidStateData> = {
     stateTip:
       'There is no waiting list for the Kaileigh Mulligan program.',
     phoneScript:
-      '"I am calling to inquire about the Kaileigh Mulligan intake process for my child."',
+      `"I am calling to inquire about the Kaileigh Mulligan intake process for my child."`,
   },
   MD: {
     stateCode: 'MD',
@@ -824,7 +824,7 @@ export const MEDICAID_STATES: Record<string, MedicaidStateData> = {
     stateTip:
       'The Autism Waiver currently has a waiting list. Families must contact the AW Registry at 1-866-417-3480 to be added to the waiting list when a vacancy occurs.',
     phoneScript:
-      '"I am calling to inquire about applying for the Medicaid Home and Community-Based Services Waiver for Children with Autism Spectrum Disorder. Can you provide information on the application process and any required forms?"',
+      `"I am calling to inquire about applying for the Medicaid Home and Community-Based Services Waiver for Children with Autism Spectrum Disorder. Can you provide information on the application process and any required forms?"`,
   },
   ME: {
     stateCode: 'ME',
@@ -856,7 +856,7 @@ export const MEDICAID_STATES: Record<string, MedicaidStateData> = {
     stateTip:
       'When filling out the MaineCare application, be sure to state that the child has a disability. This should prompt the OFI eligibility specialist to screen for the Katie Beckett program if they do not qualify for MaineCare based on family size and income.',
     phoneScript:
-      '"Hello, I am calling to inquire about applying for MaineCare for my child through the Katie Beckett program. My child has a disability, and I would like to understand the application process and what forms are required."',
+      `"Hello, I am calling to inquire about applying for MaineCare for my child through the Katie Beckett program. My child has a disability, and I would like to understand the application process and what forms are required."`,
   },
   MI: {
     stateCode: 'MI',
@@ -893,7 +893,7 @@ export const MEDICAID_STATES: Record<string, MedicaidStateData> = {
     stateTip:
       'Ensure all required forms are completed in full and submitted together as PDF documents to avoid delays in processing the application for the HCC/TEFRA program.',
     phoneScript:
-      '"I am calling to inquire about the Home Care Children\'s (HCC) / TEFRA Program for my child with a disability. Can you provide information on how to start the application process and what forms are needed?"',
+      `"I am calling to inquire about the Home Care Children's (HCC) / TEFRA Program for my child with a disability. Can you provide information on how to start the application process and what forms are needed?"`,
   },
   MN: {
     stateCode: 'MN',
@@ -930,7 +930,7 @@ export const MEDICAID_STATES: Record<string, MedicaidStateData> = {
     stateTip:
       'Minnesota eliminated its Developmental Disabilities (DD) waiver waitlist in 2016 and has maintained that status through strong county-based service coordination.',
     phoneScript:
-      '"I am calling to inquire about applying for Medical Assistance under the TEFRA option for my child with a disability. Can you guide me through the process and explain the required forms?"',
+      `"I am calling to inquire about applying for Medical Assistance under the TEFRA option for my child with a disability. Can you guide me through the process and explain the required forms?"`,
   },
   MO: {
     stateCode: 'MO',
@@ -967,7 +967,7 @@ export const MEDICAID_STATES: Record<string, MedicaidStateData> = {
     stateTip:
       'Missouri is a 209(b) state, meaning SSI approval does not automatically enroll your child in MO HealthNet; a separate Medicaid application must be filed the same day as the SSI application.',
     phoneScript:
-      '"I am calling to inquire about applying for disability-based Medicaid for my child, specifically the MOCDD Waiver, and to schedule an intake with the Regional DD Office."',
+      `"I am calling to inquire about applying for disability-based Medicaid for my child, specifically the MOCDD Waiver, and to schedule an intake with the Regional DD Office."`,
   },
   MS: {
     stateCode: 'MS',
@@ -1004,7 +1004,7 @@ export const MEDICAID_STATES: Record<string, MedicaidStateData> = {
     stateTip:
       'Mississippi has a waiting list for its ID/DD Waiver, with 2496 people with developmental disabilities on it. It is important to apply early.',
     phoneScript:
-      '"I am calling to inquire about applying for the Katie Beckett Program for my child with a disability. Can you guide me through the application process and provide the necessary forms?"',
+      `"I am calling to inquire about applying for the Katie Beckett Program for my child with a disability. Can you guide me through the application process and provide the necessary forms?"`,
   },
   MT: {
     stateCode: 'MT',
@@ -1031,7 +1031,7 @@ export const MEDICAID_STATES: Record<string, MedicaidStateData> = {
     stateTip:
       'Be aware that Montana has a significant waiting list for the Developmental Disabilities Waiver, with 2095 individuals currently awaiting services.',
     phoneScript:
-      '"I am calling to inquire about the application process for the Developmental Disabilities Program (DDP) Comprehensive Waiver for my child with a developmental disability."',
+      `"I am calling to inquire about the application process for the Developmental Disabilities Program (DDP) Comprehensive Waiver for my child with a developmental disability."`,
   },
   NC: {
     stateCode: 'NC',
@@ -1063,7 +1063,7 @@ export const MEDICAID_STATES: Record<string, MedicaidStateData> = {
     stateTip:
       'For the NC Innovations Waiver, join the waitlist as soon as possible, even if services are not immediately needed, as the wait can be long.',
     phoneScript:
-      '"I am calling to inquire about the disability-based Medicaid program for my child with developmental disabilities, specifically the Community Alternatives Program for Children (CAP/C) or the NC Innovations Waiver. Can you guide me on how to start the application process and what forms are required?"',
+      `"I am calling to inquire about the disability-based Medicaid program for my child with developmental disabilities, specifically the Community Alternatives Program for Children (CAP/C) or the NC Innovations Waiver. Can you guide me on how to start the application process and what forms are required?"`,
   },
   ND: {
     stateCode: 'ND',
@@ -1095,7 +1095,7 @@ export const MEDICAID_STATES: Record<string, MedicaidStateData> = {
     stateTip:
       'North Dakota does not offer a Katie Beckett or TEFRA program. Families should explore the Autism Spectrum Disorder Waiver or the Traditional Individual with Intellectual Disabilities and Developmental Disabilities Home and Community-Based Services Waiver for children with disabilities.',
     phoneScript:
-      '"Hello, I am calling to inquire about Medicaid programs for children with disabilities in North Dakota, specifically the Autism Spectrum Disorder Waiver or the Traditional Individual with Intellectual Disabilities and Developmental Disabilities Home and Community-Based Services Waiver. Can you provide information on eligibility and the application process?"',
+      `"Hello, I am calling to inquire about Medicaid programs for children with disabilities in North Dakota, specifically the Autism Spectrum Disorder Waiver or the Traditional Individual with Intellectual Disabilities and Developmental Disabilities Home and Community-Based Services Waiver. Can you provide information on eligibility and the application process?"`,
   },
   NE: {
     stateCode: 'NE',
@@ -1132,7 +1132,7 @@ export const MEDICAID_STATES: Record<string, MedicaidStateData> = {
     stateTip:
       'Be aware that there is a waiting list of 2754 people for developmental disabilities waivers in Nebraska.',
     phoneScript:
-      '"I am calling to apply for Medicaid for my child with a disability and would like to request an assessment for the Katie Beckett Program."',
+      `"I am calling to apply for Medicaid for my child with a disability and would like to request an assessment for the Katie Beckett Program."`,
   },
   NH: {
     stateCode: 'NH',
@@ -1169,7 +1169,7 @@ export const MEDICAID_STATES: Record<string, MedicaidStateData> = {
     stateTip:
       'For the Developmental Disabilities Waiver and In-Home Supports for Children with Developmental Disabilities, contact the Bureau of Developmental Services (BDS) at 603-271-5034 to apply.',
     phoneScript:
-      '"I am calling to apply for the Home Care for Children with Severe Disabilities (HC-CSD) program, also known as the Katie Beckett option, for my child with a disability."',
+      `"I am calling to apply for the Home Care for Children with Severe Disabilities (HC-CSD) program, also known as the Katie Beckett option, for my child with a disability."`,
   },
   NJ: {
     stateCode: 'NJ',
@@ -1196,7 +1196,7 @@ export const MEDICAID_STATES: Record<string, MedicaidStateData> = {
     stateTip:
       'New Jersey has a waiting list for some waiver programs; it is advisable to apply early and contact the Division of Disabilities Services (DDS) for guidance on specific programs for children.',
     phoneScript:
-      '"I am calling to inquire about Medicaid options for my child with a disability, specifically programs that do not count parental income, such as the Managed Long Term Services and Supports (MLTSS) program or the Split Application Medicaid method."',
+      `"I am calling to inquire about Medicaid options for my child with a disability, specifically programs that do not count parental income, such as the Managed Long Term Services and Supports (MLTSS) program or the Split Application Medicaid method."`,
   },
   NM: {
     stateCode: 'NM',
@@ -1233,7 +1233,7 @@ export const MEDICAID_STATES: Record<string, MedicaidStateData> = {
     stateTip:
       'New Mexico has a significant waiting list for its Developmental Disabilities Waiver Program, with over 16,000 individuals awaiting services. Early application is crucial.',
     phoneScript:
-      '"I am calling to inquire about applying for Medicaid for my child with a disability, specifically a Katie Beckett-style waiver or a waiver that disregards parental income."',
+      `"I am calling to inquire about applying for Medicaid for my child with a disability, specifically a Katie Beckett-style waiver or a waiver that disregards parental income."`,
   },
   NV: {
     stateCode: 'NV',
@@ -1270,7 +1270,7 @@ export const MEDICAID_STATES: Record<string, MedicaidStateData> = {
     stateTip:
       'Nevada previously charged a family fee or “parental reimbursement” for families who earn more than 200% of the federal poverty level, but as of 2019, there was a moratorium on collection of these fees.',
     phoneScript:
-      '"I am calling to apply for Medicaid under the Katie Beckett Eligibility Option for my child with a disability. Can you guide me through the application process and let me know what forms, specifically the MAABD portion, I need to complete?"',
+      `"I am calling to apply for Medicaid under the Katie Beckett Eligibility Option for my child with a disability. Can you guide me through the application process and let me know what forms, specifically the MAABD portion, I need to complete?"`,
   },
   NY: {
     stateCode: 'NY',
@@ -1307,7 +1307,7 @@ export const MEDICAID_STATES: Record<string, MedicaidStateData> = {
     stateTip:
       'Contact your regional OPWDD Front Door Office as the first step to access supports and services, including the HCBS Waiver. They can guide you through the eligibility determination process.',
     phoneScript:
-      '"I am calling to inquire about Medicaid programs for my child with a developmental disability, specifically the Home and Community Based Services Waiver, where parental income is not counted for eligibility."',
+      `"I am calling to inquire about Medicaid programs for my child with a developmental disability, specifically the Home and Community Based Services Waiver, where parental income is not counted for eligibility."`,
   },
   OH: {
     stateCode: 'OH',
@@ -1344,7 +1344,7 @@ export const MEDICAID_STATES: Record<string, MedicaidStateData> = {
     stateTip:
       'Ohio has a waiting list for developmental disabilities waivers, so it is important to apply early and contact your County Board for Developmental Disabilities for assistance.',
     phoneScript:
-      '"I am calling to inquire about applying for Medicaid Home and Community-Based Services (HCBS) waivers for my child with a disability, specifically programs where parental income is not counted for eligibility."',
+      `"I am calling to inquire about applying for Medicaid Home and Community-Based Services (HCBS) waivers for my child with a disability, specifically programs where parental income is not counted for eligibility."`,
   },
   OK: {
     stateCode: 'OK',
@@ -1376,7 +1376,7 @@ export const MEDICAID_STATES: Record<string, MedicaidStateData> = {
     stateTip:
       'Oklahoma is actively working to reduce waiver waiting lists, aiming to become a no-wait state for developmental disability services.',
     phoneScript:
-      '"I am calling to request a TEFRA application packet for my child with disabilities."',
+      `"I am calling to request a TEFRA application packet for my child with disabilities."`,
   },
   OR: {
     stateCode: 'OR',
@@ -1413,7 +1413,7 @@ export const MEDICAID_STATES: Record<string, MedicaidStateData> = {
     stateTip:
       'Be aware that there may be waiting lists for the Medically Involved and Behavior Programs, and it is advisable to contact the CIIS program before moving to Oregon.',
     phoneScript:
-      '"I am calling to inquire about the Children\'s Intensive In-Home Services (CIIS) program, Oregon\'s version of the Katie Beckett waiver, for my child with a disability. Can you guide me through the application process?"',
+      `"I am calling to inquire about the Children's Intensive In-Home Services (CIIS) program, Oregon's version of the Katie Beckett waiver, for my child with a disability. Can you guide me through the application process?"`,
   },
   PA: {
     stateCode: 'PA',
@@ -1450,7 +1450,7 @@ export const MEDICAID_STATES: Record<string, MedicaidStateData> = {
     stateTip:
       'Even though parental income is not counted for PH-95 eligibility, parents will still be required to submit proof of their income to the County Assistance Office.',
     phoneScript:
-      '"I am calling to apply for Medicaid for my child under the PH-95 category for children with disabilities. Can you guide me through the application process and what documentation is needed to establish disability?"',
+      `"I am calling to apply for Medicaid for my child under the PH-95 category for children with disabilities. Can you guide me through the application process and what documentation is needed to establish disability?"`,
   },
   RI: {
     stateCode: 'RI',
@@ -1482,7 +1482,7 @@ export const MEDICAID_STATES: Record<string, MedicaidStateData> = {
     stateTip:
       'Rhode Island has 164 uncategorized individuals on interest/referral lists for the Comprehensive Demonstration waiver, indicating potential wait times for services beyond basic Medicaid coverage.',
     phoneScript:
-      '"I am calling to inquire about the Katie Beckett Medicaid program for my child with a disability. Can you guide me through the application process and required forms?"',
+      `"I am calling to inquire about the Katie Beckett Medicaid program for my child with a disability. Can you guide me through the application process and required forms?"`,
   },
   SC: {
     stateCode: 'SC',
@@ -1519,7 +1519,7 @@ export const MEDICAID_STATES: Record<string, MedicaidStateData> = {
     stateTip:
       'South Carolina has a waiting list for some waiver programs; it is advisable to apply early and contact Family Connection of South Carolina for assistance and support.',
     phoneScript:
-      '"I am calling to inquire about applying for the Katie Beckett/TEFRA Medicaid program for my child with a disability. Can you guide me through the application process and required forms?"',
+      `"I am calling to inquire about applying for the Katie Beckett/TEFRA Medicaid program for my child with a disability. Can you guide me through the application process and required forms?"`,
   },
   TN: {
     stateCode: 'TN',
@@ -1556,7 +1556,7 @@ export const MEDICAID_STATES: Record<string, MedicaidStateData> = {
     stateTip:
       'Be sure to have medical documents that clearly identify your child’s condition and/or proof of intellectual disability ready for the DDA assessment to avoid delays in enrollment.',
     phoneScript:
-      '"I am calling to inquire about applying for the Katie Beckett program for my child with disabilities. Can you guide me through the self-referral process or connect me with a DDA case manager?"',
+      `"I am calling to inquire about applying for the Katie Beckett program for my child with disabilities. Can you guide me through the self-referral process or connect me with a DDA case manager?"`,
   },
   UT: {
     stateCode: 'UT',
@@ -1593,7 +1593,7 @@ export const MEDICAID_STATES: Record<string, MedicaidStateData> = {
     stateTip:
       'The Medically Complex Children\'s Waiver (MCCW) has a waitlist, and applicants are enrolled based on the highest confirmed acuity score as spots become available. Early application is recommended.',
     phoneScript:
-      '"I am calling to inquire about applying for disability-based Medicaid for my child with autism/developmental disabilities. Can you provide information on programs like the Medically Complex Children\'s Waiver or other waivers that do not consider parental income?"',
+      `"I am calling to inquire about applying for disability-based Medicaid for my child with autism/developmental disabilities. Can you provide information on programs like the Medically Complex Children's Waiver or other waivers that do not consider parental income?"`,
   },
   VT: {
     stateCode: 'VT',
@@ -1620,7 +1620,7 @@ export const MEDICAID_STATES: Record<string, MedicaidStateData> = {
     stateTip:
       'Vermont\'s Disabled Children\'s Home Care (Katie Beckett) program and the Global Commitment to Health waiver currently have no waiting lists.',
     phoneScript:
-      '"I am calling to inquire about the Disabled Children\'s Home Care (Katie Beckett) program and to start the application process for my child."',
+      `"I am calling to inquire about the Disabled Children's Home Care (Katie Beckett) program and to start the application process for my child."`,
   },
   WA: {
     stateCode: 'WA',
@@ -1657,7 +1657,7 @@ export const MEDICAID_STATES: Record<string, MedicaidStateData> = {
     stateTip:
       'Get on waiver waitlists as soon as possible, as there can be significant wait times for services.',
     phoneScript:
-      '"I am calling to inquire about applying for Apple Health Classic Medicaid for my child with a disability, specifically through the TEFRA/Katie Beckett option, where parental income is not considered. Can you guide me through the application process and explain the required disability assessments?"',
+      `"I am calling to inquire about applying for Apple Health Classic Medicaid for my child with a disability, specifically through the TEFRA/Katie Beckett option, where parental income is not considered. Can you guide me through the application process and explain the required disability assessments?"`,
   },
   WI: {
     stateCode: 'WI',
@@ -1689,7 +1689,7 @@ export const MEDICAID_STATES: Record<string, MedicaidStateData> = {
     stateTip:
       'Wisconsin has eliminated the waitlist for the Children\'s Long-Term Support (CLTS) Program through a continuous enrollment approach, ensuring eligible children receive services promptly.',
     phoneScript:
-      '"I am calling to inquire about applying for the Katie Beckett Medicaid program for my child with a disability. Could you please guide me through the initial steps and forms required?"',
+      `"I am calling to inquire about applying for the Katie Beckett Medicaid program for my child with a disability. Could you please guide me through the initial steps and forms required?"`,
   },
   WV: {
     stateCode: 'WV',
@@ -1726,7 +1726,7 @@ export const MEDICAID_STATES: Record<string, MedicaidStateData> = {
     stateTip:
       'The Children with Disabilities Community Service Program (CDCSP), also known as the Katie Beckett Waiver, is a vital program in West Virginia that disregards parental income, allowing children with significant disabilities to access Medicaid services regardless of their family\'s financial status.',
     phoneScript:
-      '"I am calling to inquire about the Children with Disabilities Community Service Program, also known as the Katie Beckett Waiver, for my child. I would like to understand the application process and what forms are required."',
+      `"I am calling to inquire about the Children with Disabilities Community Service Program, also known as the Katie Beckett Waiver, for my child. I would like to understand the application process and what forms are required."`,
   },
   WY: {
     stateCode: 'WY',
@@ -1763,7 +1763,7 @@ export const MEDICAID_STATES: Record<string, MedicaidStateData> = {
     stateTip:
       'Apply for the Katie Beckett option and relevant waivers as early as possible, as the application date is crucial for waitlist prioritization. Even if you think your income is too high, apply for Wyoming Medicaid online, as the Katie Beckett option bypasses parental income limits.',
     phoneScript:
-      '"I am calling to inquire about applying for Medicaid for my child with a disability under the Katie Beckett option. I would like to request an autism intake and be screened for the Comprehensive Waiver, Supports Waiver, and the Katie Beckett option. Please document our application date today and place us on every applicable list."',
+      `"I am calling to inquire about applying for Medicaid for my child with a disability under the Katie Beckett option. I would like to request an autism intake and be screened for the Comprehensive Waiver, Supports Waiver, and the Katie Beckett option. Please document our application date today and place us on every applicable list."`,
   },
   },
   SD: {
@@ -1804,7 +1804,7 @@ export const MEDICAID_STATES: Record<string, MedicaidStateData> = {
     stateTip:
       'The Family Support 360 and CHOICES waivers have a combined interest list of about 80 individuals with a wait of one to two years — apply as early as possible even before your child is fully approved for the Disabled Children\'s Program.',
     phoneScript:
-      '"I\'d like to apply for the Disabled Children\'s Program for my child with a disability. Can you tell me what documentation is needed and how to get started?"',
+      `"I'd like to apply for the Disabled Children's Program for my child with a disability. Can you tell me what documentation is needed and how to get started?"`,
   },
 };
 
