@@ -564,6 +564,23 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     marginLeft: 12,
   },
+  ppHeroCard: {
+    backgroundColor: '#4a3f8f',
+    borderRadius: 16,
+    padding: SPACING.lg,
+    marginBottom: SPACING.md,
+  },
+  ppHeroTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#ffffff',
+    marginBottom: 3,
+  },
+  ppHeroSub: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.75)',
+    lineHeight: 16,
+  },
 });
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -685,6 +702,7 @@ export default function DashboardScreen() {
   ];
 
   const TOOL_TILES = [
+    { icon: '🆘', name: 'In-the-Moment', route: '/parenting-pathways' },
     { icon: '📓', name: 'Observations', route: '/observations' },
     { icon: '🩺', name: 'Provider Prep', route: '/provider-prep' },
     { icon: '🧘', name: 'Safe Space', route: '/safe-space' },
@@ -820,6 +838,21 @@ export default function DashboardScreen() {
             ))}
           </View>
 
+          {/* PARENTING PATHWAYS HERO CARD */}
+          <TouchableOpacity
+            style={styles.ppHeroCard}
+            onPress={() => router.push('/parenting-pathways')}
+            activeOpacity={0.85}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: SPACING.md }}>
+              <Text style={{ fontSize: 28 }}>🆘</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.ppHeroTitle}>I Need Help Right Now</Text>
+                <Text style={styles.ppHeroSub}>Get an in-the-moment strategy in 30 seconds</Text>
+              </View>
+              <Text style={{ fontSize: 20, color: COLORS.purple }}>›</Text>
+            </View>
+          </TouchableOpacity>
           {/* TOOLS SCROLLER */}
           <Text style={styles.sectionLabel}>QUICK ACCESS</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pathwayScroll} contentContainerStyle={{ paddingRight: SPACING.lg }}>

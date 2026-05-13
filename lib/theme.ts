@@ -18,6 +18,10 @@ export const COLORS = {
   peachAccent: '#FFBB9A',
   yellowAccent: '#FFD97A',
   
+  // Teal
+  teal: '#3BBFA3',
+  tealAccent: '#7DD9C0',
+
   // Brand purple
   purple: '#7C5CBF',
   purpleDark: '#5C3EA8',
