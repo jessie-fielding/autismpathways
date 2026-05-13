@@ -189,7 +189,7 @@ export const MEDICAID_STATES: Record<string, MedicaidStateData> = {
       "Delaware's CCADP was formerly called the Disabled Children's Program. Initial approval is generally for up to one year and must be renewed. The DDDS Lifespan Waiver is available starting at age 12.",
     phoneScript:
       "\"I'd like to apply for the Children's Community Alternative Disability Program (CCADP) for my child. Can you tell me what documentation I need and how to get started?\"",
-,
+  },
   AK: {
     stateCode: 'AK',
     stateName: 'Alaska',
