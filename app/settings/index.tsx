@@ -409,14 +409,14 @@ export default function SettingsScreen() {
             icon="🔒"
             title="Privacy Policy"
             subtitle="How we protect your data"
-            onPress={() => Linking.openURL('https://autismpathways.app/privacy')}
+            onPress={() => Linking.openURL('https://info.autismpathways.app/privacy-policy/')}
           />
           <View style={styles.divider} />
           <Row
             icon="📄"
             title="Terms of Service"
             subtitle="Our terms and conditions"
-            onPress={() => Linking.openURL('https://autismpathways.app/terms')}
+            onPress={() => Linking.openURL('https://info.autismpathways.app/terms-of-service/')}
           />
           <View style={styles.divider} />
           <Row

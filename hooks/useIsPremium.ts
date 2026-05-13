@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_BASE = 'https://autismpathways.app';
+const API_BASE = 'https://info.autismpathways.app';
 
 /**
  * useIsPremium

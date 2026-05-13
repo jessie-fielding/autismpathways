@@ -385,11 +385,11 @@ export default function PaywallScreen() {
             }
           </Text>
           <View style={styles.legalLinks}>
-            <TouchableOpacity onPress={() => Linking.openURL('https://autismpathways.app/privacy')}>
+            <TouchableOpacity onPress={() => Linking.openURL('https://info.autismpathways.app/privacy-policy/')}>
               <Text style={styles.legalLink}>Privacy Policy</Text>
             </TouchableOpacity>
             <Text style={styles.legalSep}>·</Text>
-            <TouchableOpacity onPress={() => Linking.openURL('https://autismpathways.app/terms')}>
+            <TouchableOpacity onPress={() => Linking.openURL('https://info.autismpathways.app/terms-of-service/')}>
               <Text style={styles.legalLink}>Terms of Use</Text>
             </TouchableOpacity>
           </View>
