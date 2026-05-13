@@ -1765,7 +1765,6 @@ export const MEDICAID_STATES: Record<string, MedicaidStateData> = {
     phoneScript:
       `"I am calling to inquire about applying for Medicaid for my child with a disability under the Katie Beckett option. I would like to request an autism intake and be screened for the Comprehensive Waiver, Supports Waiver, and the Katie Beckett option. Please document our application date today and place us on every applicable list."`,
   },
-  },
   SD: {
     stateCode: 'SD',
     stateName: 'South Dakota',
