@@ -8,6 +8,7 @@ import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
   ActivityIndicator, Alert, Linking, Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import {
@@ -143,7 +144,25 @@ export default function PaywallScreen() {
     }
     const product = selectedPlan === 'annual' ? annualProduct : monthlyProduct;
     if (!product) {
-      Alert.alert('Not Available', 'This subscription is not available on your device right now.');
+      Alert.alert(
+        'Subscription Unavailable',
+        'Unable to connect to the App Store. Please ensure you are signed in with a valid Apple ID and have an active internet connection, then try again.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Retry', onPress: () => {
+            setIapReady(false);
+            initConnection().then(() =>
+              fetchProducts({ skus: PRODUCT_IDS, type: 'subs' }).then(subs => {
+                subs.forEach(sub => {
+                  if (sub.productId === PRODUCT_ID_ANNUAL) { setAnnualProduct(sub); setAnnualPrice(sub.localizedPrice ?? '$79.99'); }
+                  if (sub.productId === PRODUCT_ID_MONTHLY) { setMonthlyProduct(sub); setMonthlyPrice(sub.localizedPrice ?? '$9.99'); }
+                });
+                setIapReady(true);
+              })
+            ).catch(() => setIapReady(true));
+          }},
+        ]
+      );
       return;
     }
     setPurchasing(true);
@@ -213,12 +232,13 @@ export default function PaywallScreen() {
 
   const currentPrice = selectedPlan === 'annual' ? annualPrice : monthlyPrice;
   const priceLoaded  = annualPrice !== null && monthlyPrice !== null;
+  const insets = useSafeAreaInsets();
 
   // ── Full paywall ──────────────────────────────────────────────────────────
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+      <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
           <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>
       </View>
@@ -383,7 +403,6 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   header: {
     paddingHorizontal: SPACING.lg,
-    paddingTop: SPACING.lg,
     paddingBottom: SPACING.sm,
   },
   backBtn: { alignSelf: 'flex-start', padding: SPACING.sm },
