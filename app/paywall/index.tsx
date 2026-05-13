@@ -131,7 +131,7 @@ export default function PaywallScreen() {
       setAnnualPrice(prev => prev ?? '$79.99');
       setMonthlyPrice(prev => prev ?? '$9.99');
       setIapReady(true);
-    }, 6000);
+    }, 3000);
 
     return () => {
       clearTimeout(fallbackTimer);
@@ -287,9 +287,8 @@ export default function PaywallScreen() {
           </View>
 
           <TouchableOpacity
-            style={[styles.purchaseBtn, (!iapReady || purchasing) && styles.purchaseBtnDisabled]}
+            style={[styles.purchaseBtn, purchasing && styles.purchaseBtnDisabled]}
             onPress={handlePurchase}
-            disabled={!iapReady || purchasing}
             activeOpacity={0.85}
           >
             {purchasing ? (
@@ -352,9 +351,8 @@ export default function PaywallScreen() {
         {/* Bottom CTA */}
         <View style={styles.ctaSection}>
           <TouchableOpacity
-            style={[styles.purchaseBtn, (!iapReady || purchasing) && styles.purchaseBtnDisabled]}
+            style={[styles.purchaseBtn, purchasing && styles.purchaseBtnDisabled]}
             onPress={handlePurchase}
-            disabled={!iapReady || purchasing}
             activeOpacity={0.85}
           >
             {purchasing ? (
