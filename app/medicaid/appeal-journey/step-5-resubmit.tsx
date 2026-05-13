@@ -115,6 +115,7 @@ export default function Step5Resubmit() {
           <Text style={[styles.navButtonText, styles.navButtonTextPrimary]}>I've submitted ✓</Text>
         </TouchableOpacity>
       </View>
+      </View>
     </KeyboardAvoidingView>
   );
 }

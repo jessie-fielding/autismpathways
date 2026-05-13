@@ -141,6 +141,7 @@ export default function ManageChildrenScreen() {
 
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
       <View style={styles.header}>
@@ -218,8 +219,8 @@ export default function ManageChildrenScreen() {
                       </TouchableOpacity>
                     )}
                   </View>
-    </KeyboardAvoidingView>
-  );
+                </View>
+              );
             })
           )}
 
@@ -324,10 +325,10 @@ export default function ManageChildrenScreen() {
           </View>
         </View>
       </Modal>
-    </View>
+     </View>
+    </KeyboardAvoidingView>
   );
 }
-
 // ── Styles ────────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({

@@ -376,6 +376,7 @@ export default function NewEntryScreen() {
 
         <View style={styles.rainbowBar} />
       </ScrollView>
+      </View>
     </KeyboardAvoidingView>
   );
 }

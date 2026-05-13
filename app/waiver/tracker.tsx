@@ -79,7 +79,7 @@ export default function WaiverTrackerScreen() {
           {(data[key] as string) || placeholder}
         </Text>
       )}
-    </KeyboardAvoidingView>
+    </View>
   );
 
   return (
@@ -181,6 +181,7 @@ export default function WaiverTrackerScreen() {
         <View style={{ height: 40 }} />
       </ScrollView>
     </View>
+    </KeyboardAvoidingView>
   );
 }
 
