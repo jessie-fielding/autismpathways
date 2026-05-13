@@ -1766,9 +1766,49 @@ export const MEDICAID_STATES: Record<string, MedicaidStateData> = {
       "\""I am calling to inquire about applying for Medicaid for my child with a disability under the Katie Beckett option. I would like to request an autism intake and be screened for the Comprehensive Waiver, Supports Waiver, and the Katie Beckett option. Please document our application date today and place us on every applicable list."\"",
   },
   },
+  SD: {
+    stateCode: 'SD',
+    stateName: 'South Dakota',
+    programName: 'Disabled Children\'s Program (TEFRA)',
+    programAcronym: 'DCP',
+    requiredForm: 'Level of Care Assessment (Intermediate Care Facility or Nursing Facility level)',
+    requiredFormNote:
+      'A medical assessment is required to establish that your child meets an Intermediate Care Facility or Nursing Facility level of care. This is completed with the help of your child\'s physician and the South Dakota DSS.',
+    incomeRuleHeadline:
+      'Parental income is not counted — eligibility is based on the child\'s income only.',
+    incomeRuleDetail:
+      'South Dakota\'s Disabled Children\'s Program (TEFRA) waives parental income for eligibility purposes. Only the child\'s own income is considered, making it accessible to families at any income level. The Family Support 360 and CHOICES waivers also use the child\'s income only.',
+    applicationUrl: 'https://dss.sd.gov/economicassistance/medical_programs.aspx',
+    applicationPortalName: 'South Dakota DSS Benefits Portal',
+    waiverPrograms: [
+      {
+        name: 'Disabled Children\'s Program',
+        acronym: 'DCP',
+        description:
+          'TEFRA program providing Medicaid coverage for children ages 0–18 with any disability (medical, developmental, intellectual, or psychiatric) who would otherwise require institutional care.',
+      },
+      {
+        name: 'Family Support 360 Waiver',
+        acronym: 'FS360',
+        description:
+          'Provides personal care, respite, support coordination, therapies, and adaptive equipment for children and adults with intellectual or developmental disabilities.',
+      },
+      {
+        name: 'CHOICES Waiver',
+        acronym: 'CHOICES',
+        description:
+          'Provides day services, residential habilitation, supported employment, and case management for children and adults with intellectual or developmental disabilities.',
+      },
+    ],
+    medicaidPhone: '1-605-773-4678',
+    stateTip:
+      'The Family Support 360 and CHOICES waivers have a combined interest list of about 80 individuals with a wait of one to two years — apply as early as possible even before your child is fully approved for the Disabled Children\'s Program.',
+    phoneScript:
+      "\"I\'d like to apply for the Disabled Children\'s Program for my child with a disability. Can you tell me what documentation is needed and how to get started?\"",
+  },
 };
 
-export const BETA_STATES = ['AK', 'AL', 'AR', 'AZ', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA', 'HI', 'IA', 'ID', 'IL', 'IN', 'KS', 'KY', 'LA', 'MA', 'MD', 'ME', 'MI', 'MN', 'MO', 'MS', 'MT', 'NC', 'ND', 'NE', 'NH', 'NJ', 'NM', 'NV', 'NY', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC', 'TN', 'TX', 'UT', 'VA', 'VT', 'WA', 'WI', 'WV', 'WY'];
+export const BETA_STATES = ['AK', 'AL', 'AR', 'AZ', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA', 'HI', 'IA', 'ID', 'IL', 'IN', 'KS', 'KY', 'LA', 'MA', 'MD', 'ME', 'MI', 'MN', 'MO', 'MS', 'MT', 'NC', 'ND', 'NE', 'NH', 'NJ', 'NM', 'NV', 'NY', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC', 'TN', 'TX', 'UT', 'VA', 'VT', 'WA', 'WI', 'WV', 'WY', 'SD'];
 
 export const STATE_OPTIONS = [
   { code: 'AL', name: 'Alabama' },
@@ -1811,6 +1851,7 @@ export const STATE_OPTIONS = [
   { code: 'PA', name: 'Pennsylvania' },
   { code: 'RI', name: 'Rhode Island' },
   { code: 'SC', name: 'South Carolina' },
+  { code: 'SD', name: 'South Dakota' },
   { code: 'TN', name: 'Tennessee' },
   { code: 'TX', name: 'Texas' },
   { code: 'UT', name: 'Utah' },
