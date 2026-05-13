@@ -59,6 +59,9 @@ export default function PaywallScreen() {
   const [restoring, setRestoring]   = useState(false);
   const [iapReady, setIapReady]     = useState(false);
 
+  const currentPrice = selectedPlan === 'annual' ? annualPrice : monthlyPrice;
+  const priceLoaded  = currentPrice !== null;
+
   const onPurchaseSuccess = useCallback(async () => {
     await AsyncStorage.setItem(IAP_PURCHASED_KEY, 'true');
     setPurchasing(false);
