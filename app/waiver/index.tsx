@@ -8,11 +8,13 @@ import { COLORS, FONT_SIZES, RADIUS, SHADOWS, SPACING } from '../../lib/theme';
 import waiverData from '../../data/waiver-data.json';
 import { PathwayDisclaimer } from '../../components/PathwayDisclaimer';
 
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const ALL_STATES = Object.entries(waiverData as Record<string, { stateName: string }>)
   .map(([abbr, data]) => ({ abbr, name: data.stateName }))
   .sort((a, b) => a.name.localeCompare(b.name));
 
 export default function WaiverStatePickerScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const [search, setSearch] = useState('');
   const [savedState, setSavedState] = useState<string | null>(null);
@@ -47,8 +49,8 @@ export default function WaiverStatePickerScreen() {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.push('/(tabs)/dashboard')} style={styles.backBtn}>
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+        <TouchableOpacity onPress={() => router.push('/(tabs)/dashboard')} style={styles.backBtn} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
           <Text style={styles.backText}>← Dashboard</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>
@@ -145,7 +147,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: SPACING.md,
-    paddingTop: 56,
+    
     paddingBottom: SPACING.sm,
     backgroundColor: COLORS.white,
     borderBottomWidth: 1,

@@ -442,7 +442,7 @@ export default function ProviderReportScreen() {
     <View style={styles.container}>
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
           <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Provider Report</Text>
@@ -514,7 +514,7 @@ export default function ProviderReportScreen() {
       {selected && d && (
         <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
           {/* Back to list */}
-          <TouchableOpacity onPress={() => setSelected(null)} style={styles.backToList}>
+          <TouchableOpacity onPress={() => setSelected(null)} style={styles.backToList} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
             <Text style={styles.backToListText}>← All sessions</Text>
           </TouchableOpacity>
 

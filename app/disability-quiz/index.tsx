@@ -379,7 +379,7 @@ export default function DisabilityQuizScreen() {
     return (
       <View style={styles.container}>
         <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
             <Text style={styles.backText}>← Back</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Developmental Quiz</Text>
@@ -424,7 +424,7 @@ export default function DisabilityQuizScreen() {
         <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
           <TouchableOpacity
             onPress={() => currentQ === 0 ? setScreen('intro') : setCurrentQ(currentQ - 1)}
-            style={styles.backBtn}
+            style={styles.backBtn} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
           >
             <Text style={styles.backText}>← Back</Text>
           </TouchableOpacity>
@@ -475,7 +475,7 @@ export default function DisabilityQuizScreen() {
   return (
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
-        <TouchableOpacity onPress={() => { setScreen('intro'); setCurrentQ(0); setAnswers({}); }} style={styles.backBtn}>
+        <TouchableOpacity onPress={() => { setScreen('intro'); setCurrentQ(0); setAnswers({}); }} style={styles.backBtn} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
           <Text style={styles.backText}>Retake</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Your Results</Text>

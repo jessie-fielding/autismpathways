@@ -4,6 +4,7 @@ import { Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'r
 import { useMedicaidState } from '../../../lib/MedicaidStateContext';
 import { COLORS, FONT_SIZES, RADIUS, SPACING } from '../../../lib/theme';
 
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const BASE_STEPS = [
   { id: 's1', title: 'Gather provider documentation', desc: 'Collect any paperwork or notes your provider completed about your child\'s needs' },
   { id: 's2', title: 'Include diagnosis and evaluation records', desc: 'Evaluation reports, diagnosis letters, and any assessments from providers' },
@@ -13,6 +14,7 @@ const BASE_STEPS = [
 ];
 
 export default function ApplyForLtd() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const { stateData } = useMedicaidState();
   const [completed, setCompleted] = useState<Set<string>>(new Set());
@@ -34,8 +36,8 @@ export default function ApplyForLtd() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+        <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
           <Text style={styles.backButton}>←</Text>
         </TouchableOpacity>
         <View style={styles.headerTextGroup}>
@@ -176,7 +178,7 @@ export default function ApplyForLtd() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
   header: {
-    backgroundColor: COLORS.white, paddingHorizontal: SPACING.lg, paddingTop: 56,
+    backgroundColor: COLORS.white, paddingHorizontal: SPACING.lg, 
     paddingBottom: SPACING.lg, borderBottomWidth: 1, borderBottomColor: COLORS.border,
     flexDirection: 'row', alignItems: 'center',
   },

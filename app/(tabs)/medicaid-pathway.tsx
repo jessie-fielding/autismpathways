@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { COLORS, FONT_SIZES, RADIUS, SPACING } from '../../lib/theme';
 
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -210,6 +211,7 @@ const styles = StyleSheet.create({
 });
 
 export default function MedicaidPathwayScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const [selectedReason, setSelectedReason] = useState<string | null>(null);
 
@@ -272,8 +274,8 @@ export default function MedicaidPathwayScreen() {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+        <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
           <Text style={styles.backButton}>←</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Medicaid Pathway</Text>

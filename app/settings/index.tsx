@@ -13,6 +13,7 @@ import { useAuth } from '../../services/useAuth';
 import { clearCredentials } from '../../services/secureCredentials';
 import { loadChildren, getActiveChildId, type ChildProfile } from '../../services/childManager';
 
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 // All AsyncStorage keys used across the app
 const ALL_DATA_KEYS = [
   'ap_profile',
@@ -57,6 +58,7 @@ const NOTIF_ITEMS: { key: NotifKey; icon: string; title: string; desc: string }[
 ];
 
 export default function SettingsScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const { isPremium } = useIsPremium();
   const { scheduleAll } = useNotifications();
@@ -258,8 +260,8 @@ export default function SettingsScreen() {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
           <Text style={styles.backText}>← Dashboard</Text>
         </TouchableOpacity>
       </View>
@@ -490,7 +492,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
   header: {
     paddingHorizontal: SPACING.lg,
-    paddingTop: 56,
+    
     paddingBottom: SPACING.sm,
   },
   backBtn: { paddingVertical: 6 },

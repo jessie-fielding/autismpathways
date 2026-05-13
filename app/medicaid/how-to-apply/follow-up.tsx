@@ -5,6 +5,7 @@ import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { COLORS, FONT_SIZES, RADIUS, SPACING } from '../../../lib/theme';
 
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const TIMELINE = [
   { week: '2 weeks', action: 'First follow-up call', detail: 'Confirm your application was received and is being processed. Ask for an estimated decision date.' },
   { week: '4 weeks', action: 'Second follow-up if no response', detail: 'If you haven\'t heard back, call again. Ask if any additional documents are needed.' },
@@ -28,6 +29,7 @@ const SCRIPTS = [
 ];
 
 export default function FollowUp() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const { key: childKey } = useActiveChild();
   useEffect(() => {
@@ -41,8 +43,8 @@ export default function FollowUp() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+        <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
           <Text style={styles.backButton}>←</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>How to Apply</Text>
@@ -141,7 +143,7 @@ export default function FollowUp() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
   header: {
-    backgroundColor: COLORS.white, paddingHorizontal: SPACING.lg, paddingTop: 56,
+    backgroundColor: COLORS.white, paddingHorizontal: SPACING.lg, 
     paddingBottom: SPACING.lg, borderBottomWidth: 1, borderBottomColor: COLORS.border,
     flexDirection: 'row', alignItems: 'center',
   },

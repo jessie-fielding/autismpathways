@@ -3,6 +3,7 @@ import React from 'react';
 import { Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { COLORS, FONT_SIZES, RADIUS, SPACING } from '../../lib/theme';
 
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const SOURCES = [
   {
     category: 'Medicaid & Insurance',
@@ -117,12 +118,13 @@ const SOURCES = [
 ];
 
 export default function SourcesScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
           <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Sources & Citations</Text>
@@ -175,7 +177,7 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: COLORS.white,
     paddingHorizontal: SPACING.lg,
-    paddingTop: 56,
+    
     paddingBottom: SPACING.lg,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,

@@ -7,12 +7,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, FONT_SIZES, RADIUS, SHADOWS, SPACING } from '../../lib/theme';
 import waiverData from '../../data/waiver-data.json';
 
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 type StateData = {
   stateName: string;
   counties: Record<string, { countyDisplay: string }>;
 };
 
 export default function CountyPickerScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const params = useLocalSearchParams<{ state?: string }>();
   const stateAbbr = params.state || '';
@@ -44,8 +46,8 @@ export default function CountyPickerScreen() {
   if (!data) {
     return (
       <View style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+        <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
             <Text style={styles.backText}>← Back</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Autism <Text style={styles.headerPurple}>Pathways</Text></Text>
@@ -62,7 +64,7 @@ export default function CountyPickerScreen() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
           <Text style={styles.backText}>← {stateAbbr}</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Autism <Text style={styles.headerPurple}>Pathways</Text></Text>
@@ -131,7 +133,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: SPACING.md,
-    paddingTop: 56,
+    
     paddingBottom: SPACING.sm,
     backgroundColor: COLORS.white,
     borderBottomWidth: 1,

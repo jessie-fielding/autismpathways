@@ -5,6 +5,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '../../lib/theme';
 
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 type PathwayKey = 'encopresis' | 'bodySignals' | 'sensory' | 'regression';
 
 const PATHWAY_META: Record<PathwayKey, {
@@ -187,6 +188,7 @@ function RegressionMsgCard() {
 }
 
 export default function PottyResultScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const params = useLocalSearchParams<{ primary?: string; secondary?: string }>();
   const [primary, setPrimary] = useState<PathwayKey>('encopresis');
@@ -227,8 +229,8 @@ export default function PottyResultScreen() {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.push('/(tabs)/dashboard')} style={styles.backBtn}>
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+        <TouchableOpacity onPress={() => router.push('/(tabs)/dashboard')} style={styles.backBtn} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
           <Text style={styles.backText}>← Dashboard</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Autism <Text style={styles.headerPurple}>Pathways</Text></Text>
@@ -369,7 +371,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: SPACING.lg,
-    paddingTop: 56,
+    
     paddingBottom: SPACING.md,
     backgroundColor: COLORS.bg,
     borderBottomWidth: 1,

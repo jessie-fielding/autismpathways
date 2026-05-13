@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '../../../lib/theme';
 
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const TOTAL_STEPS = 6;
 const CURRENT_STEP = 3;
 
@@ -48,6 +49,7 @@ const QUESTIONS = [
 ];
 
 export default function HelpMeDecideScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const [currentQ, setCurrentQ] = useState(0);
   const [answers, setAnswers] = useState<Answer[]>(Array(QUESTIONS.length).fill(null));
@@ -90,8 +92,8 @@ export default function HelpMeDecideScreen() {
     const isTelehealth = recommendation === 'telehealth';
     return (
       <View style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => setShowResult(false)} style={styles.backBtn}>
+        <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+          <TouchableOpacity onPress={() => setShowResult(false)} style={styles.backBtn} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
             <Text style={styles.backText}>← Back</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Autism Pathways</Text>
@@ -165,7 +167,7 @@ export default function HelpMeDecideScreen() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => currentQ > 0 ? setCurrentQ(currentQ - 1) : router.back()} style={styles.backBtn}>
+        <TouchableOpacity onPress={() => currentQ > 0 ? setCurrentQ(currentQ - 1) : router.back()} style={styles.backBtn} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
           <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Help Me Decide</Text>
@@ -243,7 +245,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: SPACING.lg,
-    paddingTop: 56,
+    
     paddingBottom: SPACING.md,
     backgroundColor: COLORS.white,
     borderBottomWidth: 1,

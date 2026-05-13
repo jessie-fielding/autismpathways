@@ -5,6 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '../../lib/theme';
 import { useActiveChild } from '../../services/childManager';
 
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const TOTAL_STEPS = 6;
 const CURRENT_STEP = 2;
 
@@ -23,6 +24,7 @@ const REASONS = [
 ];
 
 export default function WhyDiagnosisScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const { key: childKey } = useActiveChild();
   const [selected, setSelected] = useState<string[]>([]);
@@ -42,8 +44,8 @@ export default function WhyDiagnosisScreen() {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
           <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Autism Pathways</Text>
@@ -117,7 +119,7 @@ export default function WhyDiagnosisScreen() {
       {/* Footer */}
       <View style={styles.footer}>
         <View style={styles.footerRow}>
-          <TouchableOpacity style={styles.secondaryBtn} onPress={() => router.back()}>
+          <TouchableOpacity style={styles.secondaryBtn} onPress={() => router.back()} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
             <Text style={styles.secondaryBtnText}>← Back</Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -140,7 +142,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: SPACING.lg,
-    paddingTop: 56,
+    
     paddingBottom: SPACING.md,
     backgroundColor: COLORS.white,
     borderBottomWidth: 1,

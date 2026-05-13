@@ -333,7 +333,7 @@ export default function TalkingPointsScreen() {
       {/* AP-branded header */}
       <View style={[styles.headerBar, { paddingTop: insets.top + SPACING.sm }]}>
         <View style={styles.headerTop}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
             <Text style={styles.backText}>← Back</Text>
           </TouchableOpacity>
           <Text style={styles.headerBarTitle}>Talking Points</Text>

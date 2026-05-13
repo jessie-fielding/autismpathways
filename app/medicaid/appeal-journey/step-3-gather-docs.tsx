@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { COLORS, FONT_SIZES, RADIUS, SPACING } from '../../../lib/theme';
 
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const DOC_SECTIONS = [
   {
     title: 'Identity & Household',
@@ -43,6 +44,7 @@ const DOC_SECTIONS = [
 ];
 
 export default function Step3GatherDocs() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const [checked, setChecked] = useState<Set<string>>(new Set());
 
@@ -58,8 +60,8 @@ export default function Step3GatherDocs() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+        <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
           <Text style={styles.backButton}>←</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Appeal Journey</Text>
@@ -153,7 +155,7 @@ export default function Step3GatherDocs() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
   header: {
-    backgroundColor: COLORS.white, paddingHorizontal: SPACING.lg, paddingTop: 56,
+    backgroundColor: COLORS.white, paddingHorizontal: SPACING.lg, 
     paddingBottom: SPACING.lg, borderBottomWidth: 1, borderBottomColor: COLORS.border,
     flexDirection: 'row', alignItems: 'center',
   },

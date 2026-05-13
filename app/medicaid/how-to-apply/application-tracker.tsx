@@ -8,9 +8,11 @@ import {
 import { COLORS, FONT_SIZES, RADIUS, SPACING } from '../../../lib/theme';
 import { useIsPremium } from '../../../hooks/useIsPremium';
 
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const TRACKER_KEY = 'ap_medicaid_tracker';
 
 export default function ApplicationTracker() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const { key: childKey } = useActiveChild();
   const { isPremium } = useIsPremium();
@@ -59,8 +61,8 @@ export default function ApplicationTracker() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+        <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
           <Text style={styles.backButton}>←</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>How to Apply</Text>
@@ -221,7 +223,7 @@ export default function ApplicationTracker() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
   header: {
-    backgroundColor: COLORS.white, paddingHorizontal: SPACING.lg, paddingTop: 56,
+    backgroundColor: COLORS.white, paddingHorizontal: SPACING.lg, 
     paddingBottom: SPACING.lg, borderBottomWidth: 1, borderBottomColor: COLORS.border,
     flexDirection: 'row', alignItems: 'center',
   },

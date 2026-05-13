@@ -4,6 +4,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, FONT_SIZES, RADIUS, SHADOWS, SPACING } from '../../lib/theme';
 
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 export const OBS_KEY = 'ap_observations';
 export const IEP_FLAGGED_KEY = 'ap_iep_flagged_obs';
 
@@ -105,6 +106,7 @@ function detectPatterns(entries: Observation[]): { icon: string; text: string; s
 }
 
 export default function ObservationsHomeScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const [entries, setEntries] = useState<Observation[]>([]);
 
@@ -148,8 +150,8 @@ export default function ObservationsHomeScreen() {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.push('/(tabs)/dashboard')} style={styles.backBtn}>
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+        <TouchableOpacity onPress={() => router.push('/(tabs)/dashboard')} style={styles.backBtn} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
           <Text style={styles.backText}>← Dashboard</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>
@@ -269,7 +271,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: SPACING.lg,
-    paddingTop: 56,
+    
     paddingBottom: SPACING.md,
     backgroundColor: COLORS.bg,
     borderBottomWidth: 1,

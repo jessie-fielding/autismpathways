@@ -12,6 +12,7 @@ import {
 import { useRouter } from 'expo-router';
 import { COLORS, SPACING, RADIUS, FONT_SIZES, SHADOWS } from '../../lib/theme';
 
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 // ── WordPress API ────────────────────────────────────────────────────────────
 const WP_API   = 'https://info.autismpathways.app/wp-json/wp/v2';
 const PER_PAGE = 10;
@@ -113,6 +114,7 @@ function getCatMeta(catIds: number[], catMap: Record<number, WPCategory>): CatMe
 
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function LearningScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
 
   const [posts, setPosts]                     = useState<WPPost[]>([]);
@@ -299,7 +301,7 @@ export default function LearningScreen() {
   return (
     <View style={styles.container}>
       {/* Sticky header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <Text style={styles.headerTitle}>
           Autism <Text style={styles.headerTitlePink}>Pathways</Text>
         </Text>
@@ -472,7 +474,7 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: COLORS.white,
     paddingHorizontal: SPACING.lg,
-    paddingTop: 56,
+    
     paddingBottom: SPACING.md,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,

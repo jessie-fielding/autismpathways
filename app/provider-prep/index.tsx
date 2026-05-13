@@ -337,7 +337,7 @@ export default function ProviderPrepScreen() {
       {/* ── AP-branded Header ── */}
       <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
         <View style={styles.headerTop}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
             <Text style={styles.backText}>← Back</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Provider Prep</Text>

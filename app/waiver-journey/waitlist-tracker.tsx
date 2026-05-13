@@ -165,7 +165,7 @@ export default function WaitlistTrackerScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
           <Text style={styles.backButton}>Back</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>My Waiver Applications</Text>
@@ -189,7 +189,7 @@ export default function WaitlistTrackerScreen() {
       </ScrollView>
 
       <View style={styles.navButtons}>
-        <TouchableOpacity style={styles.navButton} onPress={() => router.back()}>
+        <TouchableOpacity style={styles.navButton} onPress={() => router.back()} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
           <Text style={styles.navButtonText}>Back</Text>
         </TouchableOpacity>
         <TouchableOpacity 

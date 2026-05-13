@@ -11,11 +11,10 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "app.autismpathways.app",
-      "buildNumber": "29",
+      "buildNumber": "30",
       "infoPlist": {
         "NSFaceIDUsageDescription": "Autism Pathways uses Face ID to sign you in quickly and securely.",
-        "NSPhotoLibraryUsageDescription": "Autism Pathways accesses your photo library to let you attach documents to your vault.",
-        "NSPhotoLibraryAddUsageDescription": "Autism Pathways saves documents to your photo library."
+        "NSPhotoLibraryUsageDescription": "Autism Pathways accesses your photo library to let you attach documents to your vault."
       }
     },
     "android": {

@@ -5,6 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '../../lib/theme';
 
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 type ScoreKey = 'encopresis' | 'bodySignals' | 'sensory' | 'regression' | 'fearAnxiety' | 'developmental';
 
 interface Option {
@@ -113,6 +114,7 @@ const QUESTIONS: Question[] = [
 ];
 
 export default function PottyQuizScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const [currentQ, setCurrentQ] = useState(0);
   const [answers, setAnswers] = useState<Record<string, number>>({});
@@ -188,8 +190,8 @@ export default function PottyQuizScreen() {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.push('/(tabs)/dashboard')} style={styles.backBtn}>
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+        <TouchableOpacity onPress={() => router.push('/(tabs)/dashboard')} style={styles.backBtn} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
           <Text style={styles.backText}>← Dashboard</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Autism <Text style={styles.headerPurple}>Pathways</Text></Text>
@@ -256,7 +258,7 @@ export default function PottyQuizScreen() {
             </Text>
           </LinearGradient>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.secondaryBtn} onPress={handleBack}>
+        <TouchableOpacity style={styles.secondaryBtn} onPress={handleBack} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
           <Text style={styles.secondaryBtnText}>← Back</Text>
         </TouchableOpacity>
       </View>
@@ -273,7 +275,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: SPACING.lg,
-    paddingTop: 56,
+    
     paddingBottom: SPACING.md,
     backgroundColor: COLORS.bg,
     borderBottomWidth: 1,

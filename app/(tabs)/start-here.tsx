@@ -6,6 +6,7 @@ import { useRouter } from 'expo-router';
 import { COLORS, SPACING, FONT_SIZES, RADIUS } from '../../lib/theme';
 import { addChild, loadChildren, setActiveChildId, getActiveChildId, updateChild } from '../../services/childManager';
 
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -250,6 +251,7 @@ const concerns = [
 ];
 
 export default function StartHereScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [childName, setChildName] = useState('');
@@ -337,7 +339,7 @@ export default function StartHereScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <Text style={styles.progressLabel}>STEP {step} OF 3 — {step === 1 ? 'YOUR CHILD' : step === 2 ? 'YOUR CONCERNS' : "YOU'RE ALL SET!"}</Text>
         <View style={styles.progressBar}>
           <View style={[styles.progressFill, { width: `${getProgress()}%` }]} />
@@ -521,7 +523,7 @@ export default function StartHereScreen() {
       <View style={styles.buttonContainer}>
         <View style={styles.buttonGroup}>
           {step > 1 ? (
-            <TouchableOpacity style={styles.secondaryButton} onPress={handleBack}>
+            <TouchableOpacity style={styles.secondaryButton} onPress={handleBack} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
               <Text style={styles.secondaryButtonText}>← Back</Text>
             </TouchableOpacity>
           ) : null}

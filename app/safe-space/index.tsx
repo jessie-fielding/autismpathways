@@ -231,7 +231,7 @@ export default function SafeSpaceScreen() {
     <View style={{ flex: 1 }}>
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
           <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Safe Space</Text>
@@ -325,7 +325,7 @@ export default function SafeSpaceScreen() {
       <View style={{ flex: 1 }}>
         {/* Header */}
         <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
-          <TouchableOpacity onPress={confirmDiscard} style={styles.backBtn}>
+          <TouchableOpacity onPress={confirmDiscard} style={styles.backBtn} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
             <Text style={styles.backText}>← Discard</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{currentId ? 'Edit Entry' : 'New Entry'}</Text>
@@ -413,7 +413,7 @@ export default function SafeSpaceScreen() {
       <View style={{ flex: 1 }}>
         {/* Header */}
         <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
-          <TouchableOpacity onPress={goList} style={styles.backBtn}>
+          <TouchableOpacity onPress={goList} style={styles.backBtn} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
             <Text style={styles.backText}>← Back</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Read Entry</Text>

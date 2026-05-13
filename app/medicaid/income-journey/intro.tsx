@@ -3,13 +3,15 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-nati
 import { COLORS, FONT_SIZES, RADIUS, SPACING } from '../../../lib/theme';
 import { PathwayDisclaimer } from '../../../components/PathwayDisclaimer';
 
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 export default function IncomeJourneyIntroScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+        <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
           <Text style={styles.backButton}>←</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Income Denial</Text>
@@ -45,7 +47,7 @@ export default function IncomeJourneyIntroScreen() {
       </ScrollView>
 
       <View style={styles.navigationButtons}>
-        <TouchableOpacity style={styles.navButton} onPress={() => router.back()}>
+        <TouchableOpacity style={styles.navButton} onPress={() => router.back()} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
           <Text style={styles.navButtonText}>← Back</Text>
         </TouchableOpacity>
         <TouchableOpacity

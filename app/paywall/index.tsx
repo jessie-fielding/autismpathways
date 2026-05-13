@@ -49,6 +49,7 @@ const FEATURES = [
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function PaywallScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [selectedPlan, setSelectedPlan] = useState<'annual' | 'monthly'>('annual');
   const [annualProduct, setAnnualProduct]   = useState<ProductSubscription | null>(null);
   const [monthlyProduct, setMonthlyProduct] = useState<ProductSubscription | null>(null);
@@ -204,8 +205,8 @@ export default function PaywallScreen() {
   if (BETA_MODE) {
     return (
       <View style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+        <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
             <Text style={styles.backText}>← Back</Text>
           </TouchableOpacity>
         </View>
@@ -230,9 +231,6 @@ export default function PaywallScreen() {
     );
   }
 
-  const currentPrice = selectedPlan === 'annual' ? annualPrice : monthlyPrice;
-  const priceLoaded  = annualPrice !== null && monthlyPrice !== null;
-  const insets = useSafeAreaInsets();
 
   // ── Full paywall ──────────────────────────────────────────────────────────
   return (

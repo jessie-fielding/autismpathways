@@ -5,6 +5,7 @@ import React, { useEffect } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { COLORS, FONT_SIZES, RADIUS, SPACING } from '../../../lib/theme';
 
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const STEPS = [
   { step: '1', title: 'Gather your paperwork', desc: 'We\'ll give you a checklist of exactly what you need' },
   { step: '2', title: 'Choose how to apply', desc: 'In person vs. over the phone — pros and cons of each' },
@@ -14,6 +15,7 @@ const STEPS = [
 ];
 
 export default function HowToApplyIntro() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const { key: childKey } = useActiveChild();
   useEffect(() => {
@@ -26,8 +28,8 @@ export default function HowToApplyIntro() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+        <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
           <Text style={styles.backButton}>←</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>How to Apply</Text>
@@ -109,7 +111,7 @@ export default function HowToApplyIntro() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
   header: {
-    backgroundColor: COLORS.white, paddingHorizontal: SPACING.lg, paddingTop: 56,
+    backgroundColor: COLORS.white, paddingHorizontal: SPACING.lg, 
     paddingBottom: SPACING.lg, borderBottomWidth: 1, borderBottomColor: COLORS.border,
     flexDirection: 'row', alignItems: 'center',
   },

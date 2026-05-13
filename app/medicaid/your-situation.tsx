@@ -11,6 +11,7 @@ import {
 import LottieView from 'lottie-react-native';
 import { COLORS, FONT_SIZES, RADIUS, SPACING } from '../../lib/theme';
 
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const TABS = [
   { number: 1, label: 'Overview', active: false, completed: true },
   { number: 2, label: 'Your Situation', active: true, completed: false },
@@ -41,6 +42,7 @@ const OPTIONS = [
 ];
 
 export default function YourSituation() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const [selected, setSelected] = useState<string | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
@@ -96,8 +98,8 @@ export default function YourSituation() {
       </Modal>
 
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+        <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
           <Text style={styles.backButton}>←</Text>
         </TouchableOpacity>
         <View style={styles.headerCenter}>
@@ -277,7 +279,7 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: COLORS.white,
     paddingHorizontal: SPACING.lg,
-    paddingTop: 56,
+    
     paddingBottom: SPACING.lg,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,

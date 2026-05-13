@@ -8,6 +8,7 @@ import { COLORS, FONT_SIZES, RADIUS, SHADOWS, SPACING } from '../../lib/theme';
 import { useIsPremium } from '../../hooks/useIsPremium';
 import waiverData from '../../data/waiver-data.json';
 
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 type Section = { heading: string; content: string };
 type CountyData = {
   countyDisplay: string;
@@ -27,6 +28,7 @@ type StateData = {
 };
 
 export default function AgencyCardScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const params = useLocalSearchParams<{ state?: string; county?: string }>();
   const { isPremium } = useIsPremium();
@@ -84,8 +86,8 @@ export default function AgencyCardScreen() {
   if (!countyData || !stateData) {
     return (
       <View style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+        <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
             <Text style={styles.backText}>← Back</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Autism <Text style={styles.headerPurple}>Pathways</Text></Text>
@@ -93,7 +95,7 @@ export default function AgencyCardScreen() {
         </View>
         <View style={styles.centered}>
           <Text style={styles.emptyText}>No data found for this county.</Text>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backLink}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backLink} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
             <Text style={styles.backLinkText}>← Go back</Text>
           </TouchableOpacity>
         </View>
@@ -107,7 +109,7 @@ export default function AgencyCardScreen() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
           <Text style={styles.backText}>← Counties</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Autism <Text style={styles.headerPurple}>Pathways</Text></Text>
@@ -323,7 +325,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: SPACING.md,
-    paddingTop: 56,
+    
     paddingBottom: SPACING.sm,
     backgroundColor: COLORS.white,
     borderBottomWidth: 1,

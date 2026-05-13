@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const COLORS = {
   bg: '#F7F4FB',
   white: '#FFFFFF',
@@ -87,12 +88,13 @@ const styles = StyleSheet.create({
 });
 
 export default function Step3WaiverTypes() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+        <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
           <Text style={styles.backButton}>←</Text>
         </TouchableOpacity>
         <Text style={styles.title}>Step 3: Waiver Types</Text>
@@ -111,7 +113,7 @@ export default function Step3WaiverTypes() {
       </ScrollView>
 
       <View style={styles.buttons}>
-        <TouchableOpacity style={styles.button} onPress={() => router.back()}>
+        <TouchableOpacity style={styles.button} onPress={() => router.back()} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
           <Text style={styles.buttonText}>Back</Text>
         </TouchableOpacity>
         <TouchableOpacity style={[styles.button, styles.buttonPrimary]} onPress={() => router.back()}>

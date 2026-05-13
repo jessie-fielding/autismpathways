@@ -11,6 +11,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useActiveChild } from '../../services/childManager';
 
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const COLORS = {
   primary: '#5B4FCF',
   primaryLight: '#EEF0FF',
@@ -28,6 +29,7 @@ const COLORS = {
 };
 
 export default function AppointmentDateScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const { key: childKey } = useActiveChild();
   const params = useLocalSearchParams();
@@ -77,7 +79,7 @@ export default function AppointmentDateScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: insets.top + 16 }]}>
       {/* Step bar */}
       <View style={styles.stepBar}>
         {[1, 2, 3, 4, 5, 6].map((s) => (
@@ -201,7 +203,7 @@ export default function AppointmentDateScreen() {
 
       {/* Buttons */}
       <View style={styles.buttonRow}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
           <Text style={styles.backButtonText}>← Back</Text>
         </TouchableOpacity>
 

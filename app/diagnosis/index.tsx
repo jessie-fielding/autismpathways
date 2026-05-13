@@ -8,10 +8,12 @@ import { useActiveChild } from '../../services/childManager';
 import { useChildChanged } from '../../hooks/useChildChanged';
 import { PathwayDisclaimer } from '../../components/PathwayDisclaimer';
 
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const TOTAL_STEPS = 6;
 const CURRENT_STEP = 1;
 
 export default function DiagnosisIntroScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const { key: childKey, child } = useActiveChild();
   const [profile, setProfile] = useState<any>(null);
@@ -50,8 +52,8 @@ export default function DiagnosisIntroScreen() {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
           <Text style={styles.backText}>← Dashboard</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Autism Pathways</Text>
@@ -200,7 +202,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: SPACING.lg,
-    paddingTop: 56,
+    
     paddingBottom: SPACING.md,
     backgroundColor: COLORS.white,
     borderBottomWidth: 1,
