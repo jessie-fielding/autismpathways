@@ -134,17 +134,20 @@ export default function ParentingPathwaysTrends() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { isPremium } = useIsPremium();
-  const { childId } = useActiveChild();
+  const { childId, loading: childLoading } = useActiveChild();
 
   const [trends, setTrends] = useState<TrendData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Wait until the child manager has resolved the active child ID
+    // before reading from storage — avoids reading the wrong (null) key on first render
+    if (childLoading) return;
     ppGetLog(childId).then((log) => {
       setTrends(computeTrends(log));
       setLoading(false);
     });
-  }, [childId]);
+  }, [childId, childLoading]);
 
   if (!isPremium) {
     return (

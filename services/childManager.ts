@@ -58,6 +58,7 @@ export const CHILD_SCOPED_KEYS = [
   'ap_contacts',
   'ap_medicaid_not_applied_steps',
   'ap_medicaid_approved_steps',
+  'ap_parenting_pathways_log',
 ];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
