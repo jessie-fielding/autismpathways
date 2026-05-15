@@ -1,14 +1,15 @@
 /**
  * Paywall screen — Premium subscription purchase.
- * Uses react-native-iap v15 for iOS (StoreKit).
+ * Uses react-native-iap v15.2.3 for iOS (StoreKit).
  *
  * Product IDs:
  *   app.autismpathways.premium.sub.annual
  *   app.autismpathways.premium.sub.monthly
  *
- * IMPORTANT: For subscriptions, react-native-iap v15 requires:
- *   - getSubscriptions() to fetch subscription products (NOT fetchProducts)
- *   - requestSubscription() to initiate purchase (NOT requestPurchase)
+ * react-native-iap v15 API notes:
+ *   - getSubscriptions({ skus }) to fetch subscription products
+ *   - requestPurchase({ type: 'subs', request: { apple: { sku } } }) to purchase
+ *   - requestSubscription does NOT exist in v15 — do not import it
  */
 import React, { useState, useEffect, useCallback } from 'react';
 import {
@@ -22,20 +23,16 @@ import {
   initConnection,
   endConnection,
   getSubscriptions,
-  requestSubscription,
+  requestPurchase,
   getAvailablePurchases,
   finishTransaction,
   purchaseErrorListener,
   purchaseUpdatedListener,
-  type SubscriptionAndroid,
-  type SubscriptionIOS,
   type Purchase,
   type PurchaseError,
 } from 'react-native-iap';
 import { COLORS, SPACING, RADIUS, FONT_SIZES, SHADOWS } from '../../lib/theme';
 import { BETA_MODE, IAP_PURCHASED_KEY } from '../../hooks/useIsPremium';
-
-type Subscription = SubscriptionIOS | SubscriptionAndroid;
 
 const PRODUCT_ID_ANNUAL  = 'app.autismpathways.premium.sub.annual';
 const PRODUCT_ID_MONTHLY = 'app.autismpathways.premium.sub.monthly';
@@ -56,14 +53,12 @@ export default function PaywallScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  const [selectedPlan, setSelectedPlan]     = useState<'annual' | 'monthly'>('annual');
-  const [annualSub, setAnnualSub]           = useState<Subscription | null>(null);
-  const [monthlySub, setMonthlySub]         = useState<Subscription | null>(null);
-  const [annualPrice, setAnnualPrice]       = useState<string | null>(null);
-  const [monthlyPrice, setMonthlyPrice]     = useState<string | null>(null);
-  const [purchasing, setPurchasing]         = useState(false);
-  const [restoring, setRestoring]           = useState(false);
-  const [iapReady, setIapReady]             = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<'annual' | 'monthly'>('annual');
+  const [annualPrice, setAnnualPrice]   = useState<string | null>(null);
+  const [monthlyPrice, setMonthlyPrice] = useState<string | null>(null);
+  const [purchasing, setPurchasing]     = useState(false);
+  const [restoring, setRestoring]       = useState(false);
+  const [iapReady, setIapReady]         = useState(false);
 
   const currentPrice = selectedPlan === 'annual' ? annualPrice : monthlyPrice;
   const priceLoaded  = currentPrice !== null;
@@ -105,17 +100,15 @@ export default function PaywallScreen() {
           }
         });
 
-        // Use getSubscriptions (not fetchProducts) for subscription-type products
         const subs = await getSubscriptions({ skus: PRODUCT_IDS });
         subs.forEach((sub) => {
           const price = (sub as any).localizedPrice ?? null;
-          if (sub.productId === PRODUCT_ID_ANNUAL)  { setAnnualSub(sub);  setAnnualPrice(price  ?? '$79.99'); }
-          if (sub.productId === PRODUCT_ID_MONTHLY) { setMonthlySub(sub); setMonthlyPrice(price ?? '$9.99'); }
+          if (sub.productId === PRODUCT_ID_ANNUAL)  setAnnualPrice(price  ?? '$79.99');
+          if (sub.productId === PRODUCT_ID_MONTHLY) setMonthlyPrice(price ?? '$9.99');
         });
         setIapReady(true);
       } catch (e) {
         console.log('IAP setup error', e);
-        // Fallback prices so the button is never stuck loading
         setAnnualPrice('$79.99');
         setMonthlyPrice('$9.99');
         setIapReady(true);
@@ -124,7 +117,6 @@ export default function PaywallScreen() {
 
     setup();
 
-    // Safety net: never leave the button in a loading state
     const fallbackTimer = setTimeout(() => {
       setAnnualPrice(prev => prev ?? '$79.99');
       setMonthlyPrice(prev => prev ?? '$9.99');
@@ -147,10 +139,12 @@ export default function PaywallScreen() {
     const productId = selectedPlan === 'annual' ? PRODUCT_ID_ANNUAL : PRODUCT_ID_MONTHLY;
     setPurchasing(true);
     try {
-      // requestSubscription is the correct API for subscription products in react-native-iap v15
-      await requestSubscription({
-        sku: productId,
-        andDangerouslyFinishTransactionAutomaticallyIOS: false,
+      await requestPurchase({
+        type: 'subs',
+        request: {
+          apple: { sku: productId },
+          google: { skus: [productId] },
+        },
       });
     } catch (e: any) {
       setPurchasing(false);
@@ -182,7 +176,6 @@ export default function PaywallScreen() {
     }
   };
 
-  // ── Beta mode bypass ──────────────────────────────────────────────────────
   if (BETA_MODE) {
     return (
       <View style={styles.container}>
@@ -203,7 +196,6 @@ export default function PaywallScreen() {
     );
   }
 
-  // ── Full paywall ──────────────────────────────────────────────────────────
   return (
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
@@ -213,13 +205,11 @@ export default function PaywallScreen() {
       </View>
 
       <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-        {/* Hero */}
         <View style={styles.hero}>
           <Text style={styles.heroIcon}>🌟</Text>
           <Text style={styles.heroTitle}>Autism Pathways Premium</Text>
           <Text style={styles.heroSub}>Everything you need to navigate the system — diagnosis, Medicaid, IEP, and beyond.</Text>
 
-          {/* Plan toggle */}
           <View style={styles.planToggle}>
             <TouchableOpacity style={[styles.planOption, selectedPlan === 'annual' && styles.planOptionActive]} onPress={() => setSelectedPlan('annual')} activeOpacity={0.8}>
               <View style={styles.planBadgeRow}>
@@ -235,11 +225,16 @@ export default function PaywallScreen() {
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity style={[styles.purchaseBtn, (purchasing || !iapReady) && styles.purchaseBtnDisabled]} onPress={handlePurchase} activeOpacity={0.85} disabled={purchasing || !iapReady}>
+          <TouchableOpacity
+            style={[styles.purchaseBtn, (purchasing || !iapReady) && styles.purchaseBtnDisabled]}
+            onPress={handlePurchase}
+            activeOpacity={0.85}
+            disabled={purchasing || !iapReady}
+          >
             {purchasing ? (
               <ActivityIndicator color={COLORS.white} />
             ) : !iapReady ? (
-              <><ActivityIndicator color={COLORS.white} size="small" style={{ marginRight: 8 }} /><Text style={styles.purchaseBtnText}>Connecting…</Text></>
+              <Text style={styles.purchaseBtnText}>Connecting…</Text>
             ) : (
               <Text style={styles.purchaseBtnText}>{priceLoaded ? `Get Premium — ${currentPrice}` : 'Get Premium'}</Text>
             )}
@@ -247,7 +242,6 @@ export default function PaywallScreen() {
           <Text style={styles.priceNote}>{selectedPlan === 'annual' ? 'Billed annually · ~$6.67/mo' : 'Billed monthly · cancel anytime'}</Text>
         </View>
 
-        {/* Features */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Everything included</Text>
           {FEATURES.map((f, i) => (
@@ -262,7 +256,6 @@ export default function PaywallScreen() {
           ))}
         </View>
 
-        {/* FAQ */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Questions</Text>
           <View style={styles.faqCard}>
@@ -279,13 +272,17 @@ export default function PaywallScreen() {
           </View>
         </View>
 
-        {/* Bottom CTA */}
         <View style={styles.ctaSection}>
-          <TouchableOpacity style={[styles.purchaseBtn, (purchasing || !iapReady) && styles.purchaseBtnDisabled]} onPress={handlePurchase} activeOpacity={0.85} disabled={purchasing || !iapReady}>
+          <TouchableOpacity
+            style={[styles.purchaseBtn, (purchasing || !iapReady) && styles.purchaseBtnDisabled]}
+            onPress={handlePurchase}
+            activeOpacity={0.85}
+            disabled={purchasing || !iapReady}
+          >
             {purchasing ? (
               <ActivityIndicator color={COLORS.white} />
             ) : !iapReady ? (
-              <><ActivityIndicator color={COLORS.white} size="small" style={{ marginRight: 8 }} /><Text style={styles.purchaseBtnText}>Connecting…</Text></>
+              <Text style={styles.purchaseBtnText}>Connecting…</Text>
             ) : (
               <Text style={styles.purchaseBtnText}>{priceLoaded ? `Get Premium — ${currentPrice}` : 'Get Premium'}</Text>
             )}
@@ -347,7 +344,7 @@ const styles = StyleSheet.create({
   faqQ: { fontSize: FONT_SIZES.sm, fontWeight: '700', color: COLORS.text, marginBottom: SPACING.xs },
   faqA: { fontSize: FONT_SIZES.sm, color: COLORS.textMid, lineHeight: 19 },
   ctaSection: { paddingHorizontal: SPACING.lg, paddingTop: SPACING.xl, alignItems: 'center' },
-  purchaseBtn: { width: '100%', backgroundColor: COLORS.purple, borderRadius: RADIUS.sm, paddingVertical: SPACING.lg, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', marginBottom: SPACING.md, ...SHADOWS.lg },
+  purchaseBtn: { width: '100%', backgroundColor: COLORS.purple, borderRadius: RADIUS.sm, paddingVertical: SPACING.lg, alignItems: 'center', justifyContent: 'center', marginBottom: SPACING.md, ...SHADOWS.lg },
   purchaseBtnDisabled: { opacity: 0.6 },
   purchaseBtnText: { color: COLORS.white, fontSize: FONT_SIZES.md, fontWeight: '800' },
   restoreBtn: { paddingVertical: SPACING.md, alignItems: 'center', marginBottom: SPACING.lg },
