@@ -1,10 +1,14 @@
 /**
  * Paywall screen — Premium subscription purchase.
- * Uses react-native-iap for iOS (StoreKit).
+ * Uses react-native-iap v15 for iOS (StoreKit).
  *
  * Product IDs:
  *   app.autismpathways.premium.sub.annual
  *   app.autismpathways.premium.sub.monthly
+ *
+ * IMPORTANT: For subscriptions, react-native-iap v15 requires:
+ *   - getSubscriptions() to fetch subscription products (NOT fetchProducts)
+ *   - requestSubscription() to initiate purchase (NOT requestPurchase)
  */
 import React, { useState, useEffect, useCallback } from 'react';
 import {
@@ -17,18 +21,21 @@ import { useRouter } from 'expo-router';
 import {
   initConnection,
   endConnection,
-  fetchProducts,
-  requestPurchase,
+  getSubscriptions,
+  requestSubscription,
   getAvailablePurchases,
   finishTransaction,
   purchaseErrorListener,
   purchaseUpdatedListener,
-  type ProductSubscription,
+  type SubscriptionAndroid,
+  type SubscriptionIOS,
   type Purchase,
   type PurchaseError,
 } from 'react-native-iap';
 import { COLORS, SPACING, RADIUS, FONT_SIZES, SHADOWS } from '../../lib/theme';
 import { BETA_MODE, IAP_PURCHASED_KEY } from '../../hooks/useIsPremium';
+
+type Subscription = SubscriptionIOS | SubscriptionAndroid;
 
 const PRODUCT_ID_ANNUAL  = 'app.autismpathways.premium.sub.annual';
 const PRODUCT_ID_MONTHLY = 'app.autismpathways.premium.sub.monthly';
@@ -50,8 +57,8 @@ export default function PaywallScreen() {
   const insets = useSafeAreaInsets();
 
   const [selectedPlan, setSelectedPlan]     = useState<'annual' | 'monthly'>('annual');
-  const [annualProduct, setAnnualProduct]   = useState<ProductSubscription | null>(null);
-  const [monthlyProduct, setMonthlyProduct] = useState<ProductSubscription | null>(null);
+  const [annualSub, setAnnualSub]           = useState<Subscription | null>(null);
+  const [monthlySub, setMonthlySub]         = useState<Subscription | null>(null);
   const [annualPrice, setAnnualPrice]       = useState<string | null>(null);
   const [monthlyPrice, setMonthlyPrice]     = useState<string | null>(null);
   const [purchasing, setPurchasing]         = useState(false);
@@ -98,14 +105,17 @@ export default function PaywallScreen() {
           }
         });
 
-        const subs = await fetchProducts({ skus: PRODUCT_IDS, type: 'subs' });
+        // Use getSubscriptions (not fetchProducts) for subscription-type products
+        const subs = await getSubscriptions({ skus: PRODUCT_IDS });
         subs.forEach((sub) => {
-          if (sub.productId === PRODUCT_ID_ANNUAL)  { setAnnualProduct(sub);  setAnnualPrice(sub.localizedPrice  ?? '$79.99'); }
-          if (sub.productId === PRODUCT_ID_MONTHLY) { setMonthlyProduct(sub); setMonthlyPrice(sub.localizedPrice ?? '$9.99'); }
+          const price = (sub as any).localizedPrice ?? null;
+          if (sub.productId === PRODUCT_ID_ANNUAL)  { setAnnualSub(sub);  setAnnualPrice(price  ?? '$79.99'); }
+          if (sub.productId === PRODUCT_ID_MONTHLY) { setMonthlySub(sub); setMonthlyPrice(price ?? '$9.99'); }
         });
         setIapReady(true);
       } catch (e) {
         console.log('IAP setup error', e);
+        // Fallback prices so the button is never stuck loading
         setAnnualPrice('$79.99');
         setMonthlyPrice('$9.99');
         setIapReady(true);
@@ -114,11 +124,12 @@ export default function PaywallScreen() {
 
     setup();
 
+    // Safety net: never leave the button in a loading state
     const fallbackTimer = setTimeout(() => {
       setAnnualPrice(prev => prev ?? '$79.99');
       setMonthlyPrice(prev => prev ?? '$9.99');
       setIapReady(true);
-    }, 3000);
+    }, 4000);
 
     return () => {
       clearTimeout(fallbackTimer);
@@ -133,35 +144,19 @@ export default function PaywallScreen() {
       Alert.alert('Not Ready', 'Store connection is still loading. Please try again in a moment.');
       return;
     }
-    const product = selectedPlan === 'annual' ? annualProduct : monthlyProduct;
-    if (!product) {
-      Alert.alert(
-        'Subscription Unavailable',
-        'Unable to connect to the App Store. Please ensure you are signed in with a valid Apple ID and try again.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Retry', onPress: () => {
-            setIapReady(false);
-            initConnection().then(() =>
-              fetchProducts({ skus: PRODUCT_IDS, type: 'subs' }).then(subs => {
-                subs.forEach(sub => {
-                  if (sub.productId === PRODUCT_ID_ANNUAL)  { setAnnualProduct(sub);  setAnnualPrice(sub.localizedPrice  ?? '$79.99'); }
-                  if (sub.productId === PRODUCT_ID_MONTHLY) { setMonthlyProduct(sub); setMonthlyPrice(sub.localizedPrice ?? '$9.99'); }
-                });
-                setIapReady(true);
-              })
-            ).catch(() => setIapReady(true));
-          }},
-        ]
-      );
-      return;
-    }
+    const productId = selectedPlan === 'annual' ? PRODUCT_ID_ANNUAL : PRODUCT_ID_MONTHLY;
     setPurchasing(true);
     try {
-      await requestPurchase({ type: 'subs', request: { apple: { sku: product.productId }, google: { skus: [product.productId] } } });
-    } catch (e) {
+      // requestSubscription is the correct API for subscription products in react-native-iap v15
+      await requestSubscription({
+        sku: productId,
+        andDangerouslyFinishTransactionAutomaticallyIOS: false,
+      });
+    } catch (e: any) {
       setPurchasing(false);
-      Alert.alert('Error', 'Could not start purchase. Please try again.');
+      if (e?.code !== 'E_USER_CANCELLED') {
+        Alert.alert('Error', e?.message || 'Could not start purchase. Please try again.');
+      }
     }
   };
 
@@ -187,6 +182,7 @@ export default function PaywallScreen() {
     }
   };
 
+  // ── Beta mode bypass ──────────────────────────────────────────────────────
   if (BETA_MODE) {
     return (
       <View style={styles.container}>
@@ -207,6 +203,7 @@ export default function PaywallScreen() {
     );
   }
 
+  // ── Full paywall ──────────────────────────────────────────────────────────
   return (
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
@@ -216,11 +213,13 @@ export default function PaywallScreen() {
       </View>
 
       <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+        {/* Hero */}
         <View style={styles.hero}>
           <Text style={styles.heroIcon}>🌟</Text>
           <Text style={styles.heroTitle}>Autism Pathways Premium</Text>
           <Text style={styles.heroSub}>Everything you need to navigate the system — diagnosis, Medicaid, IEP, and beyond.</Text>
 
+          {/* Plan toggle */}
           <View style={styles.planToggle}>
             <TouchableOpacity style={[styles.planOption, selectedPlan === 'annual' && styles.planOptionActive]} onPress={() => setSelectedPlan('annual')} activeOpacity={0.8}>
               <View style={styles.planBadgeRow}>
@@ -236,12 +235,19 @@ export default function PaywallScreen() {
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity style={[styles.purchaseBtn, purchasing && styles.purchaseBtnDisabled]} onPress={handlePurchase} activeOpacity={0.85}>
-            {purchasing ? <ActivityIndicator color={COLORS.white} /> : <Text style={styles.purchaseBtnText}>{priceLoaded ? `Get Premium — ${currentPrice}` : 'Loading…'}</Text>}
+          <TouchableOpacity style={[styles.purchaseBtn, (purchasing || !iapReady) && styles.purchaseBtnDisabled]} onPress={handlePurchase} activeOpacity={0.85} disabled={purchasing || !iapReady}>
+            {purchasing ? (
+              <ActivityIndicator color={COLORS.white} />
+            ) : !iapReady ? (
+              <><ActivityIndicator color={COLORS.white} size="small" style={{ marginRight: 8 }} /><Text style={styles.purchaseBtnText}>Connecting…</Text></>
+            ) : (
+              <Text style={styles.purchaseBtnText}>{priceLoaded ? `Get Premium — ${currentPrice}` : 'Get Premium'}</Text>
+            )}
           </TouchableOpacity>
           <Text style={styles.priceNote}>{selectedPlan === 'annual' ? 'Billed annually · ~$6.67/mo' : 'Billed monthly · cancel anytime'}</Text>
         </View>
 
+        {/* Features */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Everything included</Text>
           {FEATURES.map((f, i) => (
@@ -256,6 +262,7 @@ export default function PaywallScreen() {
           ))}
         </View>
 
+        {/* FAQ */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Questions</Text>
           <View style={styles.faqCard}>
@@ -272,13 +279,22 @@ export default function PaywallScreen() {
           </View>
         </View>
 
+        {/* Bottom CTA */}
         <View style={styles.ctaSection}>
-          <TouchableOpacity style={[styles.purchaseBtn, purchasing && styles.purchaseBtnDisabled]} onPress={handlePurchase} activeOpacity={0.85}>
-            {purchasing ? <ActivityIndicator color={COLORS.white} /> : <Text style={styles.purchaseBtnText}>{priceLoaded ? `Get Premium — ${currentPrice}` : 'Loading…'}</Text>}
+          <TouchableOpacity style={[styles.purchaseBtn, (purchasing || !iapReady) && styles.purchaseBtnDisabled]} onPress={handlePurchase} activeOpacity={0.85} disabled={purchasing || !iapReady}>
+            {purchasing ? (
+              <ActivityIndicator color={COLORS.white} />
+            ) : !iapReady ? (
+              <><ActivityIndicator color={COLORS.white} size="small" style={{ marginRight: 8 }} /><Text style={styles.purchaseBtnText}>Connecting…</Text></>
+            ) : (
+              <Text style={styles.purchaseBtnText}>{priceLoaded ? `Get Premium — ${currentPrice}` : 'Get Premium'}</Text>
+            )}
           </TouchableOpacity>
+
           <TouchableOpacity style={styles.restoreBtn} onPress={handleRestore} disabled={restoring} activeOpacity={0.7}>
             {restoring ? <ActivityIndicator color={COLORS.purple} size="small" /> : <Text style={styles.restoreBtnText}>Restore Purchase</Text>}
           </TouchableOpacity>
+
           <Text style={styles.legalText}>
             {selectedPlan === 'annual'
               ? `Subscription auto-renews annually at ${annualPrice ?? '$79.99'} unless cancelled at least 24 hours before the renewal date.`
@@ -331,7 +347,7 @@ const styles = StyleSheet.create({
   faqQ: { fontSize: FONT_SIZES.sm, fontWeight: '700', color: COLORS.text, marginBottom: SPACING.xs },
   faqA: { fontSize: FONT_SIZES.sm, color: COLORS.textMid, lineHeight: 19 },
   ctaSection: { paddingHorizontal: SPACING.lg, paddingTop: SPACING.xl, alignItems: 'center' },
-  purchaseBtn: { width: '100%', backgroundColor: COLORS.purple, borderRadius: RADIUS.sm, paddingVertical: SPACING.lg, alignItems: 'center', marginBottom: SPACING.md, ...SHADOWS.lg },
+  purchaseBtn: { width: '100%', backgroundColor: COLORS.purple, borderRadius: RADIUS.sm, paddingVertical: SPACING.lg, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', marginBottom: SPACING.md, ...SHADOWS.lg },
   purchaseBtnDisabled: { opacity: 0.6 },
   purchaseBtnText: { color: COLORS.white, fontSize: FONT_SIZES.md, fontWeight: '800' },
   restoreBtn: { paddingVertical: SPACING.md, alignItems: 'center', marginBottom: SPACING.lg },
