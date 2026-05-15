@@ -458,9 +458,9 @@ function FullTracker() {
 }
 
 export default function AppealTrackerScreen() {
-  const { isPremium, isLoading } = useIsPremium();
+  const { isPremium, loading } = useIsPremium();
 
-  if (isLoading) {
+  if (loading) {
     return (
       <View style={styles.loadingContainer}>
         <Text style={styles.loadingText}>Loading...</Text>
