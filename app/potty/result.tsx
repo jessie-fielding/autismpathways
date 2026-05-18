@@ -302,6 +302,9 @@ export default function PottyResultScreen() {
 
         {/* CTA buttons */}
         <View style={styles.ctaSection}>
+          <TouchableOpacity style={styles.providerReportBtn} onPress={() => router.push('/potty/provider-report')}>
+            <Text style={styles.providerReportBtnText}>📋 Send to Provider Report</Text>
+          </TouchableOpacity>
           <TouchableOpacity style={styles.premiumBtn} onPress={() => router.push('/potty/bowel-diary')}>
             <Text style={styles.premiumBtnText}>📊 Open Bowel Diary</Text>
           </TouchableOpacity>
@@ -519,6 +522,14 @@ const styles = StyleSheet.create({
     padding: SPACING.lg,
     gap: SPACING.sm,
   },
+  providerReportBtn: {
+    backgroundColor: COLORS.purple,
+    borderRadius: RADIUS.pill,
+    paddingVertical: SPACING.lg,
+    alignItems: 'center',
+    ...SHADOWS.sm,
+  },
+  providerReportBtnText: { color: COLORS.white, fontWeight: '700', fontSize: FONT_SIZES.md },
   premiumBtn: {
     backgroundColor: '#f0c040',
     borderRadius: RADIUS.pill,
