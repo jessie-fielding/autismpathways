@@ -138,6 +138,9 @@ export default function MedicaidNotAppliedScreen() {
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Apply for Medicaid</Text>
         <View style={{ width: 60 }} />
+        <TouchableOpacity onPress={() => router.push('/(tabs)/dashboard')} style={{ padding: 8 }}>
+          <Text style={{ fontSize: 20 }}>🏠</Text>
+        </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>

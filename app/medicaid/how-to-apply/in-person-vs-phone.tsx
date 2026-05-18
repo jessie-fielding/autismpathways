@@ -80,6 +80,9 @@ export default function InPersonVsPhone() {
           <Text style={styles.backButton}>←</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>How to Apply</Text>
+        <TouchableOpacity onPress={() => router.push('/(tabs)/dashboard')} style={{ padding: 8 }}>
+          <Text style={{ fontSize: 20 }}>🏠</Text>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.progressContainer}>

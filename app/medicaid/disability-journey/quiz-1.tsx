@@ -33,6 +33,9 @@ export default function DisabilityQuiz1Screen() {
           <Text style={styles.backButton}>Back</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Assessment</Text>
+        <TouchableOpacity onPress={() => router.push('/(tabs)/dashboard')} style={{ padding: 8 }}>
+          <Text style={{ fontSize: 20 }}>🏠</Text>
+        </TouchableOpacity>
       </View>
       <ScrollView style={styles.content}>
         <Text style={styles.mainTitle}>What is your child primary disability?</Text>

@@ -15,6 +15,9 @@ export default function IncomeJourneyIntroScreen() {
           <Text style={styles.backButton}>←</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Income Denial</Text>
+        <TouchableOpacity onPress={() => router.push('/(tabs)/dashboard')} style={{ padding: 8 }}>
+          <Text style={{ fontSize: 20 }}>🏠</Text>
+        </TouchableOpacity>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>

@@ -133,8 +133,11 @@ export default function Step3Summary() {
       <ScrollView
         contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 32 }}
       >
+        <TouchableOpacity onPress={() => router.push('/(tabs)/dashboard')} style={{ alignSelf: 'flex-end', padding: 8, marginBottom: 4 }}>
+          <Text style={{ fontSize: 20 }}>🏠</Text>
+        </TouchableOpacity>
         <Text style={{ fontSize: 22, fontWeight: '700', color: '#111827', marginBottom: 4 }}>
-          You’re better prepared for your visit
+          You're better prepared for your visit
         </Text>
         <Text style={{ fontSize: 14, color: '#4b5563', marginBottom: 12 }}>
           This page pulls together key points you can review with your provider so they can help

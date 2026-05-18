@@ -37,6 +37,9 @@ export default function IncomeJourneyIntro() {
             </TouchableOpacity>
           )}
         </View>
+        <TouchableOpacity onPress={() => router.push('/(tabs)/dashboard')} style={{ padding: 8 }}>
+          <Text style={{ fontSize: 20 }}>🏠</Text>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.progressContainer}>

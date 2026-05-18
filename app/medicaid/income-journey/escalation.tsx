@@ -67,6 +67,9 @@ export default function Escalation() {
           <Text style={styles.headerTitle}>Income Journey</Text>
           {stateName && <Text style={styles.headerState}>📍 {stateName}</Text>}
         </View>
+        <TouchableOpacity onPress={() => router.push('/(tabs)/dashboard')} style={{ padding: 8 }}>
+          <Text style={{ fontSize: 20 }}>🏠</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Progress */}
