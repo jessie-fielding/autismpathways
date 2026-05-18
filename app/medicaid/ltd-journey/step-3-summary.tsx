@@ -292,8 +292,8 @@ export default function Step3Summary() {
                   }}
                 >
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.apptCardTitle}>{note.providerName || 'Provider'} — {note.appointmentDate || ''}</Text>
-                    <Text style={styles.apptCardMeta}>{note.visitType || ''}</Text>
+                    <Text style={styles.apptCardTitle}>{note.draft?.providerName || note.providerName || 'Provider'} — {note.draft?.apptDate || note.appointmentDate || note.date || ''}</Text>
+                    <Text style={styles.apptCardMeta}>{note.draft?.visitType || note.visitType || ''}</Text>
                     {note.medicaidLtd && (
                       <Text style={styles.apptCardBadge}>✓ Medicaid summary already linked</Text>
                     )}
