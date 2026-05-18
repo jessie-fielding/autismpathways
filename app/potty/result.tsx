@@ -101,34 +101,34 @@ const FREE_TIPS: Record<PathwayKey, { emoji: string; title: string; body: string
   ],
 };
 
-const PREMIUM_UPSELL: Record<PathwayKey, { header: string; items: { emoji: string; title: string; body: string }[] }> = {
+const PREMIUM_UPSELL: Record<PathwayKey, { header: string; items: { emoji: string; title: string; body: string; route: string }[] }> = {
   encopresis: {
     header: 'Premium unlocks the full bowel retraining protocol, PFPT exercises, and the Bowel Diary tracker.',
     items: [
-      { emoji: '📋', title: 'Full Bowel Retraining Schedule', body: "A day-by-day protocol for resetting your child's bowel habits after a cleanout — including timed sits, positioning, and what to watch for." },
-      { emoji: '🧘', title: 'Pelvic Floor PT Exercises for Kids', body: 'Adapted from pediatric PFPT resources — breathing techniques, belly massage, and positioning that help a stretched colon recover.' },
-      { emoji: '📊', title: 'Bowel Diary — 2-Week Tracker', body: 'Track BMs, consistency, accidents, and fluids. Gives you something concrete to bring to your pediatrician or GI specialist.' },
+      { emoji: '📋', title: 'Full Bowel Retraining Schedule', body: "A day-by-day protocol for resetting your child's bowel habits after a cleanout — including timed sits, positioning, and what to watch for.", route: '/potty/tools/bowel-retraining' },
+      { emoji: '🧘', title: 'Pelvic Floor PT Exercises for Kids', body: 'Adapted from pediatric PFPT resources — breathing techniques, belly massage, and positioning that help a stretched colon recover.', route: '/potty/tools/pfpt-exercises' },
+      { emoji: '📊', title: 'Bowel Diary — 2-Week Tracker', body: 'Track BMs, consistency, accidents, and fluids. Gives you something concrete to bring to your pediatrician or GI specialist.', route: '/potty/bowel-diary' },
     ],
   },
   bodySignals: {
     header: 'Premium unlocks interoception activities, a customizable visual schedule builder, and body signal awareness exercises.',
     items: [
-      { emoji: '🧠', title: 'Interoception Awareness Activities', body: "Adapted from Kelly Mahler's interoception curriculum — games and activities that help your child tune into their body signals over time." },
-      { emoji: '🖼️', title: 'Visual Schedule Builder', body: 'Build a custom bathroom visual schedule for your child — choose icons, steps, and timing that match your routine.' },
+      { emoji: '🧠', title: 'Interoception Awareness Activities', body: "Adapted from Kelly Mahler's interoception curriculum — games and activities that help your child tune into their body signals over time.", route: '/potty/tools/interoception-activities' },
+      { emoji: '🖼️', title: 'Visual Schedule Builder', body: 'Build a custom bathroom visual schedule for your child — choose icons, steps, and timing that match your routine.', route: '/potty/tools/visual-schedule' },
     ],
   },
   sensory: {
     header: 'Premium unlocks a full sensory audit checklist, OT-informed desensitization sequence, and step-by-step toilet approach plan.',
     items: [
-      { emoji: '📋', title: 'Sensory Audit Checklist', body: 'Identify every sensory trigger in your bathroom — sound, light, temperature, texture, smell — with specific modifications for each.' },
-      { emoji: '🧩', title: 'OT-Informed Desensitization Sequence', body: 'A step-by-step tolerance-building plan based on occupational therapy principles — starting from just entering the bathroom and working up to independent use.' },
+      { emoji: '📋', title: 'Sensory Audit Checklist', body: 'Identify every sensory trigger in your bathroom — sound, light, temperature, texture, smell — with specific modifications for each.', route: '/potty/tools/sensory-audit' },
+      { emoji: '🧩', title: 'OT-Informed Desensitization Sequence', body: 'A step-by-step tolerance-building plan based on occupational therapy principles — starting from just entering the bathroom and working up to independent use.', route: '/potty/tools/desensitization' },
     ],
   },
   regression: {
     header: 'Premium unlocks a school bathroom plan template, regression response protocol, and environment-specific strategies.',
     items: [
-      { emoji: '🏫', title: 'School Bathroom Plan Template', body: "A ready-to-send document you can give your child's teacher and aide — covering schedule, signals, privacy, and what to do if there's an accident at school." },
-      { emoji: '📋', title: 'Regression Response Protocol', body: 'A step-by-step guide for the first 2 weeks of a regression — what to do each day, what to avoid, and when to consider bringing in outside support.' },
+      { emoji: '🏫', title: 'School Bathroom Plan Template', body: "A ready-to-send document you can give your child's teacher and aide — covering schedule, signals, privacy, and what to do if there's an accident at school.", route: '/potty/tools/school-bathroom-plan' },
+      { emoji: '📋', title: 'Regression Response Protocol', body: 'A step-by-step guide for the first 2 weeks of a regression — what to do each day, what to avoid, and when to consider bringing in outside support.', route: '/potty/tools/regression-protocol' },
     ],
   },
 };
@@ -281,22 +281,28 @@ export default function PottyResultScreen() {
           <Text style={styles.premiumHeaderText}>{premium.header}</Text>
         </View>
 
-        {/* Premium locked cards */}
+        {/* Premium cards — unlocked for premium users, locked for free */}
         {premium.items.map((item) => (
           <TouchableOpacity
             key={item.title}
-            style={[styles.premiumCard, styles.premiumCardLocked]}
-            onPress={() => router.push('/paywall')}
+            style={[styles.premiumCard, isPremium ? styles.premiumCardUnlocked : styles.premiumCardLocked]}
+            onPress={() => isPremium ? router.push(item.route as any) : router.push('/paywall')}
             activeOpacity={0.8}
           >
             <View style={styles.tipCardTop}>
               <Text style={styles.tipIcon}>{item.emoji}</Text>
               <Text style={styles.tipTitle}>{item.title}</Text>
             </View>
-            <Text style={[styles.tipText, { opacity: 0.5 }]}>{item.body}</Text>
-            <View style={styles.lockedBadge}>
-              <Text style={styles.lockedBadgeText}>🔒 Premium — Tap to Unlock</Text>
-            </View>
+            <Text style={[styles.tipText, !isPremium && { opacity: 0.5 }]}>{item.body}</Text>
+            {isPremium ? (
+              <View style={[styles.lockedBadge, { backgroundColor: '#e8f5e9', borderColor: '#4caf50' }]}>
+                <Text style={[styles.lockedBadgeText, { color: '#2e7d32' }]}>✓ Tap to Open</Text>
+              </View>
+            ) : (
+              <View style={styles.lockedBadge}>
+                <Text style={styles.lockedBadgeText}>🔒 Premium — Tap to Unlock</Text>
+              </View>
+            )}
           </TouchableOpacity>
         ))}
 
