@@ -7,6 +7,7 @@ export default function PottyLayout() {
       <Stack.Screen name="quiz" />
       <Stack.Screen name="result" />
       <Stack.Screen name="bowel-diary" />
+      <Stack.Screen name="provider-report" />
     </Stack>
   );
 }

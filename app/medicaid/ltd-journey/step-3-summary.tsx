@@ -1,10 +1,11 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Alert, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useMedicaidState } from '../../../lib/MedicaidStateContext';
-import { COLORS, FONT_SIZES, RADIUS, SPACING } from '../../../lib/theme';
-
+import { COLORS, FONT_SIZES, RADIUS, SHADOWS, SPACING } from '../../../lib/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 const NEED_LABELS: Record<string, string> = {
   communication: 'Communication',
   social: 'Social interaction',
@@ -41,6 +42,67 @@ export default function Step3Summary() {
 
   const diagnoses: string[] = params.diagnoses ? JSON.parse(params.diagnoses) : [];
   const needs: string[] = params.needs ? JSON.parse(params.needs) : [];
+
+  // Appointment picker state
+  const [apptModal, setApptModal]         = useState(false);
+  const [savedNotes, setSavedNotes]       = useState<any[]>([]);
+  const [selectedAppts, setSelectedAppts] = useState<Set<number>>(new Set());
+  const [linking, setLinking]             = useState(false);
+  const [linked, setLinked]               = useState(false);
+
+  useEffect(() => {
+    AsyncStorage.getItem('ap_provider_prep_saved').then((raw) => {
+      if (raw) {
+        try { setSavedNotes(JSON.parse(raw)); } catch (_) {}
+      }
+    });
+    // Save LTD summary to AsyncStorage so it's available for linking later
+    const ltdData = {
+      childName: params.childName,
+      childAge: params.childAge,
+      diagnoses: diagnoses.map((d) => DIAGNOSIS_LABELS[d] || d),
+      needs: needs.map((n) => NEED_LABELS[n] || n),
+      notes: params.notes,
+      stateName,
+      formName,
+      generatedAt: new Date().toISOString(),
+    };
+    AsyncStorage.setItem('ap_medicaid_ltd_summary', JSON.stringify(ltdData));
+  }, []);
+
+  const medicaidData = {
+    childName: params.childName,
+    childAge: params.childAge,
+    diagnoses: diagnoses.map((d) => DIAGNOSIS_LABELS[d] || d),
+    needs: needs.map((n) => NEED_LABELS[n] || n),
+    notes: params.notes,
+    stateName,
+    formName,
+    generatedAt: new Date().toISOString(),
+  };
+
+  const handleLinkToAppointments = async () => {
+    setLinking(true);
+    try {
+      const raw = await AsyncStorage.getItem('ap_provider_prep_saved');
+      const notes: any[] = raw ? JSON.parse(raw) : [];
+      const updated = notes.map((n, i) =>
+        selectedAppts.has(i) ? { ...n, medicaidLtd: medicaidData } : n
+      );
+      await AsyncStorage.setItem('ap_provider_prep_saved', JSON.stringify(updated));
+      setSavedNotes(updated);
+      setLinked(true);
+      setApptModal(false);
+      Alert.alert(
+        'Added!',
+        `Medicaid LTD summary added to ${selectedAppts.size} appointment report${selectedAppts.size > 1 ? 's' : ''}.`
+      );
+    } catch (_) {
+      Alert.alert('Error', 'Could not save. Please try again.');
+    } finally {
+      setLinking(false);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -138,6 +200,37 @@ export default function Step3Summary() {
             </View>
           </View>
 
+          {/* Add to Appointment Report */}
+          {savedNotes.length > 0 ? (
+            <TouchableOpacity
+              style={[styles.addApptBtn, linked && styles.addApptBtnLinked]}
+              onPress={() => setApptModal(true)}
+            >
+              <Text style={styles.addApptIcon}>{linked ? '✅' : '📅'}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.addApptTitle}>
+                  {linked ? 'Added to Appointment Report' : 'Add to Appointment Report'}
+                </Text>
+                <Text style={styles.addApptSub}>
+                  {linked
+                    ? 'Tap to update which appointments include this summary'
+                    : `Link this Medicaid summary to an upcoming appointment — ${savedNotes.length} available`}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              style={styles.addApptBtn}
+              onPress={() => router.push('/provider-prep')}
+            >
+              <Text style={styles.addApptIcon}>📋</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.addApptTitle}>Add to Appointment Report</Text>
+                <Text style={styles.addApptSub}>Create an appointment first to link this summary</Text>
+              </View>
+            </TouchableOpacity>
+          )}
+
           <View style={styles.tipBox}>
             <Text style={styles.tipLabel}>📋 AT YOUR APPOINTMENT</Text>
             <Text style={styles.tipText}>
@@ -165,6 +258,55 @@ export default function Step3Summary() {
           <Text style={[styles.navButtonText, styles.navButtonTextPrimary]}>After the visit →</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Appointment Picker Modal */}
+      <Modal visible={apptModal} animationType="slide" presentationStyle="pageSheet">
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={() => setApptModal(false)}>
+              <Text style={styles.modalCancelText}>Cancel</Text>
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Select Appointment</Text>
+            <TouchableOpacity
+              style={[styles.modalDoneBtn, selectedAppts.size === 0 && styles.modalDoneBtnDisabled]}
+              disabled={selectedAppts.size === 0 || linking}
+              onPress={handleLinkToAppointments}
+            >
+              <Text style={styles.modalDoneText}>{linking ? '...' : 'Done'}</Text>
+            </TouchableOpacity>
+          </View>
+          <Text style={styles.modalSubtitle}>
+            Select which upcoming appointment(s) to include this Medicaid LTD summary in.
+          </Text>
+          <ScrollView contentContainerStyle={{ padding: SPACING.lg }}>
+            {savedNotes.map((note, i) => {
+              const sel = selectedAppts.has(i);
+              return (
+                <TouchableOpacity
+                  key={i}
+                  style={[styles.apptCard, sel && styles.apptCardSelected]}
+                  onPress={() => {
+                    const next = new Set(selectedAppts);
+                    if (next.has(i)) next.delete(i); else next.add(i);
+                    setSelectedAppts(next);
+                  }}
+                >
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.apptCardTitle}>{note.providerName || 'Provider'} — {note.appointmentDate || ''}</Text>
+                    <Text style={styles.apptCardMeta}>{note.visitType || ''}</Text>
+                    {note.medicaidLtd && (
+                      <Text style={styles.apptCardBadge}>✓ Medicaid summary already linked</Text>
+                    )}
+                  </View>
+                  <View style={[styles.apptCheckbox, sel && styles.apptCheckboxSelected]}>
+                    {sel && <Text style={styles.apptCheckmark}>✓</Text>}
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -172,7 +314,7 @@ export default function Step3Summary() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
   header: {
-    backgroundColor: COLORS.white, paddingHorizontal: SPACING.lg, 
+    backgroundColor: COLORS.white, paddingHorizontal: SPACING.lg,
     paddingBottom: SPACING.lg, borderBottomWidth: 1, borderBottomColor: COLORS.border,
     flexDirection: 'row', alignItems: 'center',
   },
@@ -201,10 +343,10 @@ const styles = StyleSheet.create({
   sectionLabel: { fontSize: FONT_SIZES.xs, fontWeight: '700', color: COLORS.purple, letterSpacing: 1.5, marginBottom: SPACING.sm },
   mainTitle: { fontSize: FONT_SIZES.xl, fontWeight: '800', color: COLORS.text, marginBottom: SPACING.md, lineHeight: 28 },
   mainSubtitle: { fontSize: FONT_SIZES.sm, color: COLORS.textMid, lineHeight: 20 },
-  content: { paddingHorizontal: SPACING.lg, paddingVertical: SPACING.xl },
+  content: { paddingHorizontal: SPACING.lg, paddingVertical: SPACING.xl, gap: SPACING.lg },
   summaryCard: {
     backgroundColor: COLORS.white, borderRadius: RADIUS.md, borderWidth: 1,
-    borderColor: COLORS.border, marginBottom: SPACING.lg, overflow: 'hidden',
+    borderColor: COLORS.border, overflow: 'hidden',
   },
   summaryHeader: {
     backgroundColor: COLORS.purple, paddingHorizontal: SPACING.lg, paddingVertical: SPACING.lg,
@@ -223,6 +365,17 @@ const styles = StyleSheet.create({
   summaryNotes: { fontSize: FONT_SIZES.sm, color: COLORS.textMid, lineHeight: 20 },
   summaryFooter: { paddingHorizontal: SPACING.lg, paddingVertical: SPACING.lg, backgroundColor: COLORS.bg },
   summaryFooterText: { fontSize: FONT_SIZES.xs, color: COLORS.textMid, lineHeight: 18, fontStyle: 'italic' },
+
+  addApptBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: SPACING.md,
+    backgroundColor: '#f0faf5', borderRadius: RADIUS.md, padding: SPACING.lg,
+    borderWidth: 1.5, borderColor: '#2a9d8f', ...SHADOWS.sm,
+  },
+  addApptBtnLinked: { backgroundColor: '#e8f8f5' },
+  addApptIcon: { fontSize: 28 },
+  addApptTitle: { fontSize: FONT_SIZES.base, fontWeight: '700', color: '#1a6b60' },
+  addApptSub: { fontSize: FONT_SIZES.xs, color: '#2a9d8f', marginTop: 2 },
+
   tipBox: {
     backgroundColor: COLORS.infoBg, borderRadius: RADIUS.md, padding: SPACING.lg,
     borderWidth: 1, borderColor: COLORS.infoBorder,
@@ -241,4 +394,39 @@ const styles = StyleSheet.create({
   navButtonText: { fontSize: FONT_SIZES.md, fontWeight: '700' },
   navButtonTextPrimary: { color: COLORS.white },
   navButtonTextSecondary: { color: COLORS.purple },
+
+  // Modal styles
+  modalContainer: { flex: 1, backgroundColor: COLORS.bg },
+  modalHeader: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: SPACING.lg, paddingTop: SPACING.xl, paddingBottom: SPACING.md,
+    backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.border,
+  },
+  modalTitle: { fontSize: FONT_SIZES.base, fontWeight: '700', color: COLORS.text },
+  modalCancelText: { fontSize: FONT_SIZES.sm, color: COLORS.purple, fontWeight: '600' },
+  modalDoneBtn: {
+    backgroundColor: COLORS.purple, borderRadius: RADIUS.pill,
+    paddingHorizontal: SPACING.md, paddingVertical: 6, minWidth: 60, alignItems: 'center',
+  },
+  modalDoneBtnDisabled: { opacity: 0.4 },
+  modalDoneText: { fontSize: FONT_SIZES.sm, fontWeight: '700', color: COLORS.white },
+  modalSubtitle: {
+    fontSize: FONT_SIZES.sm, color: COLORS.textMid,
+    paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md, backgroundColor: COLORS.white,
+  },
+  apptCard: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.white,
+    borderRadius: RADIUS.md, padding: SPACING.md, marginBottom: SPACING.sm,
+    borderWidth: 1.5, borderColor: COLORS.border, ...SHADOWS.sm,
+  },
+  apptCardSelected: { borderColor: COLORS.purple, backgroundColor: '#f8f7ff' },
+  apptCardTitle: { fontSize: FONT_SIZES.base, fontWeight: '700', color: COLORS.text, marginBottom: 2 },
+  apptCardMeta: { fontSize: FONT_SIZES.xs, color: COLORS.textMid },
+  apptCardBadge: { fontSize: FONT_SIZES.xs, color: '#2a9d8f', fontWeight: '600', marginTop: 4 },
+  apptCheckbox: {
+    width: 24, height: 24, borderRadius: 12, borderWidth: 2, borderColor: COLORS.border,
+    alignItems: 'center', justifyContent: 'center', marginLeft: SPACING.md,
+  },
+  apptCheckboxSelected: { backgroundColor: COLORS.purple, borderColor: COLORS.purple },
+  apptCheckmark: { fontSize: 13, fontWeight: '800', color: COLORS.white },
 });

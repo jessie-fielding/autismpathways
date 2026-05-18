@@ -44,6 +44,41 @@ interface VisitSummary {
   followUpDate: string;
 }
 
+interface PottyPathwayData {
+  primary: string;
+  primaryName: string;
+  secondary?: string | null;
+  secondaryName?: string | null;
+  summary: string;
+  discussionPoints: string[];
+  questionsToAsk: string[];
+  referrals: string[];
+  addedAt: string;
+}
+
+interface BowelDiarySummary {
+  totalDays: number;
+  bmDays: number;
+  accidentDays: number;
+  noBmDays: number;
+  avgBristol: string | null;
+  avgBristolLabel?: string | null;
+  avgBristolScore?: string | null;
+  addedAt?: string;
+  generatedAt?: string;
+}
+
+interface MedicaidLtdData {
+  childName: string;
+  childAge: string;
+  diagnoses: string[];
+  needs: string[];
+  notes: string;
+  stateName: string | null;
+  formName: string | null;
+  generatedAt: string;
+}
+
 interface SavedNote {
   id: number;
   title: string;
@@ -51,6 +86,9 @@ interface SavedNote {
   savedAt: string;
   draft: PrepDraft;
   visitSummary?: VisitSummary;
+  pottyPathway?: PottyPathwayData;
+  bowelDiarySummary?: BowelDiarySummary;
+  medicaidLtd?: MedicaidLtdData;
 }
 
 // ─── Question Bank Labels ─────────────────────────────────────────────────────
@@ -126,6 +164,52 @@ function buildHTML(note: SavedNote): string {
         </ul>
       </div>`
     : '';
+
+  // Potty pathway section
+  const pp = note.pottyPathway;
+  const pottyPathwayHTML = pp ? `
+    <div class="page-break"></div>
+    <div class="report-section-header" style="border-bottom-color:#7c6fd4">Potty Pathway Assessment</div>
+    <div class="section" style="border-left-color:#7c6fd4;background:#f8f7ff">
+      <div class="section-title" style="color:#7c6fd4">PRIMARY PATHWAY: ${pp.primaryName}</div>
+      <div class="section-body">${pp.summary}</div>
+    </div>
+    ${pp.discussionPoints?.length ? `<div class="section"><div class="section-title" style="color:#7c6fd4">DISCUSSION POINTS</div><ul class="q-list">${pp.discussionPoints.map(p => `<li>${p}</li>`).join('')}</ul></div>` : ''}
+    ${pp.questionsToAsk?.length ? `<div class="section"><div class="section-title" style="color:#7c6fd4">QUESTIONS TO ASK</div><ul class="q-list">${pp.questionsToAsk.map(q => `<li>${q}</li>`).join('')}</ul></div>` : ''}
+    ${pp.referrals?.length ? `<div class="section" style="background:#f0faf5;border-left-color:#2a9d8f"><div class="section-title" style="color:#2a9d8f">REFERRALS TO CONSIDER</div><ul class="q-list">${pp.referrals.map(r => `<li>${r}</li>`).join('')}</ul></div>` : ''}
+  ` : '';
+
+  // Use bowelDiarySummary (new key) with fallback to bowelDiary (old key)
+  const bdRaw = (note as any).bowelDiarySummary || (note as any).bowelDiary;
+  const bd = bdRaw as BowelDiarySummary | undefined;
+
+  const ml = note.medicaidLtd;
+  const medicaidLtdHTML = ml ? `
+    <div class="report-section-header" style="border-bottom-color:#7c6fd4">Medicaid LTD — Provider Briefing</div>
+    <table class="meta-table">
+      ${ml.childName ? `<tr><td class="meta-label">Child Name</td><td class="meta-value">${ml.childName}</td></tr>` : ''}
+      ${ml.childAge ? `<tr><td class="meta-label">Age</td><td class="meta-value">${ml.childAge} years old</td></tr>` : ''}
+      ${ml.stateName ? `<tr><td class="meta-label">State</td><td class="meta-value">${ml.stateName}</td></tr>` : ''}
+      ${ml.formName ? `<tr><td class="meta-label">Required Form</td><td class="meta-value">${ml.formName}</td></tr>` : ''}
+    </table>
+    ${ml.diagnoses?.length > 0 ? `<div class="section"><div class="section-label">DIAGNOSES</div><div class="section-body">${ml.diagnoses.map((d: string) => `• ${d}`).join('<br>')}</div></div>` : ''}
+    ${ml.needs?.length > 0 ? `<div class="section"><div class="section-label">AREAS REQUIRING SUPPORT</div><div class="section-body">${ml.needs.map((n: string) => `• ${n}`).join('<br>')}</div></div>` : ''}
+    ${ml.notes ? `<div class="section"><div class="section-label">ADDITIONAL NOTES</div><div class="section-body">${ml.notes}</div></div>` : ''}
+    <div class="section" style="border-left-color:#7c6fd4;background:#f8f7ff"><div class="section-body" style="color:#4a3f8c;font-style:italic">This child is seeking disability-based Medicaid eligibility. Please complete any required state-specific documentation based on the above information.</div></div>
+  ` : '';
+
+  const bowelDiaryHTML = bd ? `
+    <div class="report-section-header" style="border-bottom-color:#2a9d8f">Bowel Diary — ${bd.totalDays}-Day Summary</div>
+    <table class="meta-table">
+      <tr><td class="meta-label">Days tracked</td><td class="meta-value">${bd.totalDays}</td></tr>
+      <tr><td class="meta-label">Days with BM</td><td class="meta-value">${bd.bmDays} of ${bd.totalDays}</td></tr>
+      <tr><td class="meta-label">Days with accident</td><td class="meta-value">${bd.accidentDays} of ${bd.totalDays}</td></tr>
+      <tr><td class="meta-label">Days with no BM</td><td class="meta-value">${bd.noBmDays} of ${bd.totalDays}</td></tr>
+      ${bd.avgBristol ? `<tr><td class="meta-label">Avg Bristol Scale</td><td class="meta-value">${bd.avgBristol} / 7</td></tr>` : ''}
+    </table>
+    ${bd.accidentDays > 3 ? '<div class="section" style="border-left-color:#e76f51;background:#fff5f0"><div class="section-body" style="color:#c45a00">⚠️ Accidents recorded on more than 3 days — may indicate overflow incontinence or encopresis.</div></div>' : ''}
+    ${bd.noBmDays > 3 ? '<div class="section" style="border-left-color:#e76f51;background:#fff5f0"><div class="section-body" style="color:#c45a00">⚠️ No bowel movement recorded on more than 3 days — may indicate constipation or withholding.</div></div>' : ''}
+  ` : '';
 
   const visitSummaryHTML = vs
     ? `<div class="page-break"></div>
@@ -318,6 +402,10 @@ ${sectionHTML('Most Worried About', d.worriedAbout, '#e76f51')}
 
 ${checkedQHTML}
 ${customQHTML}
+
+${pottyPathwayHTML}
+${bowelDiaryHTML}
+${medicaidLtdHTML}
 
 ${visitSummaryHTML}
 
@@ -603,6 +691,101 @@ export default function ProviderReportScreen() {
                     <Text style={styles.questionText}>{q}</Text>
                   </View>
                 ))}
+              </View>
+            </>
+          )}
+
+          {/* Potty Pathway Section */}
+          {selected.pottyPathway && (
+            <>
+              <View style={styles.divider} />
+              <Text style={styles.sectionHeader}>Potty Pathway Assessment</Text>
+              <View style={[styles.field, { borderLeftColor: PURPLE }]}>
+                <Text style={styles.fieldLabel}>Primary Pathway: {selected.pottyPathway.primaryName}</Text>
+                <Text style={styles.fieldValue}>{selected.pottyPathway.summary}</Text>
+              </View>
+              {selected.pottyPathway.discussionPoints?.length > 0 && (
+                <View style={styles.questionList}>
+                  {selected.pottyPathway.discussionPoints.map((p, i) => (
+                    <View key={i} style={styles.questionItem}>
+                      <Text style={styles.questionBullet}>•</Text>
+                      <Text style={styles.questionText}>{p}</Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </>
+          )}
+
+          {/* Bowel Diary Section */}
+          {((selected as any).bowelDiarySummary || (selected as any).bowelDiary) && (() => {
+            const bd = (selected as any).bowelDiarySummary || (selected as any).bowelDiary;
+            return (
+              <>
+                <View style={styles.divider} />
+                <Text style={[styles.sectionHeader, { borderBottomColor: '#2a9d8f' }]}>Bowel Diary — {bd.totalDays}-Day Summary</Text>
+                <View style={styles.metaTable}>
+                  {[
+                    ['Days tracked', String(bd.totalDays)],
+                    ['Days with BM', `${bd.bmDays} of ${bd.totalDays}`],
+                    ['Days with accident', `${bd.accidentDays} of ${bd.totalDays}`],
+                    ['Days with no BM', `${bd.noBmDays} of ${bd.totalDays}`],
+                    ...((bd.avgBristolLabel || bd.avgBristol) ? [['Avg Bristol Scale', bd.avgBristolLabel || `${bd.avgBristol} / 7`]] : []),
+                  ].map(([label, value]) => (
+                    <View key={label} style={styles.metaRow}>
+                      <Text style={[styles.metaLabel, { color: '#2a9d8f' }]}>{label}</Text>
+                      <Text style={styles.metaValue}>{value}</Text>
+                    </View>
+                  ))}
+                </View>
+              </>
+            );
+          })()}
+
+          {/* Medicaid LTD Section */}
+          {selected.medicaidLtd && (
+            <>
+              <View style={styles.divider} />
+              <Text style={[styles.sectionHeader, { borderBottomColor: '#7c6fd4' }]}>Medicaid LTD — Provider Briefing</Text>
+              <View style={styles.metaTable}>
+                {[
+                  selected.medicaidLtd.childName ? ['Child Name', selected.medicaidLtd.childName] : null,
+                  selected.medicaidLtd.childAge ? ['Age', `${selected.medicaidLtd.childAge} years old`] : null,
+                  selected.medicaidLtd.stateName ? ['State', selected.medicaidLtd.stateName] : null,
+                  selected.medicaidLtd.formName ? ['Required Form', selected.medicaidLtd.formName] : null,
+                ].filter(Boolean).map(([label, value]) => (
+                  <View key={label as string} style={styles.metaRow}>
+                    <Text style={[styles.metaLabel, { color: '#7c6fd4' }]}>{label}</Text>
+                    <Text style={styles.metaValue}>{value}</Text>
+                  </View>
+                ))}
+              </View>
+              {selected.medicaidLtd.diagnoses?.length > 0 && (
+                <View style={styles.fieldContainer}>
+                  <Text style={[styles.fieldLabel, { color: '#7c6fd4' }]}>DIAGNOSES</Text>
+                  {selected.medicaidLtd.diagnoses.map((d: string) => (
+                    <Text key={d} style={styles.fieldValue}>• {d}</Text>
+                  ))}
+                </View>
+              )}
+              {selected.medicaidLtd.needs?.length > 0 && (
+                <View style={styles.fieldContainer}>
+                  <Text style={[styles.fieldLabel, { color: '#7c6fd4' }]}>AREAS REQUIRING SUPPORT</Text>
+                  {selected.medicaidLtd.needs.map((n: string) => (
+                    <Text key={n} style={styles.fieldValue}>• {n}</Text>
+                  ))}
+                </View>
+              )}
+              {selected.medicaidLtd.notes ? (
+                <View style={styles.fieldContainer}>
+                  <Text style={[styles.fieldLabel, { color: '#7c6fd4' }]}>ADDITIONAL NOTES</Text>
+                  <Text style={styles.fieldValue}>{selected.medicaidLtd.notes}</Text>
+                </View>
+              ) : null}
+              <View style={[styles.tipBox, { borderLeftColor: '#7c6fd4', backgroundColor: '#f8f7ff' }]}>
+                <Text style={[styles.tipText, { color: '#4a3f8c', fontStyle: 'italic' }]}>
+                  This child is seeking disability-based Medicaid eligibility. Please complete any required state-specific documentation based on the above information.
+                </Text>
               </View>
             </>
           )}

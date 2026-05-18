@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  ActivityIndicator, Alert,
+  ActivityIndicator, Alert, Modal,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -367,19 +367,25 @@ export default function PottyProviderReportScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  const [result,       setResult]       = useState<PottyResult | null>(null);
-  const [diary,        setDiary]        = useState<Record<string, DiaryEntry>>({});
-  const [childName,    setChildName]    = useState('');
-  const [loading,      setLoading]      = useState(true);
-  const [generating,   setGenerating]   = useState(false);
+  const [result,         setResult]         = useState<PottyResult | null>(null);
+  const [diary,          setDiary]          = useState<Record<string, DiaryEntry>>({});
+  const [childName,      setChildName]      = useState('');
+  const [loading,        setLoading]        = useState(true);
+  const [generating,     setGenerating]     = useState(false);
+  const [apptModal,      setApptModal]      = useState(false);
+  const [savedNotes,     setSavedNotes]     = useState<any[]>([]);
+  const [selectedAppts,  setSelectedAppts]  = useState<Set<number>>(new Set());
+  const [linking,        setLinking]        = useState(false);
+  const [linked,         setLinked]         = useState(false);
 
   useEffect(() => {
     (async () => {
       try {
-        const [resultRaw, diaryRaw, profileRaw] = await Promise.all([
+        const [resultRaw, diaryRaw, profileRaw, notesRaw] = await Promise.all([
           AsyncStorage.getItem('potty_result'),
           AsyncStorage.getItem('ap_potty_diary'),
           AsyncStorage.getItem('profile'),
+          AsyncStorage.getItem('ap_provider_prep_saved'),
         ]);
         if (resultRaw) setResult(JSON.parse(resultRaw));
         if (diaryRaw)  setDiary(JSON.parse(diaryRaw));
@@ -387,6 +393,7 @@ export default function PottyProviderReportScreen() {
           const profile = JSON.parse(profileRaw);
           setChildName(profile.childName || profile.name || '');
         }
+        if (notesRaw) setSavedNotes(JSON.parse(notesRaw));
       } catch (e) {
         console.error('Error loading potty report data:', e);
       } finally {
@@ -394,6 +401,68 @@ export default function PottyProviderReportScreen() {
       }
     })();
   }, []);
+
+  const handleLinkToAppointments = async () => {
+    if (!result || selectedAppts.size === 0) return;
+    setLinking(true);
+    try {
+      const primary = result.primary;
+      const points  = PROVIDER_TALKING_POINTS[primary];
+      const pottyData = {
+        primary,
+        primaryName: PATHWAY_NAMES[primary],
+        secondary: result.secondary || null,
+        secondaryName: result.secondary ? PATHWAY_NAMES[result.secondary] : null,
+        summary: points.summary,
+        discussionPoints: points.discussionPoints,
+        questionsToAsk: points.questionsToAsk,
+        referrals: points.referrals,
+        addedAt: new Date().toISOString(),
+      };
+
+      // Build bowel diary summary if diary exists
+      const entries = Object.entries(diary);
+      let bowelSummary: any = undefined;
+      if (entries.length > 0) {
+        const bmDays  = entries.filter(([, e]) => e.bm === 'yes').length;
+        const accDays = entries.filter(([, e]) => e.bm === 'acc').length;
+        const noBmDays = entries.filter(([, e]) => e.bm === 'no').length;
+        const bristolVals = entries.filter(([, e]) => e.bristolIndex !== undefined).map(([, e]) => e.bristolIndex as number);
+        const avgBristol = bristolVals.length > 0
+          ? (bristolVals.reduce((a, b) => a + b, 0) / bristolVals.length).toFixed(1)
+          : null;
+        bowelSummary = {
+          totalDays: entries.length,
+          bmDays, accidentDays: accDays, noBmDays, avgBristol,
+          addedAt: new Date().toISOString(),
+        };
+      }
+
+      const updatedNotes = savedNotes.map((note) => {
+        if (!selectedAppts.has(note.id)) return note;
+        return {
+          ...note,
+          pottyPathway: pottyData,
+          ...(bowelSummary ? { bowelDiary: bowelSummary } : {}),
+        };
+      });
+
+      await AsyncStorage.setItem('ap_provider_prep_saved', JSON.stringify(updatedNotes));
+      setSavedNotes(updatedNotes);
+      setLinked(true);
+      setApptModal(false);
+      setSelectedAppts(new Set());
+      Alert.alert(
+        'Added to Report!',
+        `Potty pathway data${bowelSummary ? ' and bowel diary' : ''} added to ${selectedAppts.size} appointment${selectedAppts.size > 1 ? 's' : ''}. Open Provider Report to view.`,
+        [{ text: 'View Report', onPress: () => router.push('/provider-report') }, { text: 'OK' }]
+      );
+    } catch (e) {
+      Alert.alert('Error', 'Could not link to appointments. Please try again.');
+    } finally {
+      setLinking(false);
+    }
+  };
 
   const handleGeneratePDF = async () => {
     if (!result) return;
@@ -540,6 +609,24 @@ export default function PottyProviderReportScreen() {
           </View>
         ))}
 
+        {/* Add to Appointment CTA */}
+        {savedNotes.length > 0 && (
+          <TouchableOpacity
+            style={[styles.addApptBtn, linked && styles.addApptBtnLinked]}
+            onPress={() => setApptModal(true)}
+          >
+            <Text style={styles.addApptBtnIcon}>{linked ? '✅' : '📅'}</Text>
+            <View>
+              <Text style={styles.addApptBtnTitle}>
+                {linked ? 'Added to Appointment Report' : 'Add to Appointment Report'}
+              </Text>
+              <Text style={styles.addApptBtnSub}>
+                {linked ? 'Tap to update appointment selection' : `${savedNotes.length} upcoming appointment${savedNotes.length > 1 ? 's' : ''} available`}
+              </Text>
+            </View>
+          </TouchableOpacity>
+        )}
+
         {/* Generate PDF CTA */}
         <TouchableOpacity
           style={[styles.generateBtn, generating && styles.generateBtnDisabled]}
@@ -565,6 +652,56 @@ export default function PottyProviderReportScreen() {
 
         <View style={{ height: 40 }} />
       </ScrollView>
+
+      {/* Appointment Picker Modal */}
+      <Modal visible={apptModal} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setApptModal(false)}>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={() => setApptModal(false)} style={styles.modalCancelBtn}>
+              <Text style={styles.modalCancelText}>Cancel</Text>
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Select Appointment(s)</Text>
+            <TouchableOpacity
+              onPress={handleLinkToAppointments}
+              disabled={selectedAppts.size === 0 || linking}
+              style={[styles.modalDoneBtn, (selectedAppts.size === 0 || linking) && styles.modalDoneBtnDisabled]}
+            >
+              {linking
+                ? <ActivityIndicator size="small" color={COLORS.white} />
+                : <Text style={styles.modalDoneText}>Add</Text>
+              }
+            </TouchableOpacity>
+          </View>
+          <Text style={styles.modalSubtitle}>Choose which upcoming appointment(s) to include this potty pathway data in:</Text>
+          <ScrollView style={styles.modalScroll} contentContainerStyle={{ padding: 20 }}>
+            {savedNotes.map((note) => {
+              const isSelected = selectedAppts.has(note.id);
+              return (
+                <TouchableOpacity
+                  key={note.id}
+                  style={[styles.apptCard, isSelected && styles.apptCardSelected]}
+                  onPress={() => {
+                    const next = new Set(selectedAppts);
+                    if (isSelected) next.delete(note.id); else next.add(note.id);
+                    setSelectedAppts(next);
+                  }}
+                >
+                  <View style={styles.apptCardLeft}>
+                    <Text style={styles.apptCardTitle}>{note.title || `${note.draft?.providerName || 'Provider'} — ${note.date}`}</Text>
+                    <Text style={styles.apptCardMeta}>{note.date}{note.draft?.visitType ? ` · ${note.draft.visitType}` : ''}</Text>
+                    {note.pottyPathway && (
+                      <Text style={styles.apptCardBadge}>✓ Potty data already linked</Text>
+                    )}
+                  </View>
+                  <View style={[styles.apptCheckbox, isSelected && styles.apptCheckboxSelected]}>
+                    {isSelected && <Text style={styles.apptCheckmark}>✓</Text>}
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -705,6 +842,86 @@ const styles = StyleSheet.create({
   },
   referralIcon: { fontSize: 18 },
   referralText: { flex: 1, fontSize: FONT_SIZES.sm, color: '#1a5c3a', lineHeight: 22 },
+
+  addApptBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.md,
+    backgroundColor: '#f0faf5',
+    borderRadius: RADIUS.md,
+    padding: SPACING.lg,
+    marginBottom: SPACING.md,
+    borderWidth: 1.5,
+    borderColor: '#2a9d8f',
+    ...SHADOWS.sm,
+  },
+  addApptBtnLinked: { backgroundColor: '#e8f8f5', borderColor: '#2a9d8f' },
+  addApptBtnIcon: { fontSize: 28 },
+  addApptBtnTitle: { fontSize: FONT_SIZES.base, fontWeight: '700', color: '#1a6b60' },
+  addApptBtnSub: { fontSize: FONT_SIZES.xs, color: '#2a9d8f', marginTop: 2 },
+
+  modalContainer: { flex: 1, backgroundColor: COLORS.bg },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.xl,
+    paddingBottom: SPACING.md,
+    backgroundColor: COLORS.white,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  modalTitle: { fontSize: FONT_SIZES.base, fontWeight: '700', color: COLORS.text },
+  modalCancelBtn: { minWidth: 60 },
+  modalCancelText: { fontSize: FONT_SIZES.sm, color: COLORS.purple, fontWeight: '600' },
+  modalDoneBtn: {
+    backgroundColor: COLORS.purple,
+    borderRadius: RADIUS.pill,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 6,
+    minWidth: 60,
+    alignItems: 'center',
+  },
+  modalDoneBtnDisabled: { opacity: 0.4 },
+  modalDoneText: { fontSize: FONT_SIZES.sm, fontWeight: '700', color: COLORS.white },
+  modalSubtitle: {
+    fontSize: FONT_SIZES.sm,
+    color: COLORS.textMid,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.md,
+    backgroundColor: COLORS.white,
+  },
+  modalScroll: { flex: 1 },
+
+  apptCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.white,
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
+    marginBottom: SPACING.sm,
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+    ...SHADOWS.sm,
+  },
+  apptCardSelected: { borderColor: COLORS.purple, backgroundColor: '#f8f7ff' },
+  apptCardLeft: { flex: 1 },
+  apptCardTitle: { fontSize: FONT_SIZES.base, fontWeight: '700', color: COLORS.text, marginBottom: 2 },
+  apptCardMeta: { fontSize: FONT_SIZES.xs, color: COLORS.textMid },
+  apptCardBadge: { fontSize: FONT_SIZES.xs, color: '#2a9d8f', fontWeight: '600', marginTop: 4 },
+  apptCheckbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: COLORS.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: SPACING.md,
+  },
+  apptCheckboxSelected: { backgroundColor: COLORS.purple, borderColor: COLORS.purple },
+  apptCheckmark: { fontSize: 13, fontWeight: '800', color: COLORS.white },
 
   generateBtn: {
     flexDirection: 'row',

@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { Alert, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useIsPremium } from '../../hooks/useIsPremium';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -72,6 +72,12 @@ export default function BowelDiaryScreen() {
   // Draft values for the day being edited
   const [draft, setDraft] = useState<DraftEntry>({ bm: null, bristol: null });
   const [weekLabel, setWeekLabel] = useState('');
+  // Appointment picker modal state
+  const [apptModal, setApptModal]         = useState(false);
+  const [savedNotes, setSavedNotes]       = useState<any[]>([]);
+  const [selectedAppts, setSelectedAppts] = useState<Set<number>>(new Set());
+  const [linking, setLinking]             = useState(false);
+  const [linked, setLinked]               = useState(false);
 
   const today = dateKey(new Date());
   const days = getLast14Days();
@@ -87,9 +93,12 @@ export default function BowelDiaryScreen() {
 
     AsyncStorage.getItem(DIARY_KEY).then((raw) => {
       if (raw) {
-        try {
-          setDiary(JSON.parse(raw));
-        } catch (_) {}
+        try { setDiary(JSON.parse(raw)); } catch (_) {}
+      }
+    });
+    AsyncStorage.getItem('ap_provider_prep_saved').then((raw) => {
+      if (raw) {
+        try { setSavedNotes(JSON.parse(raw)); } catch (_) {}
       }
     });
 
@@ -361,17 +370,29 @@ export default function BowelDiaryScreen() {
 
         {/* Bottom buttons */}
         <View style={styles.ctaSection}>
-          <TouchableOpacity
-            style={styles.secondaryBtn}
-            onPress={() =>
-              Alert.alert(
-                'Export',
-                '2-week summary export coming soon! This will generate a PDF you can share with your pediatrician.'
-              )
-            }
-          >
-            <Text style={styles.secondaryBtnText}>📤 Export 2-Week Summary for Doctor</Text>
-          </TouchableOpacity>
+          {savedNotes.length > 0 ? (
+            <TouchableOpacity
+              style={[styles.exportApptBtn, linked && styles.exportApptBtnLinked]}
+              onPress={() => setApptModal(true)}
+            >
+              <Text style={styles.exportApptIcon}>{linked ? '✅' : '📅'}</Text>
+              <View>
+                <Text style={styles.exportApptTitle}>
+                  {linked ? 'Added to Appointment Report' : 'Add Diary to Appointment Report'}
+                </Text>
+                <Text style={styles.exportApptSub}>
+                  {linked ? 'Tap to update' : `${savedNotes.length} appointment${savedNotes.length > 1 ? 's' : ''} available`}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              style={styles.secondaryBtn}
+              onPress={() => router.push('/provider-prep')}
+            >
+              <Text style={styles.secondaryBtnText}>📋 Create Appointment to Link Diary</Text>
+            </TouchableOpacity>
+          )}
           <TouchableOpacity style={styles.secondaryBtn} onPress={() => router.back()} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
             <Text style={styles.secondaryBtnText}>← Back to My Pathway</Text>
           </TouchableOpacity>
@@ -379,6 +400,92 @@ export default function BowelDiaryScreen() {
 
         <View style={styles.rainbowBar} />
       </ScrollView>
+
+      {/* Appointment Picker Modal */}
+      <Modal visible={apptModal} animationType="slide" presentationStyle="pageSheet">
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setApptModal(false)}>
+              <Text style={styles.modalCancelText}>Cancel</Text>
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Select Appointment</Text>
+            <TouchableOpacity
+              style={[styles.modalDoneBtn, selectedAppts.size === 0 && styles.modalDoneBtnDisabled]}
+              disabled={selectedAppts.size === 0 || linking}
+              onPress={async () => {
+                setLinking(true);
+                try {
+                  const values = Object.values(diary);
+                  const total = values.length;
+                  const bmDays = values.filter((e) => e.bm === 'yes').length;
+                  const accDays = values.filter((e) => e.bm === 'acc').length;
+                  const noBmDays = values.filter((e) => e.bm === 'no').length;
+                  const bristolScores = values.filter((e) => e.bristol !== null).map((e) => e.bristol as number);
+                  const avgBristol = bristolScores.length
+                    ? (bristolScores.reduce((a, b) => a + b, 0) / bristolScores.length).toFixed(1)
+                    : null;
+                  const BRISTOL_LABELS = ['Very hard', 'Hard lumpy', 'Normal', 'Soft', 'Liquid'];
+                  const bowelDiarySummary = {
+                    totalDays: total,
+                    bmDays,
+                    accidentDays: accDays,
+                    noBmDays,
+                    avgBristolLabel: avgBristol !== null ? BRISTOL_LABELS[Math.round(parseFloat(avgBristol))] : null,
+                    avgBristolScore: avgBristol,
+                    generatedAt: new Date().toISOString(),
+                  };
+                  const raw = await AsyncStorage.getItem('ap_provider_prep_saved');
+                  const notes: any[] = raw ? JSON.parse(raw) : [];
+                  const updated = notes.map((n, i) =>
+                    selectedAppts.has(i) ? { ...n, bowelDiarySummary } : n
+                  );
+                  await AsyncStorage.setItem('ap_provider_prep_saved', JSON.stringify(updated));
+                  setSavedNotes(updated);
+                  setLinked(true);
+                  setApptModal(false);
+                  Alert.alert('Added!', `Bowel diary summary added to ${selectedAppts.size} appointment report${selectedAppts.size > 1 ? 's' : ''}.`);
+                } catch (e) {
+                  Alert.alert('Error', 'Could not save. Please try again.');
+                } finally {
+                  setLinking(false);
+                }
+              }}
+            >
+              <Text style={styles.modalDoneText}>{linking ? '...' : 'Done'}</Text>
+            </TouchableOpacity>
+          </View>
+          <Text style={styles.modalSubtitle}>
+            Select which upcoming appointment(s) to include your 14-day bowel diary summary in.
+          </Text>
+          <ScrollView style={styles.modalScroll} contentContainerStyle={{ padding: SPACING.lg }}>
+            {savedNotes.map((note, i) => {
+              const sel = selectedAppts.has(i);
+              return (
+                <TouchableOpacity
+                  key={i}
+                  style={[styles.apptCard, sel && styles.apptCardSelected]}
+                  onPress={() => {
+                    const next = new Set(selectedAppts);
+                    if (next.has(i)) next.delete(i); else next.add(i);
+                    setSelectedAppts(next);
+                  }}
+                >
+                  <View style={styles.apptCardLeft}>
+                    <Text style={styles.apptCardTitle}>{note.providerName || 'Provider'} — {note.appointmentDate || ''}</Text>
+                    <Text style={styles.apptCardMeta}>{note.visitType || ''}</Text>
+                    {note.bowelDiarySummary && (
+                      <Text style={styles.apptCardBadge}>✓ Diary already linked</Text>
+                    )}
+                  </View>
+                  <View style={[styles.apptCheckbox, sel && styles.apptCheckboxSelected]}>
+                    {sel && <Text style={styles.apptCheckmark}>✓</Text>}
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -572,6 +679,58 @@ const styles = StyleSheet.create({
     padding: SPACING.lg,
     gap: SPACING.sm,
   },
+  exportApptBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.md,
+    backgroundColor: '#f0faf5',
+    borderRadius: RADIUS.md,
+    padding: SPACING.lg,
+    marginBottom: SPACING.md,
+    borderWidth: 1.5,
+    borderColor: '#2a9d8f',
+    ...SHADOWS.sm,
+  },
+  exportApptBtnLinked: { backgroundColor: '#e8f8f5', borderColor: '#2a9d8f' },
+  exportApptIcon: { fontSize: 28 },
+  exportApptTitle: { fontSize: FONT_SIZES.base, fontWeight: '700', color: '#1a6b60' },
+  exportApptSub: { fontSize: FONT_SIZES.xs, color: '#2a9d8f', marginTop: 2 },
+  modalContainer: { flex: 1, backgroundColor: COLORS.bg },
+  modalHeader: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: SPACING.lg, paddingTop: SPACING.xl, paddingBottom: SPACING.md,
+    backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.border,
+  },
+  modalTitle: { fontSize: FONT_SIZES.base, fontWeight: '700', color: COLORS.text },
+  modalCancelBtn: { minWidth: 60 },
+  modalCancelText: { fontSize: FONT_SIZES.sm, color: COLORS.purple, fontWeight: '600' },
+  modalDoneBtn: {
+    backgroundColor: COLORS.purple, borderRadius: RADIUS.pill,
+    paddingHorizontal: SPACING.md, paddingVertical: 6, minWidth: 60, alignItems: 'center',
+  },
+  modalDoneBtnDisabled: { opacity: 0.4 },
+  modalDoneText: { fontSize: FONT_SIZES.sm, fontWeight: '700', color: COLORS.white },
+  modalSubtitle: {
+    fontSize: FONT_SIZES.sm, color: COLORS.textMid,
+    paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md, backgroundColor: COLORS.white,
+  },
+  modalScroll: { flex: 1 },
+  apptCard: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.white,
+    borderRadius: RADIUS.md, padding: SPACING.md, marginBottom: SPACING.sm,
+    borderWidth: 1.5, borderColor: COLORS.border, ...SHADOWS.sm,
+  },
+  apptCardSelected: { borderColor: COLORS.purple, backgroundColor: '#f8f7ff' },
+  apptCardLeft: { flex: 1 },
+  apptCardTitle: { fontSize: FONT_SIZES.base, fontWeight: '700', color: COLORS.text, marginBottom: 2 },
+  apptCardMeta: { fontSize: FONT_SIZES.xs, color: COLORS.textMid },
+  apptCardBadge: { fontSize: FONT_SIZES.xs, color: '#2a9d8f', fontWeight: '600', marginTop: 4 },
+  apptCheckbox: {
+    width: 24, height: 24, borderRadius: 12, borderWidth: 2, borderColor: COLORS.border,
+    alignItems: 'center', justifyContent: 'center', marginLeft: SPACING.md,
+  },
+  apptCheckboxSelected: { backgroundColor: COLORS.purple, borderColor: COLORS.purple },
+  apptCheckmark: { fontSize: 13, fontWeight: '800', color: COLORS.white },
   secondaryBtn: {
     borderRadius: RADIUS.pill,
     paddingVertical: SPACING.md,
