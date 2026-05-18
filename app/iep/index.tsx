@@ -430,6 +430,20 @@ export default function IEPScreen() {
         {/* ── PREP TAB ── */}
         {activeTab === 'prep' && (
           <View>
+            {/* District Lookup Banner */}
+            <TouchableOpacity
+              style={s.districtLookupCard}
+              onPress={() => router.push('/iep/district-lookup')}
+            >
+              <View style={s.districtLookupLeft}>
+                <Text style={s.districtLookupIcon}>🏫</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={s.districtLookupTitle}>School District Lookup</Text>
+                  <Text style={s.districtLookupSub}>Find your state’s evaluation timelines, contacts & rights</Text>
+                </View>
+              </View>
+              <Text style={s.districtLookupArrow}>→</Text>
+            </TouchableOpacity>
             <Text style={s.sectionLabel}>MEETING PREP CHECKLIST</Text>
             <View style={s.checklist}>
               {PREP_CHECKLIST.map((item, i) => <Text key={i} style={s.checklistItem}>- {item}</Text>)}
@@ -759,6 +773,22 @@ const cs = StyleSheet.create({
   emptySub: { color: COLORS.text, textAlign: 'center', maxWidth: '80%' },
   goObsBtn: { marginTop: SPACING.lg, padding: SPACING.md },
   goObsBtnText: { color: COLORS.primary, fontWeight: 'bold' },
+  // District Lookup Card
+  districtLookupCard: {
+    backgroundColor: COLORS.primary,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.md,
+    marginBottom: SPACING.md,
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
+    ...SHADOWS.sm,
+  },
+  districtLookupLeft: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 12, flex: 1 },
+  districtLookupIcon: { fontSize: 28 },
+  districtLookupTitle: { color: 'white', fontWeight: 'bold' as const, fontSize: FONT_SIZES.md },
+  districtLookupSub: { color: 'rgba(255,255,255,0.85)', fontSize: FONT_SIZES.xs, marginTop: 2 },
+  districtLookupArrow: { color: 'white', fontSize: 20, fontWeight: 'bold' as const },
   // Checklist
   checklist: { backgroundColor: 'white', padding: SPACING.md, borderRadius: RADIUS.lg, ...SHADOWS.sm },
   checklistItem: { fontSize: FONT_SIZES.md, marginBottom: SPACING.sm, color: COLORS.text },
