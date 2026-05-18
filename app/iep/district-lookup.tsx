@@ -46,9 +46,9 @@ export default function DistrictLookupScreen() {
   };
 
   const teleheathColor = (val: string) => {
-    if (val === 'yes') return COLORS.success || '#22c55e';
-    if (val === 'no') return COLORS.error || '#ef4444';
-    return COLORS.warning || '#f59e0b';
+    if (val === 'yes') return COLORS.successText;
+    if (val === 'no') return COLORS.errorText;
+    return COLORS.warningText;
   };
 
   const teleheathLabel = (val: string) => {
@@ -98,6 +98,14 @@ export default function DistrictLookupScreen() {
             Telehealth Evaluation Acceptance: {teleheathLabel(selected.teleheathEvalAccepted)}
           </Text>
         </View>
+
+        {/* Telehealth Policy Deep Link */}
+        <TouchableOpacity
+          style={s.telehealthDeepLink}
+          onPress={() => router.push('/iep/telehealth-lookup')}
+        >
+          <Text style={s.telehealthDeepLinkText}>📡 See full telehealth acceptance policy for {selected.state} →</Text>
+        </TouchableOpacity>
 
         {/* Notes callout */}
         {selected.notes && (
@@ -281,7 +289,7 @@ export default function DistrictLookupScreen() {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background || '#f8f7ff' },
+  container: { flex: 1, backgroundColor: COLORS.bg },
   content: { padding: SPACING.md, paddingBottom: 60 },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
@@ -290,7 +298,7 @@ const s = StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: '#ede9fe',
   },
   backBtn: { padding: 4 },
-  backText: { color: COLORS.primary || '#7c3aed', fontSize: FONT_SIZES.sm, fontWeight: '600' },
+  backText: { color: COLORS.purple, fontSize: FONT_SIZES.sm, fontWeight: '600' },
   headerTitle: { fontSize: FONT_SIZES.md, fontWeight: '700', color: COLORS.text || '#1e1b4b' },
   homeBtn: { padding: 4 },
   homeBtnText: { fontSize: 20 },
@@ -308,7 +316,7 @@ const s = StyleSheet.create({
     backgroundColor: '#ede9fe', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8,
     minWidth: 52, alignItems: 'center',
   },
-  stateChipText: { fontSize: FONT_SIZES.sm, fontWeight: '700', color: COLORS.primary || '#7c3aed' },
+  stateChipText: { fontSize: FONT_SIZES.sm, fontWeight: '700', color: COLORS.purple },
 
   resultCard: {
     backgroundColor: '#fff', borderRadius: 12, padding: SPACING.md,
@@ -317,15 +325,15 @@ const s = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 }, shadowRadius: 4, elevation: 2,
   },
   resultLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  resultAbbr: { fontSize: 20, fontWeight: '800', color: COLORS.primary || '#7c3aed', width: 36 },
+  resultAbbr: { fontSize: 20, fontWeight: '800', color: COLORS.purple, width: 36 },
   resultState: { fontSize: FONT_SIZES.md, fontWeight: '600', color: COLORS.text || '#1e1b4b' },
   resultTimeline: { fontSize: FONT_SIZES.xs, color: COLORS.textLight || '#6b7280', marginTop: 2 },
-  resultArrow: { fontSize: 18, color: COLORS.primary || '#7c3aed' },
+  resultArrow: { fontSize: 18, color: COLORS.purple },
   noResults: { textAlign: 'center', color: COLORS.textLight || '#6b7280', marginTop: 40, fontSize: FONT_SIZES.md },
 
   // Detail view
   stateHero: { alignItems: 'center', paddingVertical: SPACING.lg, backgroundColor: '#fff', borderRadius: 16, marginBottom: SPACING.md },
-  stateAbbr: { fontSize: 48, fontWeight: '900', color: COLORS.primary || '#7c3aed' },
+  stateAbbr: { fontSize: 48, fontWeight: '900', color: COLORS.purple },
   stateName: { fontSize: FONT_SIZES.xl, fontWeight: '700', color: COLORS.text || '#1e1b4b', marginTop: 4 },
   seaName: { fontSize: FONT_SIZES.xs, color: COLORS.textLight || '#6b7280', textAlign: 'center', marginTop: 4, paddingHorizontal: SPACING.md },
 
@@ -335,13 +343,18 @@ const s = StyleSheet.create({
     alignItems: 'center', borderWidth: 1, borderColor: '#ede9fe',
   },
   contactBtnIcon: { fontSize: 18, marginBottom: 2 },
-  contactBtnText: { fontSize: FONT_SIZES.xs, color: COLORS.primary || '#7c3aed', fontWeight: '600', textAlign: 'center' },
+  contactBtnText: { fontSize: FONT_SIZES.xs, color: COLORS.purple, fontWeight: '600', textAlign: 'center' },
 
   teleheathBadge: {
     borderWidth: 1.5, borderRadius: 10, padding: SPACING.sm,
     marginBottom: SPACING.md, backgroundColor: '#fff',
   },
   teleheathLabel: { fontSize: FONT_SIZES.sm, fontWeight: '600', textAlign: 'center' },
+  telehealthDeepLink: {
+    backgroundColor: '#DCEEFF', borderRadius: 10, padding: SPACING.sm,
+    marginBottom: SPACING.md, borderWidth: 1, borderColor: '#A8CFFF',
+  },
+  telehealthDeepLinkText: { color: '#1A7A8A', fontWeight: '600', fontSize: FONT_SIZES.sm, textAlign: 'center' },
 
   notesBox: {
     flexDirection: 'row', backgroundColor: '#fffbeb', borderRadius: 10,
@@ -374,10 +387,10 @@ const s = StyleSheet.create({
   tipBox: {
     backgroundColor: '#ede9fe', borderRadius: 8, padding: SPACING.sm, marginTop: SPACING.sm,
   },
-  tipText: { fontSize: FONT_SIZES.xs, color: COLORS.primary || '#7c3aed', lineHeight: 18 },
+  tipText: { fontSize: FONT_SIZES.xs, color: COLORS.purple, lineHeight: 18 },
 
   rightRow: { flexDirection: 'row', gap: 8, marginBottom: SPACING.sm },
-  rightBullet: { fontSize: FONT_SIZES.sm, color: COLORS.primary || '#7c3aed', marginTop: 2 },
+  rightBullet: { fontSize: FONT_SIZES.sm, color: COLORS.purple, marginTop: 2 },
   rightText: { flex: 1, fontSize: FONT_SIZES.sm, color: COLORS.text || '#1e1b4b', lineHeight: 20 },
 
   privateTag: { borderRadius: 8, padding: SPACING.sm },
@@ -386,17 +399,17 @@ const s = StyleSheet.create({
   escalationCard: {
     backgroundColor: '#ede9fe', borderRadius: 10, padding: SPACING.md, marginTop: SPACING.sm,
   },
-  escalationName: { fontSize: FONT_SIZES.md, fontWeight: '700', color: COLORS.primary || '#7c3aed' },
-  escalationUrl: { fontSize: FONT_SIZES.xs, color: COLORS.primary || '#7c3aed', marginTop: 2 },
+  escalationName: { fontSize: FONT_SIZES.md, fontWeight: '700', color: COLORS.purple },
+  escalationUrl: { fontSize: FONT_SIZES.xs, color: COLORS.purple, marginTop: 2 },
 
   seaBtn: {
-    backgroundColor: COLORS.primary || '#7c3aed', borderRadius: 10,
+    backgroundColor: COLORS.purple, borderRadius: 10,
     padding: SPACING.sm, marginTop: SPACING.sm, alignItems: 'center',
   },
   seaBtnText: { color: '#fff', fontWeight: '700', fontSize: FONT_SIZES.sm },
 
   shareBtn: {
-    backgroundColor: COLORS.primary || '#7c3aed', borderRadius: 14,
+    backgroundColor: COLORS.purple, borderRadius: 14,
     padding: SPACING.md, alignItems: 'center', marginTop: SPACING.lg, marginBottom: SPACING.md,
   },
   shareBtnText: { color: '#fff', fontWeight: '700', fontSize: FONT_SIZES.md },

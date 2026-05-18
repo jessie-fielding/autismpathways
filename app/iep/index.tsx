@@ -98,10 +98,10 @@ const RIGHTS_TERMS = [
 ];
 
 const SCHOOL_SAYS_NO = [
-  { term: 'Step 1 — Request a PWN', def: 'Ask for the refusal in writing. Schools are required to provide this. It documents exactly what they denied and why.' },
-  { term: 'Step 2 — Request an IEP meeting', def: 'You can call an IEP meeting at any time. Submit the request in writing and keep a copy.' },
-  { term: 'Step 3 — File a state complaint', def: 'Each state has a complaint process through the State Education Agency (SEA). This is free and faster than due process.' },
-  { term: 'Step 4 — Due process hearing', def: 'A formal legal proceeding where an impartial hearing officer decides the dispute. You can have an attorney represent you.' },
+  { term: 'Step 1 — Request a PWN', def: 'Ask for the refusal in writing. Schools are required to provide this. It documents exactly what they denied and why.', tip: null },
+  { term: 'Step 2 — Request an IEP meeting', def: 'You can call an IEP meeting at any time. Submit the request in writing and keep a copy.', tip: null },
+  { term: 'Step 3 — File a state complaint', def: 'Each state has a complaint process through the State Education Agency (SEA). This is free and faster than due process.', tip: null },
+  { term: 'Step 4 — Due process hearing', def: 'A formal legal proceeding where an impartial hearing officer decides the dispute. You can have an attorney represent you.', tip: null },
 ];
 
 const PREP_CHECKLIST = [
@@ -256,7 +256,7 @@ function TermCard({ item }: { item: typeof RIGHTS_TERMS[0] }) {
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function IEPScreen() {
   const router = useRouter();
-  const { activeChild } = useActiveChild();
+  const { child: activeChild } = useActiveChild();
   const [activeTab, setActiveTab] = useState('prep');
 
   const [goals, setGoals] = useState<IEPGoal[]>([]);
@@ -444,6 +444,36 @@ export default function IEPScreen() {
               </View>
               <Text style={s.districtLookupArrow}>→</Text>
             </TouchableOpacity>
+            {/* Telehealth Lookup Banner */}
+            <TouchableOpacity
+              style={s.telehealthLookupCard}
+              onPress={() => router.push('/iep/telehealth-lookup')}
+            >
+              <View style={s.districtLookupLeft}>
+                <Text style={s.districtLookupIcon}>📡</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={s.districtLookupTitle}>Telehealth Acceptance Lookup</Text>
+                  <Text style={s.districtLookupSub}>Does your state accept telehealth IEP evaluations?</Text>
+                </View>
+              </View>
+              <Text style={s.districtLookupArrow}>→</Text>
+            </TouchableOpacity>
+
+            {/* Evaluator Directory Banner */}
+            <TouchableOpacity
+              style={s.evaluatorLookupCard}
+              onPress={() => router.push('/iep/evaluator-lookup')}
+            >
+              <View style={s.districtLookupLeft}>
+                <Text style={s.districtLookupIcon}>🔍</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={s.districtLookupTitle}>Find an Evaluator</Text>
+                  <Text style={s.districtLookupSub}>Autism evaluators by state — in-person & telehealth</Text>
+                </View>
+              </View>
+              <Text style={s.districtLookupArrow}>→</Text>
+            </TouchableOpacity>
+
             <Text style={s.sectionLabel}>MEETING PREP CHECKLIST</Text>
             <View style={s.checklist}>
               {PREP_CHECKLIST.map((item, i) => <Text key={i} style={s.checklistItem}>- {item}</Text>)}
@@ -784,6 +814,26 @@ const cs = StyleSheet.create({
     justifyContent: 'space-between' as const,
     ...SHADOWS.sm,
   },
+  telehealthLookupCard: {
+    backgroundColor: '#1A7A8A',
+    borderRadius: RADIUS.lg,
+    padding: SPACING.md,
+    marginBottom: SPACING.md,
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
+    ...SHADOWS.sm,
+  },
+  evaluatorLookupCard: {
+    backgroundColor: '#2E6B3E',
+    borderRadius: RADIUS.lg,
+    padding: SPACING.md,
+    marginBottom: SPACING.md,
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
+    ...SHADOWS.sm,
+  },
   districtLookupLeft: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 12, flex: 1 },
   districtLookupIcon: { fontSize: 28 },
   districtLookupTitle: { color: 'white', fontWeight: 'bold' as const, fontSize: FONT_SIZES.md },
@@ -852,7 +902,7 @@ const cs = StyleSheet.create({
   flaggedDate: { fontSize: FONT_SIZES.sm, color: COLORS.textLight, marginBottom: SPACING.sm },
   flaggedText: { fontSize: FONT_SIZES.md, color: COLORS.text, lineHeight: 22 },
   tagsRow: { flexDirection: 'row', flexWrap: 'wrap', marginTop: SPACING.md },
-  tag: { backgroundColor: COLORS.secondary, paddingHorizontal: SPACING.sm, paddingVertical: 4, borderRadius: RADIUS.sm, marginRight: SPACING.sm, marginBottom: SPACING.sm },
+  tag: { backgroundColor: COLORS.lavender, paddingHorizontal: SPACING.sm, paddingVertical: 4, borderRadius: RADIUS.sm, marginRight: SPACING.sm, marginBottom: SPACING.sm },
   tagText: { color: 'white', fontSize: FONT_SIZES.sm },
   clearFlagsBtn: { backgroundColor: '#ffebee', padding: SPACING.md, borderRadius: RADIUS.md, alignItems: 'center', marginTop: SPACING.md },
   clearFlagsBtnText: { color: '#c62828', fontWeight: 'bold' },

@@ -240,6 +240,15 @@ export default function EvaluatorListScreen() {
           );
         })}
 
+        {/* Submit Evaluator CTA */}
+        <TouchableOpacity
+          style={styles.submitEvaluatorCta}
+          onPress={() => router.push('/iep/submit-evaluator')}
+        >
+          <Text style={styles.submitEvaluatorCtaTitle}>Know an evaluator we're missing?</Text>
+          <Text style={styles.submitEvaluatorCtaSub}>Tap to add them to the community directory →</Text>
+        </TouchableOpacity>
+
         {/* Citations */}
         <View style={styles.citationsBox}>
           <Text style={styles.citationsLabel}>SOURCES</Text>
@@ -408,6 +417,27 @@ const styles = StyleSheet.create({
     marginTop: SPACING.xs,
   },
   selectBtnText: { color: COLORS.white, fontWeight: '700', fontSize: FONT_SIZES.sm },
+  submitEvaluatorCta: {
+    marginHorizontal: SPACING.md,
+    marginTop: SPACING.sm,
+    marginBottom: SPACING.md,
+    backgroundColor: COLORS.lavender,
+    borderRadius: 12,
+    padding: SPACING.md,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.lavenderAccent,
+  },
+  submitEvaluatorCtaTitle: {
+    fontSize: FONT_SIZES.md,
+    fontWeight: '700',
+    color: COLORS.purple,
+    marginBottom: 4,
+  },
+  submitEvaluatorCtaSub: {
+    fontSize: FONT_SIZES.sm,
+    color: COLORS.purpleDark,
+  },
   citationsBox: {
     marginHorizontal: SPACING.md,
     marginTop: SPACING.md,
