@@ -1,0 +1,28 @@
+# Cursor / Codex indexing ignore
+# These folders and files are excluded from AI indexing to keep context fast and relevant
+
+# Dependencies
+node_modules/
+
+# Generated native builds
+ios/
+android/
+.expo/
+dist/
+web-build/
+
+# Large binary assets
+assets/videos/
+assets/*.mp4
+assets/*.mov
+assets/images/*.png
+assets/images/*.jpg
+assets/images/*.jpeg
+assets/images/*.webp
+assets/*.png
+assets/confetti.json
+
+# Build artifacts
+*.tsbuildinfo
+coverage/
+.turbo/

@@ -41,3 +41,13 @@ app-example
 # generated native folders
 /ios
 /android
+
+# Large binary assets — excluded to speed up indexing and cloning
+# Videos and images are bundled at build time or hosted externally
+assets/videos/
+assets/*.mp4
+assets/*.mov
+assets/images/*.png
+assets/images/*.jpg
+assets/images/*.jpeg
+assets/images/*.webp
