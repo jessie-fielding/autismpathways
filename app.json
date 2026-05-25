@@ -82,7 +82,7 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "versionCode": 4,
+      "versionCode": 5,
       "package": "app.autismpathways.app"
     },
     "web": {
