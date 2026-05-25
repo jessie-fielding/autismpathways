@@ -16,12 +16,35 @@ const API_BASE = 'https://info.autismpathways.app';
  *   3. The purchase receipt is stored in AsyncStorage under 'ap_iap_purchased'
  *   4. Optionally, also verify server-side via /api/me
  * ──────────────────────────────────────────────────────────────────────────────
+ *
+ * ─── FREE ACCESS LIST ─────────────────────────────────────────────────────────
+ * Accounts in FREE_ACCESS_EMAILS always get premium access regardless of
+ * subscription status. Add/remove emails here as needed.
+ * ──────────────────────────────────────────────────────────────────────────────
  */
 
 export const BETA_MODE = false; // production — real IAP required
 
+// Accounts that always get free premium access (case-insensitive match)
+const FREE_ACCESS_EMAILS: string[] = [
+  'jessienrabe@gmail.com',
+  'bbriphil99@gmail.com',
+  'emilymeilstrup@gmail.com',
+];
+
 // AsyncStorage key where IAP purchase confirmation is stored
 export const IAP_PURCHASED_KEY = 'ap_iap_purchased';
+
+/** Returns true if the currently signed-in email is on the free access list */
+async function isOnFreeList(): Promise<boolean> {
+  try {
+    const email = await AsyncStorage.getItem('authUserEmail');
+    if (!email) return false;
+    return FREE_ACCESS_EMAILS.includes(email.toLowerCase().trim());
+  } catch {
+    return false;
+  }
+}
 
 export function useIsPremium(): { isPremium: boolean; loading: boolean } {
   const [isPremium, setIsPremium] = useState(BETA_MODE);
@@ -37,6 +60,12 @@ export function useIsPremium(): { isPremium: boolean; loading: boolean } {
     let cancelled = false;
     (async () => {
       try {
+        // 0. Check free access list first
+        if (await isOnFreeList()) {
+          if (!cancelled) { setIsPremium(true); setLoading(false); }
+          return;
+        }
+
         // 1. Check local IAP purchase flag (set by Paywall screen after successful purchase)
         const localPurchase = await AsyncStorage.getItem(IAP_PURCHASED_KEY);
         if (localPurchase === 'true') {
@@ -71,11 +100,14 @@ export function useIsPremium(): { isPremium: boolean; loading: boolean } {
 
 /**
  * Standalone helper for non-hook contexts (e.g. inside an async function).
- * Also returns true in BETA_MODE.
+ * Also returns true in BETA_MODE and for free-access emails.
  */
 export async function checkIsPremium(): Promise<boolean> {
   if (BETA_MODE) return true;
   try {
+    // Check free access list first
+    if (await isOnFreeList()) return true;
+
     const localPurchase = await AsyncStorage.getItem(IAP_PURCHASED_KEY);
     if (localPurchase === 'true') return true;
 
