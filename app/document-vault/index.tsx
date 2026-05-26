@@ -10,7 +10,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { COLORS, SPACING, RADIUS, FONT_SIZES, SHADOWS } from '../../lib/theme';
 import { useIsPremium } from '../../hooks/useIsPremium';
 
-const API_BASE   = 'https://info.autismpathways.app';
+const API_BASE   = 'https://inu3nb5lrfvftfyiwprftqshpy0zcegu.lambda-url.us-east-2.on.aws';
 const TOKEN_KEY  = 'authToken';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
