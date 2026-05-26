@@ -14,7 +14,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  ActivityIndicator, Alert, Linking,
+  ActivityIndicator, Alert, Linking, Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -28,6 +28,7 @@ import {
   finishTransaction,
   purchaseErrorListener,
   purchaseUpdatedListener,
+  presentCodeRedemptionSheet,
   type Purchase,
   type PurchaseError,
 } from 'react-native-iap';
@@ -292,6 +293,18 @@ export default function PaywallScreen() {
             {restoring ? <ActivityIndicator color={COLORS.purple} size="small" /> : <Text style={styles.restoreBtnText}>Restore Purchase</Text>}
           </TouchableOpacity>
 
+          {Platform.OS === 'ios' && (
+            <TouchableOpacity
+              style={styles.promoBtn}
+              onPress={async () => {
+                try { await presentCodeRedemptionSheet(); } catch {}
+              }}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.promoBtnText}>🎟️ Redeem Promo Code</Text>
+            </TouchableOpacity>
+          )}
+
           <Text style={styles.legalText}>
             {selectedPlan === 'annual'
               ? `Subscription auto-renews annually at ${annualPrice ?? '$79.99'} unless cancelled at least 24 hours before the renewal date.`
@@ -347,8 +360,10 @@ const styles = StyleSheet.create({
   purchaseBtn: { width: '100%', backgroundColor: COLORS.purple, borderRadius: RADIUS.sm, paddingVertical: SPACING.lg, alignItems: 'center', justifyContent: 'center', marginBottom: SPACING.md, ...SHADOWS.lg },
   purchaseBtnDisabled: { opacity: 0.6 },
   purchaseBtnText: { color: COLORS.white, fontSize: FONT_SIZES.md, fontWeight: '800' },
-  restoreBtn: { paddingVertical: SPACING.md, alignItems: 'center', marginBottom: SPACING.lg },
+  restoreBtn: { paddingVertical: SPACING.md, alignItems: 'center', marginBottom: SPACING.xs },
   restoreBtnText: { color: COLORS.purple, fontSize: FONT_SIZES.sm, fontWeight: '600' },
+  promoBtn: { paddingVertical: SPACING.md, alignItems: 'center', marginBottom: SPACING.lg },
+  promoBtnText: { color: COLORS.purple, fontSize: FONT_SIZES.sm, fontWeight: '600' },
   legalText: { fontSize: 11, color: COLORS.textLight, textAlign: 'center', lineHeight: 16, marginBottom: SPACING.sm },
   legalLinks: { flexDirection: 'row', gap: SPACING.sm, alignItems: 'center' },
   legalLink: { fontSize: 11, color: COLORS.purple, fontWeight: '600' },

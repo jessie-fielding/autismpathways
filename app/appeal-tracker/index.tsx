@@ -7,15 +7,64 @@
 import React, { useState, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  Platform, Modal, TextInput, Alert, KeyboardAvoidingView,
+  Platform, Modal, TextInput, Alert, KeyboardAvoidingView, Switch,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
+import * as Notifications from 'expo-notifications';
 import { COLORS, SPACING, RADIUS, FONT_SIZES, SHADOWS } from '../../lib/theme';
 import { useIsPremium } from '../../hooks/useIsPremium';
 import { useChildChanged } from '../../hooks/useChildChanged';
+
+// ── Notification helpers ──────────────────────────────────────────────────────
+async function requestNotifPermission(): Promise<boolean> {
+  const { status } = await Notifications.requestPermissionsAsync();
+  return status === 'granted';
+}
+
+async function scheduleDeadlineReminder(appeal: { id: string; title: string; deadlineDate: string }) {
+  if (!appeal.deadlineDate) return;
+  const deadline = new Date(appeal.deadlineDate);
+  if (isNaN(deadline.getTime())) return;
+  // Cancel any existing notifications for this appeal first
+  await cancelDeadlineReminder(appeal.id);
+  // 3 days before
+  const threeDaysBefore = new Date(deadline.getTime() - 3 * 24 * 60 * 60 * 1000);
+  if (threeDaysBefore > new Date()) {
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: '⏰ Appeal Deadline in 3 Days',
+        body: `"${appeal.title}" is due ${deadline.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}. Don't miss your window!`,
+        data: { appealId: appeal.id },
+      },
+      trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: threeDaysBefore },
+    });
+  }
+  // Day-of at 9am
+  const dayOf = new Date(deadline);
+  dayOf.setHours(9, 0, 0, 0);
+  if (dayOf > new Date()) {
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: '🚨 Appeal Deadline TODAY',
+        body: `Your appeal for "${appeal.title}" is due today. Open the app to check your status.`,
+        data: { appealId: appeal.id },
+      },
+      trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: dayOf },
+    });
+  }
+}
+
+async function cancelDeadlineReminder(appealId: string) {
+  const all = await Notifications.getAllScheduledNotificationsAsync();
+  for (const n of all) {
+    if ((n.content.data as any)?.appealId === appealId) {
+      await Notifications.cancelScheduledNotificationAsync(n.identifier);
+    }
+  }
+}
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 type AppealStatus = 'preparing' | 'submitted' | 'pending' | 'approved' | 'denied' | 'escalated';
@@ -158,6 +207,7 @@ function FullTracker() {
   const [modalVisible, setModalVisible] = useState(false);
   const [editId, setEditId]           = useState<string | null>(null);
   const [form, setForm]               = useState({ ...EMPTY_FORM });
+  const [remindMe, setRemindMe]        = useState(false);
   const [expandedId, setExpandedId]   = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<AppealStatus | 'all'>('all');
   const [toast, setToast]             = useState('');
@@ -195,6 +245,7 @@ function FullTracker() {
       setEditId(null);
       setForm({ ...EMPTY_FORM });
     }
+    setRemindMe(false);
     setModalVisible(true);
   };
 
@@ -207,15 +258,29 @@ function FullTracker() {
   const handleSave = async () => {
     if (!form.title.trim()) { showToast('Appeal name is required.'); return; }
     const now = new Date().toISOString();
+    const appealId = editId ?? `ap_${Date.now()}`;
     let updated: Appeal[];
     if (editId) {
       updated = appeals.map(a => a.id === editId ? { ...a, ...form, updatedAt: now } : a);
     } else {
-      updated = [{ id: `ap_${Date.now()}`, ...form, createdAt: now, updatedAt: now }, ...appeals];
+      updated = [{ id: appealId, ...form, createdAt: now, updatedAt: now }, ...appeals];
     }
     await saveAppeals(updated);
+    // Schedule or cancel push notification
+    if (remindMe && form.deadlineDate) {
+      const granted = await requestNotifPermission();
+      if (granted) {
+        await scheduleDeadlineReminder({ id: appealId, title: form.title, deadlineDate: form.deadlineDate });
+        showToast((editId ? 'Appeal updated.' : 'Appeal added.') + ' Reminder set! 🔔');
+      } else {
+        Alert.alert('Notifications Off', 'Enable notifications in Settings to receive deadline reminders.');
+        showToast(editId ? 'Appeal updated.' : 'Appeal added.');
+      }
+    } else {
+      await cancelDeadlineReminder(appealId);
+      showToast(editId ? 'Appeal updated.' : 'Appeal added.');
+    }
     closeModal();
-    showToast(editId ? 'Appeal updated.' : 'Appeal added.');
   };
 
   const handleDelete = (id: string) => {
@@ -441,6 +506,25 @@ function FullTracker() {
               placeholder="Add any relevant notes here..."
               multiline
             />
+
+            {/* Remind me toggle */}
+            {!!form.deadlineDate && (
+              <View style={styles.remindRow}>
+                <View style={styles.remindRowLeft}>
+                  <Text style={styles.remindIcon}>🔔</Text>
+                  <View>
+                    <Text style={styles.remindLabel}>Remind me before deadline</Text>
+                    <Text style={styles.remindSub}>3 days before and day-of at 9am</Text>
+                  </View>
+                </View>
+                <Switch
+                  value={remindMe}
+                  onValueChange={setRemindMe}
+                  trackColor={{ false: COLORS.border, true: COLORS.purple }}
+                  thumbColor={COLORS.white}
+                />
+              </View>
+            )}
 
             <View style={styles.modalActions}>
               <TouchableOpacity style={styles.modalBtn} onPress={closeModal}>
@@ -857,5 +941,31 @@ const styles = StyleSheet.create({
   },
   modalBtnPrimary: {
     backgroundColor: COLORS.purple,
+  },
+  remindRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: COLORS.lavender,
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
+    marginTop: SPACING.md,
+  },
+  remindRowLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    flex: 1,
+  },
+  remindIcon: { fontSize: 20 },
+  remindLabel: {
+    fontSize: FONT_SIZES.sm,
+    fontWeight: '700',
+    color: COLORS.purpleDark,
+  },
+  remindSub: {
+    fontSize: FONT_SIZES.xs,
+    color: COLORS.textMid,
+    marginTop: 2,
   },
 });

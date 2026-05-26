@@ -31,14 +31,16 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: COLORS.white,
     paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.lg,
+    paddingBottom: 12,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },
-  backButton: { fontSize: 20, color: COLORS.purple },
-  title: { fontSize: FONT_SIZES.lg, fontWeight: '700', color: COLORS.text, marginLeft: SPACING.lg },
+  backButton: { fontSize: 20, color: COLORS.purple, width: 44 },
+  title: { fontSize: 17, fontWeight: '700', color: COLORS.text, flex: 1, textAlign: 'center' },
+  headerSpacer: { width: 44 },
   content: { flex: 1, paddingHorizontal: SPACING.lg, paddingVertical: SPACING.lg, backgroundColor: COLORS.white },
   heading: { fontSize: FONT_SIZES.lg, fontWeight: '800', color: COLORS.text, marginBottom: SPACING.lg },
   text: { fontSize: FONT_SIZES.sm, color: COLORS.textMid, lineHeight: 20, marginBottom: SPACING.lg },
@@ -97,7 +99,8 @@ export default function Step3WaiverTypes() {
         <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
           <Text style={styles.backButton}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>Step 3: Waiver Types</Text>
+        <Text style={styles.title}>Waiver Journey</Text>
+        <View style={styles.headerSpacer} />
       </View>
 
       <ScrollView style={styles.content}>
