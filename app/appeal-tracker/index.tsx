@@ -233,7 +233,7 @@ function FullTracker() {
   const showToast = (msg: string) => {
     setToast(msg);
     if (toastTimer.current) clearTimeout(toastTimer.current);
-    toastTimer.current = setTimeout(() => setToast('', 2400));
+    toastTimer.current = setTimeout(() => setToast(''), 2400);
   };
 
   const openModal = (appeal?: Appeal) => {
@@ -508,23 +508,30 @@ function FullTracker() {
             />
 
             {/* Remind me toggle */}
-            {!!form.deadlineDate && (
-              <View style={styles.remindRow}>
-                <View style={styles.remindRowLeft}>
-                  <Text style={styles.remindIcon}>🔔</Text>
-                  <View>
-                    <Text style={styles.remindLabel}>Remind me before deadline</Text>
-                    <Text style={styles.remindSub}>3 days before and day-of at 9am</Text>
-                  </View>
+            <View style={styles.remindRow}>
+              <View style={styles.remindRowLeft}>
+                <Text style={styles.remindIcon}>🔔</Text>
+                <View>
+                  <Text style={styles.remindLabel}>Remind me before deadline</Text>
+                  <Text style={styles.remindSub}>
+                    {form.deadlineDate ? '3 days before and day-of at 9am' : 'Set a deadline date above to enable'}
+                  </Text>
                 </View>
-                <Switch
-                  value={remindMe}
-                  onValueChange={setRemindMe}
-                  trackColor={{ false: COLORS.border, true: COLORS.purple }}
-                  thumbColor={COLORS.white}
-                />
               </View>
-            )}
+              <Switch
+                value={remindMe}
+                onValueChange={(val) => {
+                  if (val && !form.deadlineDate) {
+                    Alert.alert('Set a Deadline', 'Add a deadline date above to enable reminders.');
+                    return;
+                  }
+                  setRemindMe(val);
+                }}
+                trackColor={{ false: COLORS.border, true: COLORS.purple }}
+                thumbColor={COLORS.white}
+                disabled={!form.deadlineDate}
+              />
+            </View>
 
             <View style={styles.modalActions}>
               <TouchableOpacity style={styles.modalBtn} onPress={closeModal}>

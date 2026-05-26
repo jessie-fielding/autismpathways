@@ -297,7 +297,22 @@ export default function PaywallScreen() {
             <TouchableOpacity
               style={styles.promoBtn}
               onPress={async () => {
-                try { await presentCodeRedemptionSheet(); } catch {}
+                try {
+                  await presentCodeRedemptionSheet();
+                } catch {
+                  // Fallback: open App Store offer code redemption URL
+                  const url = 'https://apps.apple.com/redeem?ctx=offercodes&id=6744286148&code=';
+                  const canOpen = await Linking.canOpenURL(url);
+                  if (canOpen) {
+                    await Linking.openURL(url);
+                  } else {
+                    Alert.alert(
+                      'Redeem Promo Code',
+                      'To redeem your promo code:\n\n1. Open the App Store\n2. Tap your profile icon (top right)\n3. Tap \'Redeem Gift Card or Code\'\n4. Enter your promo code',
+                      [{ text: 'OK' }]
+                    );
+                  }
+                }
               }}
               activeOpacity={0.7}
             >
