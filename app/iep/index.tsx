@@ -20,6 +20,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, FONT_SIZES, RADIUS, SHADOWS, SPACING } from '../../lib/theme';
 import { useChildChanged } from '../../hooks/useChildChanged';
 import { PathwayDisclaimer } from '../../components/PathwayDisclaimer';
+import { useLanguage } from '../../lib/LanguageContext';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface IEPGoal {
@@ -256,6 +257,7 @@ function TermCard({ item }: { item: typeof RIGHTS_TERMS[0] }) {
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function IEPScreen() {
   const router = useRouter();
+  const { t } = useLanguage();
   const { child: activeChild } = useActiveChild();
   const [activeTab, setActiveTab] = useState('prep');
 

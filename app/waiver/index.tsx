@@ -7,6 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, FONT_SIZES, RADIUS, SHADOWS, SPACING } from '../../lib/theme';
 import waiverData from '../../data/waiver-data.json';
 import { PathwayDisclaimer } from '../../components/PathwayDisclaimer';
+import { useLanguage } from '../../lib/LanguageContext';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const ALL_STATES = Object.entries(waiverData as Record<string, { stateName: string }>)
@@ -16,6 +17,7 @@ const ALL_STATES = Object.entries(waiverData as Record<string, { stateName: stri
 export default function WaiverStatePickerScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { t } = useLanguage();
   const [search, setSearch] = useState('');
   const [savedState, setSavedState] = useState<string | null>(null);
   const searchRef = useRef<TextInput>(null);
@@ -51,7 +53,7 @@ export default function WaiverStatePickerScreen() {
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <TouchableOpacity onPress={() => router.push('/(tabs)/dashboard')} style={styles.backBtn} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
-          <Text style={styles.backText}>← Dashboard</Text>
+          <Text style={styles.backText}>← {t('Dashboard', 'Inicio')}</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>
           Autism <Text style={styles.headerPurple}>Pathways</Text>

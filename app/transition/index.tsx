@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useLanguage } from '../../lib/LanguageContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, SPACING, FONT_SIZES, RADIUS } from '../../lib/theme';
 
@@ -71,6 +72,7 @@ const STAGES = [
 
 export default function TransitionHub() {
   const router = useRouter();
+  const { t } = useLanguage();
   const insets = useSafeAreaInsets();
 
   return (
@@ -81,7 +83,7 @@ export default function TransitionHub() {
           <Text style={styles.backArrow}>←</Text>
         </TouchableOpacity>
         <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>Plan Ahead & Transition</Text>
+          <Text style={styles.headerTitle}>{t('Plan Ahead & Transition', 'Planifica el Futuro')}</Text>
           <Text style={styles.headerSub}>The earlier you start, the better the outcome.</Text>
         </View>
         <View style={styles.headerSpacer} />

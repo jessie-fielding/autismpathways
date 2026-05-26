@@ -6,6 +6,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../../services/useAuth';
 import { usePmipProviderStore } from '../../lib/pmip/pmipProviderStore';
 import { useIsPremium } from '../../hooks/useIsPremium';
+import { useLanguage } from '../../lib/LanguageContext';
 
 // Exact colors from your web app
 const COLORS = {
@@ -594,6 +595,7 @@ export default function DashboardScreen() {
   const insets = useSafeAreaInsets();
   const { signOut } = useAuth();
   const { isPremium } = useIsPremium();
+  const { t } = useLanguage();
   const { child, childId, key: childKey, switchChild } = useActiveChild();
 
   // ── State ──────────────────────────────────────────────────────────────────
@@ -687,28 +689,28 @@ export default function DashboardScreen() {
   const diagLevel = child?.diagnosisLevel || profile?.diagnosisLevel || '';
 
   const WEEKLY_TASKS = [
-    'Log an observation',
-    'Check upcoming appointments',
-    'Review IEP goals',
-    'Update service tracker',
+    t('Log an observation', 'Registra una observación'),
+    t('Check upcoming appointments', 'Revisa las próximas citas'),
+    t('Review IEP goals', 'Revisa las metas del IEP'),
+    t('Update service tracker', 'Actualiza el seguimiento de servicios'),
   ];
 
   const PATHWAYS = [
-    { icon: '🔍', name: 'Diagnosis', route: '/diagnosis', progress: diagnosisStep, total: DIAGNOSIS_TOTAL },
-    { icon: '🏥', name: 'Medicaid', route: '/medicaid', progress: medicaidProgress, total: MEDICAID_TOTAL },
-    { icon: '📋', name: 'Waiver', route: '/waiver', progress: waiverProgress, total: WAIVER_TOTAL },
-    { icon: '🏫', name: 'IEP', route: '/iep', progress: iepProgress, total: IEP_TOTAL },
-    { icon: '🚽', name: 'Potty', route: '/potty', progress: pottyProgress, total: POTTY_TOTAL },
-    { icon: '🗺️', name: 'Transition', route: '/transition', progress: 0, total: 0 },
+    { icon: '🔍', name: t('Diagnosis', 'Diagnóstico'), route: '/diagnosis', progress: diagnosisStep, total: DIAGNOSIS_TOTAL },
+    { icon: '🏥', name: t('Medicaid', 'Medicaid'), route: '/medicaid', progress: medicaidProgress, total: MEDICAID_TOTAL },
+    { icon: '📋', name: t('Waiver', 'Programas'), route: '/waiver', progress: waiverProgress, total: WAIVER_TOTAL },
+    { icon: '🏫', name: t('IEP', 'IEP'), route: '/iep', progress: iepProgress, total: IEP_TOTAL },
+    { icon: '🚽', name: t('Potty', 'Baño'), route: '/potty', progress: pottyProgress, total: POTTY_TOTAL },
+    { icon: '🗺️', name: t('Transition', 'Transición'), route: '/transition', progress: 0, total: 0 },
   ];
 
   const TOOL_TILES = [
-    { icon: '🆘', name: 'In-the-Moment', route: '/parenting-pathways' },
-    { icon: '📓', name: 'Observations', route: '/observations' },
-    { icon: '🩺', name: 'Provider Prep', route: '/provider-prep' },
-    { icon: '🧘', name: 'Safe Space', route: '/safe-space' },
-    { icon: '🧮', name: 'CCB Tool', route: '/ccb-tool' },
-    { icon: '📚', name: 'Learning', route: '/(tabs)/explore' },
+    { icon: '🆘', name: t('In-the-Moment', 'En el Momento'), route: '/parenting-pathways' },
+    { icon: '📓', name: t('Observations', 'Observaciones'), route: '/observations' },
+    { icon: '🩺', name: t('Provider Prep', 'Prep. Proveedor'), route: '/provider-prep' },
+    { icon: '🧘', name: t('Safe Space', 'Espacio Seguro'), route: '/safe-space' },
+    { icon: '🧮', name: t('CCB Tool', 'Herramienta CCB'), route: '/ccb-tool' },
+    { icon: '📚', name: t('Learning', 'Aprendizaje'), route: '/(tabs)/explore' },
   ];
 
   return (
@@ -744,13 +746,13 @@ export default function DashboardScreen() {
               {diagnosis ? (
                 <Text style={styles.pcMeta}>{diagnosis}{diagLevel ? ` · Level ${diagLevel}` : ''}</Text>
               ) : (
-                <Text style={styles.pcMeta}>Tap to complete profile</Text>
+                <Text style={styles.pcMeta}>{t('Tap to complete profile', 'Toca para completar el perfil')}</Text>
               )}
               <View style={styles.pcTags}>
                 {isPremium ? (
                   <Text style={[styles.pcTag, styles.pcTagTeal]}>⭐ Premium</Text>
                 ) : (
-                  <Text style={[styles.pcTag, styles.pcTagPurple]}>Free Plan</Text>
+                  <Text style={[styles.pcTag, styles.pcTagPurple]}>{t('Free Plan', 'Plan Gratuito')}</Text>
                 )}
                 {diagLevel ? <Text style={[styles.pcTag, styles.pcTagPurple]}>Level {diagLevel}</Text> : null}
               </View>
@@ -760,27 +762,27 @@ export default function DashboardScreen() {
           {/* QUIZ RESULTS CALLOUT */}
           {(icdCodes.length > 0 || devFlags.length > 0) && (
             <View style={styles.quizResultsCard}>
-              <Text style={styles.quizResultsTitle}>📋 From Your Quizzes</Text>
+              <Text style={styles.quizResultsTitle}>📋 {t('From Your Quizzes', 'De Tus Cuestionarios')}</Text>
               {icdCodes.length > 0 && (
                 <View style={styles.quizRow}>
-                  <Text style={styles.quizLabel}>ICD Codes: </Text>
+                  <Text style={styles.quizLabel}>{t('ICD Codes', 'Códigos ICD')}: </Text>
                   <Text style={styles.quizValue}>{icdCodes.slice(0, 4).join(', ')}</Text>
                 </View>
               )}
               {devFlags.length > 0 && (
                 <View style={styles.quizRow}>
-                  <Text style={styles.quizLabel}>Flagged: </Text>
+                  <Text style={styles.quizLabel}>{t('Flagged', 'Marcado')}: </Text>
                   <Text style={styles.quizValue}>{devFlags.join(', ')}</Text>
                 </View>
               )}
               <TouchableOpacity onPress={() => router.push('/talking-points')}>
-                <Text style={styles.quizLink}>Use in Talking Points →</Text>
+                <Text style={styles.quizLink}>{t('Use in Talking Points', 'Usar en Puntos de Conversación')} →</Text>
               </TouchableOpacity>
             </View>
           )}
 
           {/* SECTION: YOUR JOURNEY */}
-          <Text style={styles.sectionLabel}>YOUR JOURNEY</Text>
+          <Text style={styles.sectionLabel}>{t('YOUR JOURNEY', 'TU CAMINO')}</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pathwayScroll} contentContainerStyle={{ paddingRight: SPACING.lg }}>
             {PATHWAYS.map((p) => {
               const pct = p.total > 0 ? Math.round((p.progress / p.total) * 100) : 0;
@@ -802,7 +804,7 @@ export default function DashboardScreen() {
           <View style={styles.dualGrid}>
             {/* Diagnosis tracker */}
             <TouchableOpacity style={styles.miniCard} onPress={() => router.push('/diagnosis')} activeOpacity={0.85}>
-              <Text style={styles.miniTitle}>🔍 Diagnosis</Text>
+              <Text style={styles.miniTitle}>🔍 {t('Diagnosis', 'Diagnóstico')}</Text>
               <View style={{ flexDirection: 'row', gap: 3, marginBottom: 6 }}>
                 {Array.from({ length: DIAGNOSIS_TOTAL }).map((_, i) => (
                   <View key={i} style={[{ flex: 1, height: 5, borderRadius: 3, backgroundColor: COLORS.card }, i < diagnosisStep && { backgroundColor: COLORS.purple }]} />
@@ -826,7 +828,7 @@ export default function DashboardScreen() {
           {/* THIS WEEK */}
           <View style={styles.tcCard}>
             <View style={styles.tcTop}>
-              <Text style={styles.tcTitle}>📅 This Week</Text>
+              <Text style={styles.tcTitle}>📅 {t('This Week', 'Esta Semana')}</Text>
               <Text style={[styles.tcBadge, styles.tcBadgePurple]}>{weeklyChecks.filter(Boolean).length}/{WEEKLY_TASKS.length} done</Text>
             </View>
             {WEEKLY_TASKS.map((task, i) => (
@@ -848,14 +850,14 @@ export default function DashboardScreen() {
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: SPACING.md }}>
               <Text style={{ fontSize: 28 }}>🆘</Text>
               <View style={{ flex: 1 }}>
-                <Text style={styles.ppHeroTitle}>I Need Help Right Now</Text>
-                <Text style={styles.ppHeroSub}>Get an in-the-moment strategy in 30 seconds</Text>
+                <Text style={styles.ppHeroTitle}>{t('I Need Help Right Now', 'Necesito Ayuda Ahora')}</Text>
+                <Text style={styles.ppHeroSub}>{t('Get an in-the-moment strategy in 30 seconds', 'Obtén una estrategia en 30 segundos')}</Text>
               </View>
               <Text style={{ fontSize: 20, color: COLORS.purple }}>›</Text>
             </View>
           </TouchableOpacity>
           {/* TOOLS SCROLLER */}
-          <Text style={styles.sectionLabel}>QUICK ACCESS</Text>
+          <Text style={styles.sectionLabel}>{t('QUICK ACCESS', 'ACCESO RÁPIDO')}</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pathwayScroll} contentContainerStyle={{ paddingRight: SPACING.lg }}>
             {TOOL_TILES.map((t) => (
               <TouchableOpacity
@@ -874,7 +876,7 @@ export default function DashboardScreen() {
               activeOpacity={0.8}
             >
               <Text style={styles.ptIcon}>➕</Text>
-              <Text style={[styles.ptName, { color: COLORS.purple }]}>More Tools</Text>
+              <Text style={[styles.ptName, { color: COLORS.purple }]}>{t('More Tools', 'Más Herramientas')}</Text>
             </TouchableOpacity>
           </ScrollView>
 
@@ -882,8 +884,8 @@ export default function DashboardScreen() {
           {!isPremium && (
             <TouchableOpacity style={styles.upgradeBanner} onPress={() => router.push('/paywall')} activeOpacity={0.9}>
               <View style={styles.upgradeLeft}>
-                <Text style={styles.upgradeTitle}>Unlock Premium Access</Text>
-                <Text style={styles.upgradeSub}>Appeal Tracker, unlimited contacts, all talking points scripts, and more.</Text>
+                <Text style={styles.upgradeTitle}>{t('Unlock Premium Access', 'Desbloquear Acceso Premium')}</Text>
+                <Text style={styles.upgradeSub}>{t('Appeal Tracker, unlimited contacts, all talking points scripts, and more.', 'Seguimiento de apelaciones, contactos ilimitados, todos los guiones y más.')}</Text>
                 <Text style={styles.upgradePrice}>$9.99/mo · $79.99/yr</Text>
               </View>
               <Text style={styles.upgradeArrow}>→</Text>

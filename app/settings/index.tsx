@@ -7,6 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, SPACING, RADIUS, FONT_SIZES, SHADOWS } from '../../lib/theme';
+import { useLanguage } from '../../lib/LanguageContext';
 import { useIsPremium } from '../../hooks/useIsPremium';
 import { useNotifications, NotifSettings } from '../../hooks/useNotifications';
 import { useAuth } from '../../services/useAuth';
@@ -61,6 +62,7 @@ export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { isPremium } = useIsPremium();
+  const { language, setLanguage, t } = useLanguage();
   const { scheduleAll } = useNotifications();
   const { signOut, signOutAndForget, deleteAccount } = useAuth();
 
@@ -296,6 +298,32 @@ export default function SettingsScreen() {
             </Text>
           </View>
         )}
+
+        {/* LANGUAGE */}
+        <Text style={styles.sectionLabel}>{t('LANGUAGE', 'IDIOMA')}</Text>
+        <View style={styles.card}>
+          <View style={styles.row}>
+            <Text style={styles.rowIcon}>🌐</Text>
+            <View style={styles.rowContent}>
+              <Text style={styles.rowTitle}>{t('App Language', 'Idioma de la aplicación')}</Text>
+              <Text style={styles.rowSub}>{t('Switch between English and Spanish', 'Cambiar entre inglés y español')}</Text>
+            </View>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <TouchableOpacity
+                onPress={() => setLanguage('en')}
+                style={[styles.langBtn, language === 'en' && styles.langBtnActive]}
+              >
+                <Text style={[styles.langBtnText, language === 'en' && styles.langBtnTextActive]}>EN</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setLanguage('es')}
+                style={[styles.langBtn, language === 'es' && styles.langBtnActive]}
+              >
+                <Text style={[styles.langBtnText, language === 'es' && styles.langBtnTextActive]}>ES</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
 
         {/* ACCOUNT */}
         <Text style={styles.sectionLabel}>ACCOUNT</Text>
@@ -625,6 +653,28 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZES.xs,
     color: COLORS.textLight,
     marginBottom: SPACING.lg,
+  },
+
+  // Language toggle
+  langBtn: {
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    borderRadius: RADIUS.sm,
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.white,
+  },
+  langBtnActive: {
+    borderColor: COLORS.purple,
+    backgroundColor: COLORS.purple,
+  },
+  langBtnText: {
+    fontSize: FONT_SIZES.xs,
+    fontWeight: '700',
+    color: COLORS.textLight,
+  },
+  langBtnTextActive: {
+    color: COLORS.white,
   },
 
   // Deleting overlay

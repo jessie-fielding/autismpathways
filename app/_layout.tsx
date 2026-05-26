@@ -5,6 +5,7 @@ import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { AuthProvider } from '../services/useAuth';
+import { LanguageProvider } from '../lib/LanguageContext';
 import { PmipProviderStoreProvider } from '../lib/pmip/pmipProviderStore';
 import NotificationPermissionPrompt from '../components/NotificationPermissionPrompt';
 
@@ -16,6 +17,7 @@ export default function RootLayout() {
   const colorScheme = useColorScheme();
 
   return (
+    <LanguageProvider>
     <AuthProvider>
       <PmipProviderStoreProvider>
         <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
@@ -27,5 +29,6 @@ export default function RootLayout() {
         </ThemeProvider>
       </PmipProviderStoreProvider>
     </AuthProvider>
+    </LanguageProvider>
   );
 }

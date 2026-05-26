@@ -1,4 +1,5 @@
 import { useRouter } from 'expo-router';
+import { useLanguage } from '../../lib/LanguageContext';
 import React from 'react';
 import {
   ScrollView,
@@ -45,6 +46,7 @@ const PATHWAY_STEPS = [
 export default function MedicaidIndex() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { t } = useLanguage();
 
   return (
     <View style={styles.container}>
