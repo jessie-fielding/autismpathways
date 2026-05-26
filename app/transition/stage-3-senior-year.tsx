@@ -5,12 +5,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, SPACING, FONT_SIZES, RADIUS } from '../../lib/theme';
 import { useIsPremium } from '../../hooks/useIsPremium';
+import { scheduleStage3FollowUp, cancelStage3FollowUp } from '../../lib/transitionNotification';
 
 const CHECKLIST_KEY = 'ap_transition_stage3_checklist';
 
 const CHECKLIST_ITEMS = [
   { id: 'guardianship', emoji: '⚖️', title: 'Decide on guardianship vs. alternatives', desc: 'Full guardianship removes your child\'s legal rights. Consider supported decision-making, power of attorney, or limited guardianship first.', free: true },
-  { id: 'ssi_apply', emoji: '💰', title: 'Apply for SSI at 17y 9m', desc: 'Apply 3 months before the 18th birthday. Gather diagnosis docs, medical records, and financial info.', free: true },
+  { id: 'ssi_apply', emoji: '💰', title: 'Apply for SSI at 17y 9m', desc: 'Apply 3 months before the 18th birthday. Gather diagnosis docs, medical records, and financial info. We\'ll remind you to check your status in 90 days.', free: true, triggersFollowUp: true },
   { id: 'adult_medicaid', emoji: '🏥', title: 'Transition to adult Medicaid', desc: 'Children\'s Medicaid ends at 18 in most states. Apply for adult Medicaid and confirm your child\'s coverage continues.', free: true },
   { id: 'able_account', emoji: '💳', title: 'Open or fund ABLE account', desc: 'If you haven\'t opened an ABLE account yet, do it before 18. Contributions don\'t affect SSI or Medicaid eligibility.', free: true },
   { id: 'adult_providers', emoji: '🤝', title: 'Connect with adult service providers', desc: 'Day programs, supported employment, and residential providers often have their own waitlists. Start connecting now.', free: false },
@@ -35,11 +36,16 @@ export default function Stage3SeniorYear() {
     AsyncStorage.getItem(CHECKLIST_KEY).then((raw) => { if (raw) setChecked(JSON.parse(raw)); });
   }, []);
 
-  const toggleItem = async (id: string, free: boolean) => {
+  const toggleItem = async (id: string, free: boolean, triggersFollowUp?: boolean) => {
     if (!free && !isPremium) { router.push('/paywall' as any); return; }
-    const updated = { ...checked, [id]: !checked[id] };
+    const nowChecked = !checked[id];
+    const updated = { ...checked, [id]: nowChecked };
     setChecked(updated);
     await AsyncStorage.setItem(CHECKLIST_KEY, JSON.stringify(updated));
+    if (triggersFollowUp && isPremium) {
+      if (nowChecked) scheduleStage3FollowUp().catch(() => {});
+      else cancelStage3FollowUp().catch(() => {});
+    }
   };
 
   const completedCount = CHECKLIST_ITEMS.filter((i) => checked[i.id]).length;
@@ -76,7 +82,7 @@ export default function Stage3SeniorYear() {
           const isChecked = !!checked[item.id];
           const locked = !item.free && !isPremium;
           return (
-            <TouchableOpacity key={item.id} style={[styles.checkItem, isChecked && styles.checkItemDone]} onPress={() => toggleItem(item.id, item.free)} activeOpacity={0.8}>
+            <TouchableOpacity key={item.id} style={[styles.checkItem, isChecked && styles.checkItemDone]} onPress={() => toggleItem(item.id, item.free, (item as any).triggersFollowUp)} activeOpacity={0.8}>
               <View style={[styles.checkbox, isChecked && styles.checkboxDone]}>
                 {isChecked && <Text style={styles.checkmark}>✓</Text>}
               </View>
@@ -87,6 +93,9 @@ export default function Stage3SeniorYear() {
                   {locked && <Text style={styles.lockIcon}>🔒</Text>}
                 </View>
                 <Text style={styles.checkDesc}>{item.desc}</Text>
+                {(item as any).triggersFollowUp && isChecked && isPremium && (
+                  <View style={notifBadgeStyle}><Text style={notifBadgeTextStyle}>🔔 90-day SSI status reminder set</Text></View>
+                )}
               </View>
             </TouchableOpacity>
           );
@@ -115,6 +124,8 @@ export default function Stage3SeniorYear() {
 }
 
 const ACCENT = '#E07B54';
+const notifBadgeStyle = { marginTop: 6, backgroundColor: '#E8F5E9', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3, alignSelf: 'flex-start' as const };
+const notifBadgeTextStyle = { fontSize: 11, color: '#2E7D32', fontWeight: '600' as const };
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.md, paddingBottom: SPACING.sm, backgroundColor: COLORS.bg, borderBottomWidth: 1, borderBottomColor: COLORS.border },

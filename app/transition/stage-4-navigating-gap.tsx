@@ -5,13 +5,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, SPACING, FONT_SIZES, RADIUS } from '../../lib/theme';
 import { useIsPremium } from '../../hooks/useIsPremium';
+import { scheduleStage4FollowUp, cancelStage4FollowUp } from '../../lib/transitionNotification';
 
 const CHECKLIST_KEY = 'ap_transition_stage4_checklist';
 
 const CHECKLIST_ITEMS = [
   { id: 'confirm_ssi', emoji: '💰', title: 'Confirm SSI is active and correct', desc: 'Verify SSI payments started and the amount is correct. Report any changes in income or living situation to SSA.', free: true },
   { id: 'confirm_medicaid', emoji: '🏥', title: 'Confirm adult Medicaid is active', desc: 'Ensure there is no gap in Medicaid coverage after leaving school. Contact your state Medicaid office if needed.', free: true },
-  { id: 'waiver_status_check', emoji: '📋', title: 'Check waiver waitlist status again', desc: 'Call your state DD agency. Ask your current position on the waitlist and estimated wait time.', free: true },
+  { id: 'waiver_status_check', emoji: '📋', title: 'Check waiver waitlist status again', desc: 'Call your state DD agency. Ask your current position on the waitlist and estimated wait time. We\'ll remind you to call again in 12 months.', free: true, triggersFollowUp: true },
   { id: 'day_program', emoji: '🏢', title: 'Research day programs and adult day services', desc: 'Adult day programs provide structured activities, skill-building, and social connection. Many have waitlists.', free: true },
   { id: 'supported_employment', emoji: '💼', title: 'Explore supported employment options', desc: 'Supported employment helps people with disabilities find and keep competitive integrated employment with job coaching support.', free: false },
   { id: 'college_options', emoji: '🎓', title: 'Explore college/vocational programs', desc: 'Many community colleges and universities have inclusive programs for students with intellectual and developmental disabilities.', free: false },
@@ -35,11 +36,16 @@ export default function Stage4NavigatingGap() {
     AsyncStorage.getItem(CHECKLIST_KEY).then((raw) => { if (raw) setChecked(JSON.parse(raw)); });
   }, []);
 
-  const toggleItem = async (id: string, free: boolean) => {
+  const toggleItem = async (id: string, free: boolean, triggersFollowUp?: boolean) => {
     if (!free && !isPremium) { router.push('/paywall' as any); return; }
-    const updated = { ...checked, [id]: !checked[id] };
+    const nowChecked = !checked[id];
+    const updated = { ...checked, [id]: nowChecked };
     setChecked(updated);
     await AsyncStorage.setItem(CHECKLIST_KEY, JSON.stringify(updated));
+    if (triggersFollowUp && isPremium) {
+      if (nowChecked) scheduleStage4FollowUp().catch(() => {});
+      else cancelStage4FollowUp().catch(() => {});
+    }
   };
 
   const completedCount = CHECKLIST_ITEMS.filter((i) => checked[i.id]).length;
@@ -81,7 +87,7 @@ export default function Stage4NavigatingGap() {
           const isChecked = !!checked[item.id];
           const locked = !item.free && !isPremium;
           return (
-            <TouchableOpacity key={item.id} style={[styles.checkItem, isChecked && styles.checkItemDone]} onPress={() => toggleItem(item.id, item.free)} activeOpacity={0.8}>
+            <TouchableOpacity key={item.id} style={[styles.checkItem, isChecked && styles.checkItemDone]} onPress={() => toggleItem(item.id, item.free, (item as any).triggersFollowUp)} activeOpacity={0.8}>
               <View style={[styles.checkbox, isChecked && styles.checkboxDone]}>
                 {isChecked && <Text style={styles.checkmark}>✓</Text>}
               </View>
@@ -92,6 +98,9 @@ export default function Stage4NavigatingGap() {
                   {locked && <Text style={styles.lockIcon}>🔒</Text>}
                 </View>
                 <Text style={styles.checkDesc}>{item.desc}</Text>
+                {(item as any).triggersFollowUp && isChecked && isPremium && (
+                  <View style={notifBadgeStyle}><Text style={notifBadgeTextStyle}>🔔 Annual waitlist check-in reminder set</Text></View>
+                )}
               </View>
             </TouchableOpacity>
           );
@@ -120,6 +129,8 @@ export default function Stage4NavigatingGap() {
 }
 
 const ACCENT = '#D97706';
+const notifBadgeStyle = { marginTop: 6, backgroundColor: '#E8F5E9', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3, alignSelf: 'flex-start' as const };
+const notifBadgeTextStyle = { fontSize: 11, color: '#2E7D32', fontWeight: '600' as const };
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.md, paddingBottom: SPACING.sm, backgroundColor: COLORS.bg, borderBottomWidth: 1, borderBottomColor: COLORS.border },

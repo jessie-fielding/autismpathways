@@ -5,12 +5,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, SPACING, FONT_SIZES, RADIUS } from '../../lib/theme';
 import { useIsPremium } from '../../hooks/useIsPremium';
+import { scheduleStage2FollowUp, cancelStage2FollowUp } from '../../lib/transitionNotification';
 
 const CHECKLIST_KEY = 'ap_transition_stage2_checklist';
 
 const CHECKLIST_ITEMS = [
   { id: 'measurable_goals', emoji: '🎯', title: 'Ensure IEP has measurable post-secondary goals', desc: 'Goals must be specific, measurable, and address education/training, employment, and independent living.', free: true },
-  { id: 'vr_application', emoji: '💼', title: 'Apply to Vocational Rehabilitation (VR)', desc: 'VR provides job training, education support, assistive technology, and more. Apply at 16 — don\'t wait.', free: true },
+  { id: 'vr_application', emoji: '💼', title: 'Apply to Vocational Rehabilitation (VR)', desc: 'VR provides job training, education support, assistive technology, and more. Apply at 16 — don\'t wait. We\'ll remind you to follow up in 45 days.', free: true, triggersFollowUp: true },
   { id: 'pre_ets', emoji: '🏢', title: 'Explore Pre-Employment Transition Services', desc: 'Pre-ETS through VR includes job exploration, work-based learning, and workplace readiness training.', free: true },
   { id: 'ssi_prep', emoji: '💰', title: 'Prepare for SSI application at 17y 9m', desc: 'You can apply for SSI 3 months before your child\'s 18th birthday. Gather documentation now.', free: true },
   { id: 'waiver_status', emoji: '📋', title: 'Check waiver waitlist status', desc: 'Call your state DD agency to confirm your child is still on the list and ask about current wait times.', free: false },
@@ -35,11 +36,16 @@ export default function Stage2BuildPlan() {
     AsyncStorage.getItem(CHECKLIST_KEY).then((raw) => { if (raw) setChecked(JSON.parse(raw)); });
   }, []);
 
-  const toggleItem = async (id: string, free: boolean) => {
+  const toggleItem = async (id: string, free: boolean, triggersFollowUp?: boolean) => {
     if (!free && !isPremium) { router.push('/paywall' as any); return; }
-    const updated = { ...checked, [id]: !checked[id] };
+    const nowChecked = !checked[id];
+    const updated = { ...checked, [id]: nowChecked };
     setChecked(updated);
     await AsyncStorage.setItem(CHECKLIST_KEY, JSON.stringify(updated));
+    if (triggersFollowUp && isPremium) {
+      if (nowChecked) scheduleStage2FollowUp().catch(() => {});
+      else cancelStage2FollowUp().catch(() => {});
+    }
   };
 
   const completedCount = CHECKLIST_ITEMS.filter((i) => checked[i.id]).length;
@@ -82,7 +88,7 @@ export default function Stage2BuildPlan() {
           const isChecked = !!checked[item.id];
           const locked = !item.free && !isPremium;
           return (
-            <TouchableOpacity key={item.id} style={[styles.checkItem, isChecked && styles.checkItemDone]} onPress={() => toggleItem(item.id, item.free)} activeOpacity={0.8}>
+            <TouchableOpacity key={item.id} style={[styles.checkItem, isChecked && styles.checkItemDone]} onPress={() => toggleItem(item.id, item.free, (item as any).triggersFollowUp)} activeOpacity={0.8}>
               <View style={[styles.checkbox, isChecked && styles.checkboxDone]}>
                 {isChecked && <Text style={styles.checkmark}>✓</Text>}
               </View>
@@ -93,6 +99,9 @@ export default function Stage2BuildPlan() {
                   {locked && <Text style={styles.lockIcon}>🔒</Text>}
                 </View>
                 <Text style={styles.checkDesc}>{item.desc}</Text>
+                {(item as any).triggersFollowUp && isChecked && isPremium && (
+                  <View style={notifBadgeStyle}><Text style={notifBadgeTextStyle}>🔔 45-day VR follow-up reminder set</Text></View>
+                )}
               </View>
             </TouchableOpacity>
           );
@@ -125,6 +134,8 @@ export default function Stage2BuildPlan() {
 }
 
 const ACCENT = '#7C5CBF';
+const notifBadgeStyle = { marginTop: 6, backgroundColor: '#E8F5E9', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3, alignSelf: 'flex-start' as const };
+const notifBadgeTextStyle = { fontSize: 11, color: '#2E7D32', fontWeight: '600' as const };
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.md, paddingBottom: SPACING.sm, backgroundColor: COLORS.bg, borderBottomWidth: 1, borderBottomColor: COLORS.border },

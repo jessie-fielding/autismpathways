@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, SPACING, FONT_SIZES, RADIUS } from '../../lib/theme';
 import { useIsPremium } from '../../hooks/useIsPremium';
+import { scheduleStage1FollowUp, cancelStage1FollowUp } from '../../lib/transitionNotification';
 
 const CHECKLIST_KEY = 'ap_transition_stage1_checklist';
 
@@ -13,7 +14,7 @@ const CHECKLIST_ITEMS = [
   { id: 'strengths_assessment', emoji: '💪', title: 'Complete a strengths & interests assessment', desc: 'Transition planning must be based on your child\'s interests, preferences, and strengths — not just deficits.', free: true },
   { id: 'course_of_study', emoji: '📚', title: 'Discuss course of study', desc: 'What classes will prepare your child for their post-secondary goals? This should be documented in the IEP.', free: true },
   { id: 'post_secondary_goals', emoji: '🎯', title: 'Start thinking about post-secondary goals', desc: 'Education, employment, and independent living goals don\'t have to be final — but the conversation should start now.', free: true },
-  { id: 'agency_connections', emoji: '🤝', title: 'Connect with your state\'s DD agency', desc: 'If you haven\'t applied for the waiver yet, do it now. Also ask about Pre-ETS (Pre-Employment Transition Services).', free: false },
+  { id: 'agency_connections', emoji: '🤝', title: 'Connect with your state\'s DD agency', desc: 'If you haven\'t applied for the waiver yet, do it now. Also ask about Pre-ETS (Pre-Employment Transition Services). We\'ll remind you to follow up in 60 days.', free: false, triggersFollowUp: true },
 ];
 
 const TOPICS = [
@@ -34,11 +35,16 @@ export default function Stage1StartConversation() {
     AsyncStorage.getItem(CHECKLIST_KEY).then((raw) => { if (raw) setChecked(JSON.parse(raw)); });
   }, []);
 
-  const toggleItem = async (id: string, free: boolean) => {
+  const toggleItem = async (id: string, free: boolean, triggersFollowUp?: boolean) => {
     if (!free && !isPremium) { router.push('/paywall' as any); return; }
-    const updated = { ...checked, [id]: !checked[id] };
+    const nowChecked = !checked[id];
+    const updated = { ...checked, [id]: nowChecked };
     setChecked(updated);
     await AsyncStorage.setItem(CHECKLIST_KEY, JSON.stringify(updated));
+    if (triggersFollowUp && isPremium) {
+      if (nowChecked) scheduleStage1FollowUp().catch(() => {});
+      else cancelStage1FollowUp().catch(() => {});
+    }
   };
 
   const completedCount = CHECKLIST_ITEMS.filter((i) => checked[i.id]).length;
@@ -75,7 +81,7 @@ export default function Stage1StartConversation() {
           const isChecked = !!checked[item.id];
           const locked = !item.free && !isPremium;
           return (
-            <TouchableOpacity key={item.id} style={[styles.checkItem, isChecked && styles.checkItemDone]} onPress={() => toggleItem(item.id, item.free)} activeOpacity={0.8}>
+            <TouchableOpacity key={item.id} style={[styles.checkItem, isChecked && styles.checkItemDone]} onPress={() => toggleItem(item.id, item.free, (item as any).triggersFollowUp)} activeOpacity={0.8}>
               <View style={[styles.checkbox, isChecked && styles.checkboxDone]}>
                 {isChecked && <Text style={styles.checkmark}>✓</Text>}
               </View>
@@ -86,6 +92,9 @@ export default function Stage1StartConversation() {
                   {locked && <Text style={styles.lockIcon}>🔒</Text>}
                 </View>
                 <Text style={styles.checkDesc}>{item.desc}</Text>
+                {(item as any).triggersFollowUp && isChecked && isPremium && (
+                  <View style={notifBadgeStyle}><Text style={notifBadgeTextStyle}>🔔 60-day follow-up reminder set</Text></View>
+                )}
               </View>
             </TouchableOpacity>
           );
@@ -114,6 +123,8 @@ export default function Stage1StartConversation() {
 }
 
 const ACCENT = '#5B9BD5';
+const notifBadgeStyle = { marginTop: 6, backgroundColor: '#E8F5E9', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3, alignSelf: 'flex-start' as const };
+const notifBadgeTextStyle = { fontSize: 11, color: '#2E7D32', fontWeight: '600' as const };
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.md, paddingBottom: SPACING.sm, backgroundColor: COLORS.bg, borderBottomWidth: 1, borderBottomColor: COLORS.border },

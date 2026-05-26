@@ -5,13 +5,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, SPACING, FONT_SIZES, RADIUS } from '../../lib/theme';
 import { useIsPremium } from '../../hooks/useIsPremium';
+import { scheduleStage5FollowUp, cancelStage5FollowUp } from '../../lib/transitionNotification';
 
 const CHECKLIST_KEY = 'ap_transition_stage5_checklist';
 
 const CHECKLIST_ITEMS = [
   { id: 'housing_plan', emoji: '🏠', title: 'Create a housing plan', desc: 'Explore options: family home, supported living, group home, host home, or independent living. Each has different funding sources.', free: true },
   { id: 'employment_pathway', emoji: '💼', title: 'Establish an employment pathway', desc: 'Supported employment, competitive integrated employment, self-employment, or volunteer work — find what fits your child.', free: true },
-  { id: 'special_needs_trust', emoji: '📜', title: 'Set up a Special Needs Trust', desc: 'A Special Needs Trust protects assets while preserving SSI and Medicaid eligibility. Consult a disability attorney.', free: true },
+  { id: 'special_needs_trust', emoji: '📜', title: 'Set up a Special Needs Trust', desc: 'A Special Needs Trust protects assets while preserving SSI and Medicaid eligibility. Consult a disability attorney. We\'ll remind you to review it in 6 months.', free: true, triggersFollowUp: true },
   { id: 'letter_of_intent', emoji: '📝', title: 'Complete your Letter of Intent', desc: 'Document your child\'s history, preferences, routines, medical needs, and your wishes for their future care.', free: true },
   { id: 'community_connections', emoji: '🤝', title: 'Build community connections', desc: 'Social isolation is a major risk for autistic adults. Seek out autism-friendly social groups, clubs, and activities.', free: false },
   { id: 'annual_review', emoji: '🔄', title: 'Schedule annual service reviews', desc: 'Review SSI, Medicaid, waiver services, and employment supports annually. Report changes promptly to avoid gaps.', free: false },
@@ -43,11 +44,16 @@ export default function Stage5AdultLife() {
     AsyncStorage.getItem(CHECKLIST_KEY).then((raw) => { if (raw) setChecked(JSON.parse(raw)); });
   }, []);
 
-  const toggleItem = async (id: string, free: boolean) => {
+  const toggleItem = async (id: string, free: boolean, triggersFollowUp?: boolean) => {
     if (!free && !isPremium) { router.push('/paywall' as any); return; }
-    const updated = { ...checked, [id]: !checked[id] };
+    const nowChecked = !checked[id];
+    const updated = { ...checked, [id]: nowChecked };
     setChecked(updated);
     await AsyncStorage.setItem(CHECKLIST_KEY, JSON.stringify(updated));
+    if (triggersFollowUp && isPremium) {
+      if (nowChecked) scheduleStage5FollowUp().catch(() => {});
+      else cancelStage5FollowUp().catch(() => {});
+    }
   };
 
   const completedCount = CHECKLIST_ITEMS.filter((i) => checked[i.id]).length;
@@ -84,7 +90,7 @@ export default function Stage5AdultLife() {
           const isChecked = !!checked[item.id];
           const locked = !item.free && !isPremium;
           return (
-            <TouchableOpacity key={item.id} style={[styles.checkItem, isChecked && styles.checkItemDone]} onPress={() => toggleItem(item.id, item.free)} activeOpacity={0.8}>
+            <TouchableOpacity key={item.id} style={[styles.checkItem, isChecked && styles.checkItemDone]} onPress={() => toggleItem(item.id, item.free, (item as any).triggersFollowUp)} activeOpacity={0.8}>
               <View style={[styles.checkbox, isChecked && styles.checkboxDone]}>
                 {isChecked && <Text style={styles.checkmark}>✓</Text>}
               </View>
@@ -95,6 +101,9 @@ export default function Stage5AdultLife() {
                   {locked && <Text style={styles.lockIcon}>🔒</Text>}
                 </View>
                 <Text style={styles.checkDesc}>{item.desc}</Text>
+                {(item as any).triggersFollowUp && isChecked && isPremium && (
+                  <View style={notifBadgeStyle}><Text style={notifBadgeTextStyle}>🔔 6-month trust review reminder set</Text></View>
+                )}
               </View>
             </TouchableOpacity>
           );
@@ -135,6 +144,8 @@ export default function Stage5AdultLife() {
 }
 
 const ACCENT = '#059669';
+const notifBadgeStyle = { marginTop: 6, backgroundColor: '#E8F5E9', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3, alignSelf: 'flex-start' as const };
+const notifBadgeTextStyle = { fontSize: 11, color: '#2E7D32', fontWeight: '600' as const };
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.md, paddingBottom: SPACING.sm, backgroundColor: COLORS.bg, borderBottomWidth: 1, borderBottomColor: COLORS.border },
