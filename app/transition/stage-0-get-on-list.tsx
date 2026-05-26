@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet, Linking, Alert,
+  View, Text, ScrollView, TouchableOpacity, StyleSheet, Linking,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, SPACING, FONT_SIZES, RADIUS } from '../../lib/theme';
 import { useIsPremium } from '../../hooks/useIsPremium';
+import {
+  scheduleWaiverFollowUpReminder,
+  cancelWaiverFollowUpReminder,
+} from '../../lib/transitionNotification';
 
 const CHECKLIST_KEY = 'ap_transition_stage0_checklist';
 
@@ -21,16 +25,18 @@ const CHECKLIST_ITEMS = [
   {
     id: 'find_waiver',
     emoji: '🗺️',
-    title: 'Find your state\'s DD/ID waiver program',
-    desc: 'Every state has a different program name and application process. Tap "Check Your State" below.',
+    title: "Find your state's DD/ID waiver program",
+    desc: "Every state has a different program name and application process. Tap \"Find Waivers in Your State\" below.",
     free: true,
   },
   {
     id: 'apply_waiver',
     emoji: '📝',
     title: 'Submit the waiver application NOW',
-    desc: 'Don\'t wait until your child is older. In CO, CA, TX and many other states, the waitlist is 10+ years.',
+    desc: "Don't wait until your child is older. In CO, CA, TX and many other states, the waitlist is 10+ years. Checking this will remind you to follow up in 3 months.",
     free: true,
+    // Checking this item schedules a 90-day follow-up push notification
+    triggersFollowUp: true,
   },
   {
     id: 'open_able',
@@ -43,14 +49,14 @@ const CHECKLIST_ITEMS = [
     id: 'build_paper_trail',
     emoji: '🗂️',
     title: 'Start building the paper trail',
-    desc: 'Collect evaluations, IEPs, medical records, and therapy notes. You\'ll need them for every application.',
+    desc: "Collect evaluations, IEPs, medical records, and therapy notes. You'll need them for every application.",
     free: true,
   },
   {
     id: 'set_reminder',
     emoji: '🔔',
     title: 'Set annual check-in reminders',
-    desc: 'Call your state\'s DD agency every year to confirm your child is still on the waitlist.',
+    desc: "Call your state's DD agency every year to confirm your child is still on the waitlist.",
     free: false,
   },
 ];
@@ -69,14 +75,26 @@ export default function Stage0GetOnList() {
     });
   }, []);
 
-  const toggleItem = async (id: string, free: boolean) => {
+  const toggleItem = async (id: string, free: boolean, triggersFollowUp?: boolean) => {
     if (!free && !isPremium) {
       router.push('/paywall' as any);
       return;
     }
-    const updated = { ...checked, [id]: !checked[id] };
+    const nowChecked = !checked[id];
+    const updated = { ...checked, [id]: nowChecked };
     setChecked(updated);
     await AsyncStorage.setItem(CHECKLIST_KEY, JSON.stringify(updated));
+
+    // Wire the waiver follow-up notification to the "apply_waiver" item
+    if (triggersFollowUp) {
+      if (nowChecked) {
+        // Family just marked "submitted" — schedule a 90-day follow-up reminder
+        scheduleWaiverFollowUpReminder().catch(() => {});
+      } else {
+        // Family un-checked it — cancel the pending reminder
+        cancelWaiverFollowUpReminder().catch(() => {});
+      }
+    }
   };
 
   const completedCount = CHECKLIST_ITEMS.filter((i) => checked[i.id]).length;
@@ -133,7 +151,7 @@ export default function Stage0GetOnList() {
             <TouchableOpacity
               key={item.id}
               style={[styles.checkItem, isChecked && styles.checkItemDone]}
-              onPress={() => toggleItem(item.id, item.free)}
+              onPress={() => toggleItem(item.id, item.free, (item as any).triggersFollowUp)}
               activeOpacity={0.8}
             >
               <View style={[styles.checkbox, isChecked && styles.checkboxDone]}>
@@ -146,6 +164,12 @@ export default function Stage0GetOnList() {
                   {locked && <Text style={styles.lockIcon}>🔒</Text>}
                 </View>
                 <Text style={styles.checkDesc}>{item.desc}</Text>
+                {/* Notification badge shown when this item is checked */}
+                {(item as any).triggersFollowUp && isChecked && (
+                  <View style={styles.notifBadge}>
+                    <Text style={styles.notifBadgeText}>🔔 3-month follow-up reminder set</Text>
+                  </View>
+                )}
               </View>
             </TouchableOpacity>
           );
@@ -267,6 +291,15 @@ const styles = StyleSheet.create({
   checkTitleDone: { color: COLORS.textLight, textDecorationLine: 'line-through' },
   lockIcon: { fontSize: 14 },
   checkDesc: { fontSize: FONT_SIZES.xs, color: COLORS.textLight, lineHeight: 17 },
+  notifBadge: {
+    marginTop: 6,
+    backgroundColor: '#E8F5E9',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    alignSelf: 'flex-start',
+  },
+  notifBadgeText: { fontSize: 11, color: '#2E7D32', fontWeight: '600' },
   stateBtn: {
     backgroundColor: COLORS.purple,
     borderRadius: RADIUS.lg,

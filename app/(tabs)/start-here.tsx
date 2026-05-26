@@ -5,7 +5,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { COLORS, SPACING, FONT_SIZES, RADIUS } from '../../lib/theme';
 import { addChild, loadChildren, setActiveChildId, getActiveChildId, updateChild } from '../../services/childManager';
-import { scheduleTransitionWaiverReminder } from '../../lib/transitionNotification';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const styles = StyleSheet.create({
@@ -301,9 +300,6 @@ export default function StartHereScreen() {
       const profile = { childName, dob, state, diagnosis, diagnosisLevel, concerns: selectedConcerns };
       await AsyncStorage.setItem('profile', JSON.stringify(profile));
       await AsyncStorage.setItem('ap_onboarding_complete', 'true');
-      // Schedule 3-month waiver reminder notification
-      scheduleTransitionWaiverReminder().catch(() => {});
-
       // Upsert into childManager: update existing active child or create first child
       const existingId = await getActiveChildId();
       const children = await loadChildren();
