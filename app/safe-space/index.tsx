@@ -22,6 +22,8 @@ import { useChildChanged } from '../../hooks/useChildChanged';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const STORE_KEY = 'ap_journal_entries';
+const API_BASE = 'https://inu3nb5lrfvftfyiwprftqshpy0zcegu.lambda-url.us-east-2.on.aws';
+const TOKEN_KEY = 'authToken';
 
 // ── Mood metadata ─────────────────────────────────────────────────────────────
 const MOODS = [
@@ -55,7 +57,7 @@ interface JournalEntry {
   updatedAt: string;
 }
 
-type View = 'list' | 'editor' | 'read';
+type ScreenView = 'list' | 'editor' | 'read';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function fmtDate(iso: string): string {
@@ -87,13 +89,16 @@ export default function SafeSpaceScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  const [view, setView]             = useState<View>('list');
+  const [view, setView]             = useState<ScreenView>('list');
   const [entries, setEntries]       = useState<JournalEntry[]>([]);
   const [currentId, setCurrentId]   = useState<string | null>(null);
   const [title, setTitle]           = useState('');
   const [body, setBody]             = useState('');
   const [mood, setMood]             = useState<string | null>(null);
   const [toast, setToast]           = useState('');
+  const [shareEntry, setShareEntry]  = useState<JournalEntry | null>(null);
+  const [shareAnon, setShareAnon]    = useState(false);
+  const [sharing, setSharing]        = useState(false);
   const toastTimer = useRef<any>(null);
 
   useFocusEffect(useCallback(() => {
@@ -218,6 +223,34 @@ export default function SafeSpaceScreen() {
         },
       ]
     );
+  };
+
+  // ── Share to community ─────────────────────────────────────────────────────
+  const shareToForum = async (entry: JournalEntry, anonymous: boolean) => {
+    let token: string | null = null;
+    try { token = await AsyncStorage.getItem(TOKEN_KEY); } catch {}
+    if (!token) {
+      Alert.alert('Sign in required', 'Please sign in to share with the community.');
+      return;
+    }
+    setSharing(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/forum/posts`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ title: entry.title || 'Untitled', body: entry.body, anonymous }),
+      });
+      if (res.ok) {
+        showToast(anonymous ? 'Shared anonymously 🌸' : 'Shared with the community 🌸');
+        setShareEntry(null);
+      } else {
+        const err = await res.json();
+        showToast(err.error || 'Could not share. Please try again.');
+      }
+    } catch {
+      showToast('Network error. Please try again.');
+    }
+    setSharing(false);
   };
 
   // ── Use prompt ─────────────────────────────────────────────────────────────
@@ -443,15 +476,34 @@ export default function SafeSpaceScreen() {
 
           <Text style={styles.readingBody}>{entry.body}</Text>
 
-          {/* Share section (coming soon) */}
+          {/* Share to community */}
           <View style={styles.shareSection}>
-            <View style={styles.shareSectionHeader}>
-              <Text style={styles.shareSectionTitle}>Share this entry</Text>
-              <View style={styles.comingSoonBadge}>
-                <Text style={styles.comingSoonText}>In Development</Text>
-              </View>
+            <Text style={styles.shareSectionTitle}>Share with Community</Text>
+            <Text style={styles.shareSectionSub}>
+              Share this entry with other AP parents. You can post as yourself or anonymously.
+            </Text>
+            <View style={styles.shareButtons}>
+              <TouchableOpacity
+                style={styles.shareBtn}
+                onPress={() => shareToForum(entry, false)}
+                disabled={sharing}
+              >
+                <Text style={styles.shareBtnText}>👤 Share as me</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.shareBtn, styles.shareBtnAnon]}
+                onPress={() => shareToForum(entry, true)}
+                disabled={sharing}
+              >
+                <Text style={[styles.shareBtnText, { color: COLORS.purple }]}>🙈 Share anonymously</Text>
+              </TouchableOpacity>
             </View>
-            <Text style={styles.shareSectionSub}>Soon you'll be able to share entries with trusted family members or caregivers.</Text>
+            <TouchableOpacity
+              style={styles.viewCommunityBtn}
+              onPress={() => router.push('/safe-space/community')}
+            >
+              <Text style={styles.viewCommunityBtnText}>🌸 View Community Feed →</Text>
+            </TouchableOpacity>
           </View>
 
           {/* Entry actions */}
@@ -460,7 +512,7 @@ export default function SafeSpaceScreen() {
               <Text style={styles.entryActionBtnText}>Edit</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[styles.entryActionBtn, styles.entryActionBtnDanger]} onPress={() => deleteEntry(entry.id)}>
-              <Text style={[styles.entryActionBtnText, { color: COLORS.error }]}>Delete</Text>
+              <Text style={[styles.entryActionBtnText, { color: COLORS.errorText }]}>Delete</Text>
             </TouchableOpacity>
           </View>
 
@@ -709,7 +761,20 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.pill,
   },
   comingSoonText: { fontSize: 10, fontWeight: '700', color: COLORS.white },
-  shareSectionSub: { fontSize: FONT_SIZES.xs, color: COLORS.textMid, lineHeight: 18 },
+  shareSectionSub: { fontSize: FONT_SIZES.xs, color: COLORS.textMid, lineHeight: 18, marginBottom: SPACING.sm },
+  shareButtons: { flexDirection: 'row', gap: SPACING.sm, marginBottom: SPACING.sm },
+  shareBtn: {
+    flex: 1, paddingVertical: SPACING.sm, borderRadius: RADIUS.lg,
+    backgroundColor: COLORS.purple, alignItems: 'center',
+  },
+  shareBtnAnon: { backgroundColor: '#f5f0ff', borderWidth: 1, borderColor: COLORS.purple },
+  shareBtnText: { fontSize: FONT_SIZES.xs, fontWeight: '700', color: COLORS.white },
+  viewCommunityBtn: {
+    paddingVertical: SPACING.sm, borderRadius: RADIUS.lg,
+    borderWidth: 1, borderColor: COLORS.purple,
+    alignItems: 'center',
+  },
+  viewCommunityBtnText: { fontSize: FONT_SIZES.xs, fontWeight: '600', color: COLORS.purple },
   // Entry actions
   entryActions: { flexDirection: 'row', gap: SPACING.md, marginBottom: SPACING.lg },
   entryActionBtn: {
