@@ -114,7 +114,9 @@ export default function StateDetailScreen() {
             <Text style={styles.backText}>← Back</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>State Not Found</Text>
-          <View style={{ width: 80 }} />
+          <TouchableOpacity onPress={() => router.push('/(tabs)/dashboard')} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
+          <Text style={styles.dashText}>🏠 Home</Text>
+        </TouchableOpacity>
         </View>
         <View style={styles.emptyState}>
           <Text style={styles.emptyText}>State data not available for "{stateAbbr}".</Text>

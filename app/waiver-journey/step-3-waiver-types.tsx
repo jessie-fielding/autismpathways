@@ -40,7 +40,7 @@ const styles = StyleSheet.create({
   },
   backButton: { fontSize: 20, color: COLORS.purple, width: 44 },
   title: { fontSize: 17, fontWeight: '700', color: COLORS.text, flex: 1, textAlign: 'center' },
-  headerSpacer: { width: 44 },
+  dashText: { fontSize: 11, color: 'rgba(255,255,255,0.85)', fontWeight: '600', textAlign: 'right' },
   content: { flex: 1, paddingHorizontal: SPACING.lg, paddingVertical: SPACING.lg, backgroundColor: COLORS.white },
   heading: { fontSize: FONT_SIZES.lg, fontWeight: '800', color: COLORS.text, marginBottom: SPACING.lg },
   text: { fontSize: FONT_SIZES.sm, color: COLORS.textMid, lineHeight: 20, marginBottom: SPACING.lg },
@@ -100,7 +100,9 @@ export default function Step3WaiverTypes() {
           <Text style={styles.backButton}>←</Text>
         </TouchableOpacity>
         <Text style={styles.title}>Waiver Journey</Text>
-        <View style={styles.headerSpacer} />
+        <TouchableOpacity onPress={() => router.push('/(tabs)/dashboard')} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
+          <Text style={styles.dashText}>🏠 Home</Text>
+        </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.content}>

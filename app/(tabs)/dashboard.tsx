@@ -582,6 +582,63 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.75)',
     lineHeight: 16,
   },
+  // TRANSITION HERO CARD
+  transitionHeroCard: {
+    backgroundColor: '#1a3a5c',
+    borderRadius: 16,
+    padding: SPACING.lg,
+    marginBottom: SPACING.md,
+  },
+  transitionHeroTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: SPACING.sm,
+  },
+  transitionHeroBadge: {
+    backgroundColor: 'rgba(75,192,200,0.25)',
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+  },
+  transitionHeroBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#4BC0C8',
+    letterSpacing: 0.8,
+  },
+  transitionHeroArrow: {
+    fontSize: 20,
+    color: 'rgba(255,255,255,0.6)',
+  },
+  transitionHeroEmoji: {
+    fontSize: 32,
+    marginBottom: SPACING.xs,
+  },
+  transitionHeroTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#ffffff',
+    marginBottom: 4,
+  },
+  transitionHeroSub: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.7)',
+    lineHeight: 17,
+    marginBottom: SPACING.md,
+  },
+  transitionStageRow: {
+    flexDirection: 'row',
+    gap: SPACING.sm,
+  },
+  transitionStageDot: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -840,6 +897,30 @@ export default function DashboardScreen() {
               </TouchableOpacity>
             ))}
           </View>
+
+          {/* TRANSITION PATHWAY HERO CARD */}
+          <TouchableOpacity
+            style={styles.transitionHeroCard}
+            onPress={() => router.push('/transition')}
+            activeOpacity={0.85}
+          >
+            <View style={styles.transitionHeroTop}>
+              <View style={styles.transitionHeroBadge}>
+                <Text style={styles.transitionHeroBadgeText}>{t('PATHWAY', 'CAMINO')}</Text>
+              </View>
+              <Text style={styles.transitionHeroArrow}>›</Text>
+            </View>
+            <Text style={styles.transitionHeroEmoji}>🗺️</Text>
+            <Text style={styles.transitionHeroTitle}>{t('Transition to Adult Life', 'Transición a la Vida Adulta')}</Text>
+            <Text style={styles.transitionHeroSub}>{t('6 stages from under 13 to age 22+ — waitlists, IEP rights, SSI, housing & more.', '6 etapas desde menos de 13 hasta los 22+ años.')}</Text>
+            <View style={styles.transitionStageRow}>
+              {['🌱', '💬', '📋', '🎓', '🌉', '🏡'].map((emoji, i) => (
+                <View key={i} style={styles.transitionStageDot}>
+                  <Text style={{ fontSize: 14 }}>{emoji}</Text>
+                </View>
+              ))}
+            </View>
+          </TouchableOpacity>
 
           {/* PARENTING PATHWAYS HERO CARD */}
           <TouchableOpacity

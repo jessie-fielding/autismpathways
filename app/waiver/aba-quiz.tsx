@@ -169,7 +169,9 @@ export default function ABAQuizScreen() {
             <Text style={styles.backText}>← Back</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>ABA Quiz</Text>
-          <View style={{ width: 60 }} />
+          <TouchableOpacity onPress={() => router.push('/(tabs)/dashboard')} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
+          <Text style={styles.dashText}>🏠 Home</Text>
+        </TouchableOpacity>
         </View>
         <ScrollView contentContainerStyle={styles.scroll}>
           <View style={[styles.resultCard, { backgroundColor: res.bg, borderColor: res.color + '44' }]}>

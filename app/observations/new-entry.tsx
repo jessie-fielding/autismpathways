@@ -140,7 +140,9 @@ export default function NewEntryScreen() {
         <Text style={styles.headerTitle}>
           Autism <Text style={styles.headerPurple}>Pathways</Text>
         </Text>
-        <View style={{ width: 60 }} />
+        <TouchableOpacity onPress={() => router.push('/(tabs)/dashboard')} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
+          <Text style={styles.dashText}>🏠 Home</Text>
+        </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">

@@ -146,7 +146,9 @@ export default function CommunityFeedScreen() {
           <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Community</Text>
-        <View style={{ width: 60 }} />
+        <TouchableOpacity onPress={() => router.push('/(tabs)/dashboard')} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
+          <Text style={styles.dashText}>🏠 Home</Text>
+        </TouchableOpacity>
       </View>
       <View style={styles.rainbow} />
 

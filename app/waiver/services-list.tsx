@@ -107,7 +107,10 @@ export default function WaiverServicesListScreen() {
         <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
           <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Waiver Services</Text>
+        <View style={{ alignItems: "center" }}>
+          <Text style={styles.headerTitle}>Waiver Services</Text>
+          <TouchableOpacity onPress={() => router.push("/(tabs)/dashboard")}><Text style={{ fontSize: 10, color: "rgba(255,255,255,0.7)", marginTop: 1 }}>🏠 Dashboard</Text></TouchableOpacity>
+        </View>
         {selectedServices.length > 0 && (
           <View style={styles.countBadge}>
             <Text style={styles.countBadgeText}>{selectedServices.length}</Text>

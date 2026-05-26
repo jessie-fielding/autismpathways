@@ -88,7 +88,10 @@ export default function BowelRetrainingScreen() {
         <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
           <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Bowel Retraining</Text>
+        <View style={{ alignItems: "center" }}>
+          <Text style={styles.headerTitle}>Bowel Retraining</Text>
+          <TouchableOpacity onPress={() => router.push("/(tabs)/dashboard")}><Text style={{ fontSize: 10, color: "rgba(255,255,255,0.7)", marginTop: 1 }}>🏠 Dashboard</Text></TouchableOpacity>
+        </View>
         <TouchableOpacity onPress={handleShare} style={styles.shareBtn}>
           <Text style={styles.shareBtnText}>Share</Text>
         </TouchableOpacity>

@@ -4,6 +4,7 @@ import { VideoView, useVideoPlayer } from 'expo-video';
 import React from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '../lib/theme';
+import { useLanguage } from '../lib/LanguageContext';
 
 const { width, height } = Dimensions.get('window');
 
@@ -16,6 +17,7 @@ const FEATURES = [
 
 export default function Index() {
   const router = useRouter();
+  const { language, setLanguage } = useLanguage();
   const player = useVideoPlayer(require('../assets/family-walking.mp4'), (p) => {
     p.loop = true;
     p.muted = true;
@@ -115,6 +117,25 @@ export default function Index() {
             </Text>
           </View>
         </ScrollView>
+
+        {/* ── Language switcher ─────────────────────────────── */}
+        <View style={styles.langSwitcher}>
+          <TouchableOpacity
+            style={[styles.langBtn, language === 'en' && styles.langBtnActive]}
+            onPress={() => setLanguage('en')}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.langBtnText, language === 'en' && styles.langBtnTextActive]}>EN</Text>
+          </TouchableOpacity>
+          <View style={styles.langDivider} />
+          <TouchableOpacity
+            style={[styles.langBtn, language === 'es' && styles.langBtnActive]}
+            onPress={() => setLanguage('es')}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.langBtnText, language === 'es' && styles.langBtnTextActive]}>ES</Text>
+          </TouchableOpacity>
+        </View>
 
         {/* Rainbow bar at very bottom */}
         <LinearGradient
@@ -266,6 +287,42 @@ const styles = StyleSheet.create({
     color: COLORS.textLight,
     lineHeight: 20,
     textAlign: 'center',
+  },
+
+  // Language switcher
+  langSwitcher: {
+    position: 'absolute',
+    top: 52,
+    right: SPACING.lg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    overflow: 'hidden',
+    ...SHADOWS.sm,
+  },
+  langBtn: {
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.xs + 2,
+  },
+  langBtnActive: {
+    backgroundColor: COLORS.purple,
+  },
+  langBtnText: {
+    fontSize: FONT_SIZES.xs,
+    fontWeight: '700',
+    color: COLORS.textMid,
+    letterSpacing: 0.5,
+  },
+  langBtnTextActive: {
+    color: COLORS.white,
+  },
+  langDivider: {
+    width: 1,
+    height: 20,
+    backgroundColor: COLORS.border,
   },
 
   // Bottom rainbow bar

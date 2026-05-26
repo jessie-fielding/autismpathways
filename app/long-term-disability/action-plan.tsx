@@ -54,7 +54,9 @@ export default function ActionPlanScreen() {
             <Text style={styles.backText}>← Back</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Action Plan</Text>
-          <View style={{ width: 80 }} />
+          <TouchableOpacity onPress={() => router.push('/(tabs)/dashboard')} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
+          <Text style={styles.dashText}>🏠 Home</Text>
+        </TouchableOpacity>
         </View>
         <View style={styles.emptyState}>
           <Text style={styles.emptyText}>No state selected. Please go back and select a state.</Text>
