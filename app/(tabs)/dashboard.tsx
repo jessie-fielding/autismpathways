@@ -699,6 +699,7 @@ export default function DashboardScreen() {
     { icon: '📋', name: 'Waiver', route: '/waiver', progress: waiverProgress, total: WAIVER_TOTAL },
     { icon: '🏫', name: 'IEP', route: '/iep', progress: iepProgress, total: IEP_TOTAL },
     { icon: '🚽', name: 'Potty', route: '/potty', progress: pottyProgress, total: POTTY_TOTAL },
+    { icon: '🗺️', name: 'Transition', route: '/transition', progress: 0, total: 0 },
   ];
 
   const TOOL_TILES = [
