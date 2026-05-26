@@ -157,6 +157,18 @@ export default function WaiverNextStepsScreen() {
           <Text style={styles.nextBtnText}>What to Expect While Waiting →</Text>
         </TouchableOpacity>
 
+        {/* Waiver Utilization Hub */}
+        <TouchableOpacity
+          style={styles.utilizationBtn}
+          onPress={() => router.push('/waiver/utilization-hub')}
+        >
+          <Text style={styles.utilizationBtnEmoji}>🎯</Text>
+          <View style={styles.utilizationBtnText}>
+            <Text style={styles.utilizationBtnTitle}>Make the Most of Your Waiver</Text>
+            <Text style={styles.utilizationBtnSub}>Services list, ABA tool, caseworker email generator →</Text>
+          </View>
+        </TouchableOpacity>
+
         {/* Citations */}
         <View style={styles.citationsBox}>
           <Text style={styles.citationsLabel}>SOURCES</Text>
@@ -274,6 +286,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   nextBtnText: { color: COLORS.white, fontSize: FONT_SIZES.md, fontWeight: '700' },
+  utilizationBtn: {
+    margin: SPACING.md,
+    marginTop: SPACING.sm,
+    padding: SPACING.md,
+    backgroundColor: COLORS.white,
+    borderRadius: RADIUS.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.md,
+    borderWidth: 1.5,
+    borderColor: COLORS.lavenderAccent,
+    ...SHADOWS.sm,
+  },
+  utilizationBtnEmoji: { fontSize: 28 },
+  utilizationBtnText: { flex: 1 },
+  utilizationBtnTitle: { fontSize: FONT_SIZES.sm, fontWeight: '700', color: COLORS.purple, marginBottom: 2 },
+  utilizationBtnSub: { fontSize: FONT_SIZES.xs, color: COLORS.textLight },
   citationsBox: {
     marginHorizontal: SPACING.md,
     marginTop: SPACING.sm,

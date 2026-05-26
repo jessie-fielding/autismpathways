@@ -14,6 +14,11 @@ export default function WaiverLayout() {
       <Stack.Screen name="state-overview" />
       <Stack.Screen name="county-picker" />
       <Stack.Screen name="agency-card" />
+      <Stack.Screen name="utilization-hub" />
+      <Stack.Screen name="services-list" />
+      <Stack.Screen name="service-scheduler" />
+      <Stack.Screen name="aba-tool" />
+      <Stack.Screen name="aba-quiz" />
     </Stack>
   );
 }

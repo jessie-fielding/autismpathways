@@ -18,17 +18,30 @@ const CATEGORIES = [
     border: '#1565C0',
     triggers: [
       { id: 'toilet-flush', label: 'Toilet flushing sound' },
+      { id: 'auto-toilet', label: 'Automatic toilet activating unexpectedly' },
+      { id: 'hand-dryer', label: 'Hand dryer noise' },
       { id: 'echo', label: 'Echoey / reverberant acoustics' },
       { id: 'fan', label: 'Exhaust fan noise' },
-      { id: 'water-pipes', label: 'Water pipe sounds' },
+      { id: 'water-pipes', label: 'Water pipe / gurgling sounds' },
+      { id: 'multiple-sounds', label: 'Multiple bathroom sounds happening at once' },
       { id: 'other-sounds', label: 'Sounds from other rooms / hallway' },
     ],
     modifications: [
-      'Flush after leaving the bathroom (not while sitting)',
+      'Use noise-cancelling headphones during bathroom time',
+      'Use a white noise machine outside the door',
+      'Allow the child to leave before flushing',
+      'Play calming music or running water sounds to mask other noises',
+      'Use a sticky note to cover the sensor on automatic toilets',
+      'Bring paper towels or wipes instead of using hand dryers',
+      'Warn child before flushing — never surprise them',
+      'Practice flushing from a distance to reduce fear',
+      'Let child flush using foot or tissue if fearful of the handle',
+      'Use social stories or videos about public bathrooms to prepare',
+      'Visit bathrooms during quieter times (avoid peak hours)',
+      'Let child control flushing from a distance using a long object or string',
+      'Keep bathroom fan off if the sound is distressing',
       'Turn off exhaust fan during use',
       'Add a soft bath mat to reduce echo',
-      'Use white noise machine outside the door',
-      'Let child wear noise-canceling headphones during bathroom time',
     ],
   },
   {
@@ -64,10 +77,16 @@ const CATEGORIES = [
       { id: 'mold-mildew', label: 'Mold or mildew smell' },
     ],
     modifications: [
-      'Switch to unscented cleaning products',
+      'Switch to scent-free bathroom products and unscented cleaners',
       'Remove all air fresheners',
+      'Use ventilation fans or open the bathroom door/window',
+      'Use essential oils or a preferred wall plug-in instead of sprays',
+      'Wear a mask during bowel movements if odor is distressing',
+      'Use toilet spray before bowel movements (e.g., Poo-Pourri)',
+      'Flush during bowel movement if tolerated to reduce odor',
+      'Keep trash emptied frequently',
+      'Let child choose their preferred bathroom scent',
       'Use a small HEPA air purifier',
-      'Ensure good ventilation (fan or window)',
       'Clean more frequently with baking soda / vinegar',
     ],
   },
@@ -78,15 +97,26 @@ const CATEGORIES = [
     color: '#e8f5e9',
     border: '#2E7D32',
     triggers: [
-      { id: 'cold-seat', label: 'Cold toilet seat' },
+      { id: 'cold-seat', label: 'Cold or hard toilet seat' },
+      { id: 'wiping', label: 'Discomfort or distress with wiping' },
+      { id: 'urine-stool-skin', label: 'Feeling urine/stool on skin intensely' },
+      { id: 'splash', label: 'Fear of splash from bowel movements' },
+      { id: 'avoids-sitting', label: 'Avoids sitting fully on toilet' },
+      { id: 'excessive-wiping', label: 'Excessive wiping or refusal to wipe' },
       { id: 'toilet-paper', label: 'Toilet paper texture' },
       { id: 'wet-floor', label: 'Wet or cold floor' },
       { id: 'clothing-removal', label: 'Discomfort removing clothing' },
       { id: 'hand-washing', label: 'Hand washing sensation (water temp, soap)' },
     ],
     modifications: [
-      'Add a padded or heated toilet seat cover',
-      'Try different toilet paper brands (ultra-soft, unscented)',
+      'Use a padded or soft toilet seat',
+      'Warm the toilet seat before use',
+      'Try wipes instead of toilet paper',
+      'Experiment with different toilet paper options (ultra-soft, unscented)',
+      'Place toilet paper in the bowl before bowel movements to reduce splash',
+      'Wear loose, comfortable clothing for easier removal',
+      'Wearing gloves while wiping if fear of mess is a barrier',
+      'Use a bidet to eliminate toilet paper wiping entirely',
       'Add a bath mat with preferred texture',
       'Practice clothing removal in a low-pressure setting',
       'Adjust water temperature before child washes hands',
@@ -117,17 +147,51 @@ const CATEGORIES = [
     color: '#fce4ec',
     border: '#C62828',
     triggers: [
+      { id: 'bright-lights', label: 'Bright or harsh overhead lights' },
+      { id: 'flickering', label: 'Flickering fluorescent lights' },
+      { id: 'reflections', label: 'Distressing reflections in mirrors' },
+      { id: 'auto-lights', label: 'Distress with automatic motion-sensor lights' },
       { id: 'cluttered', label: 'Cluttered or visually busy space' },
-      { id: 'mirrors', label: 'Large mirrors (overwhelming reflection)' },
-      { id: 'patterns', label: 'Busy tile patterns or wallpaper' },
+      { id: 'fear-flush-visual', label: 'Fear of watching the flush' },
       { id: 'unfamiliar', label: 'Unfamiliar bathroom (school, public)' },
     ],
     modifications: [
-      'Declutter and simplify the visual space',
-      'Cover or remove large mirrors temporarily',
+      'Dim lighting or switch to warm LED bulbs',
+      'Use natural lighting when possible',
+      'Check for flickering lights using slo-mo video on your phone camera',
+      'Use sunglasses or a hat for fluorescent lights',
+      'Allow child to close the lid before flushing',
+      'Cover mirrors temporarily if reflections are distressing',
+      'Use night lights instead of overhead lights',
+      'Declutter and simplify the visual space — neutral/simple décor',
       'Add a preferred visual (calming poster, favorite character)',
       'Create a "bathroom kit" for school/public use (familiar items)',
       'Practice visiting unfamiliar bathrooms with low pressure',
+    ],
+  },
+  {
+    id: 'postural',
+    emoji: '🧘',
+    title: 'Postural & Vestibular',
+    color: '#e8eaf6',
+    border: '#283593',
+    triggers: [
+      { id: 'unsafe-sitting', label: 'Feels unsafe or unstable sitting on toilet' },
+      { id: 'fear-falling', label: 'Fear of falling in' },
+      { id: 'stands-instead', label: 'Stands instead of sitting on toilet' },
+      { id: 'fearful-posture', label: 'Fearful or rigid body posture on toilet' },
+      { id: 'holds-walls', label: 'Needs to hold onto walls or surfaces' },
+      { id: 'cant-relax', label: 'Difficulty relaxing enough to void' },
+    ],
+    modifications: [
+      'Use a foot stool — knees should be above hip level for proper posture',
+      'Use a toilet insert to reduce the opening size and increase security',
+      'Add side handles or grab bars for stability',
+      'Place a mirror in front of them so they can see where they are in space',
+      'Use an adaptive toilet seat for better fit and security',
+      'Try a smaller child-sized toilet if available',
+      'Practice blowing activities (bubbles, pinwheels) to help relax the pelvic floor',
+      'Allow child to sit backwards on the toilet if that feels more stable and safe',
     ],
   },
 ];
@@ -209,17 +273,24 @@ export default function SensoryAuditScreen() {
                     <View key={trigger.id} style={styles.triggerRow}>
                       <Text style={styles.triggerLabel}>{trigger.label}</Text>
                       <View style={styles.reactionBtns}>
-                        {(['yes', 'no', 'unsure'] as Reaction[]).map(r => (
+                        {(['yes', 'no', 'unsure'] as Reaction[]).map(r => {
+                          const isActive = reactions[trigger.id] === r;
+                          const activeStyle = isActive ? {
+                            borderColor: r === 'yes' ? '#e53e3e' : r === 'no' ? '#2e7d5e' : '#FF9800',
+                            backgroundColor: r === 'yes' ? '#fff5f5' : r === 'no' ? '#f0faf5' : '#fff8e1',
+                          } : {};
+                          return (
                           <TouchableOpacity
                             key={r}
-                            style={[styles.reactionBtn, reactions[trigger.id] === r && styles.reactionBtnActive(r)]}
+                            style={[styles.reactionBtn, activeStyle]}
                             onPress={() => setReaction(trigger.id, r)}
                           >
                             <Text style={[styles.reactionBtnText, reactions[trigger.id] === r && styles.reactionBtnTextActive]}>
                               {r === 'yes' ? '✓ Yes' : r === 'no' ? '✗ No' : '? Maybe'}
                             </Text>
                           </TouchableOpacity>
-                        ))}
+                          );
+                        })}
                       </View>
                     </View>
                   ))}
@@ -268,40 +339,36 @@ const styles = StyleSheet.create({
   },
   backText: { fontSize: FONT_SIZES.sm, color: COLORS.purple, fontWeight: '600' },
   headerTitle: { fontSize: FONT_SIZES.md, fontWeight: '700', color: COLORS.text },
-  shareBtn: { paddingHorizontal: SPACING.sm, paddingVertical: 4, borderRadius: RADIUS.full, borderWidth: 1, borderColor: COLORS.purple },
+  shareBtn: { paddingHorizontal: SPACING.sm, paddingVertical: 4, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: COLORS.purple },
   shareBtnText: { fontSize: FONT_SIZES.sm, color: COLORS.purple, fontWeight: '600' },
   scroll: { padding: SPACING.lg, paddingBottom: 48 },
   introCard: {
     backgroundColor: '#f8f4ff', borderRadius: RADIUS.lg, padding: SPACING.lg,
-    alignItems: 'center', marginBottom: SPACING.lg, ...SHADOWS.card,
+    alignItems: 'center', marginBottom: SPACING.lg, ...SHADOWS.sm,
   },
   introEmoji: { fontSize: 32, marginBottom: SPACING.sm },
   introTitle: { fontSize: FONT_SIZES.lg, fontWeight: '800', color: COLORS.purple, textAlign: 'center', marginBottom: SPACING.sm },
-  introBody: { fontSize: FONT_SIZES.sm, color: COLORS.textSecondary, textAlign: 'center', lineHeight: 20 },
-  catCard: { borderRadius: RADIUS.lg, overflow: 'hidden', marginBottom: SPACING.md, ...SHADOWS.card },
+  introBody: { fontSize: FONT_SIZES.sm, color: COLORS.textLight, textAlign: 'center', lineHeight: 20 },
+  catCard: { borderRadius: RADIUS.lg, overflow: 'hidden', marginBottom: SPACING.md, ...SHADOWS.sm },
   catHeader: {
     flexDirection: 'row', alignItems: 'center', padding: SPACING.md,
     borderBottomWidth: 2,
   },
   catEmoji: { fontSize: 20, marginRight: SPACING.sm },
   catTitle: { flex: 1, fontSize: FONT_SIZES.md, fontWeight: '700' },
-  countBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: RADIUS.full, marginRight: SPACING.sm },
+  countBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: RADIUS.pill, marginRight: SPACING.sm },
   countBadgeText: { color: '#fff', fontSize: 11, fontWeight: '700' },
-  chevron: { fontSize: 12, color: COLORS.textSecondary },
+  chevron: { fontSize: 12, color: COLORS.textLight },
   catBody: { backgroundColor: '#fff', padding: SPACING.md },
   triggerRow: { marginBottom: SPACING.md },
   triggerLabel: { fontSize: FONT_SIZES.sm, color: COLORS.text, marginBottom: SPACING.xs, lineHeight: 18 },
   reactionBtns: { flexDirection: 'row', gap: 6 },
   reactionBtn: {
-    paddingHorizontal: SPACING.sm, paddingVertical: 5, borderRadius: RADIUS.full,
+    paddingHorizontal: SPACING.sm, paddingVertical: 5, borderRadius: RADIUS.pill,
     borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: '#fff',
   },
-  reactionBtnActive: (r: Reaction) => ({
-    borderColor: r === 'yes' ? '#e53e3e' : r === 'no' ? '#2e7d5e' : '#FF9800',
-    backgroundColor: r === 'yes' ? '#fff5f5' : r === 'no' ? '#f0faf5' : '#fff8e1',
-  }),
-  reactionBtnText: { fontSize: 11, color: COLORS.textSecondary, fontWeight: '600' },
-  reactionBtnTextActive: { fontWeight: '700' },
+  reactionBtnText: { fontSize: 11, color: COLORS.textLight, fontWeight: '600' },
+  reactionBtnTextActive: { fontWeight: '700' as const },
   modBtn: {
     marginTop: SPACING.sm, padding: SPACING.sm, borderRadius: RADIUS.md,
     borderWidth: 1.5, alignItems: 'center',
@@ -314,9 +381,9 @@ const styles = StyleSheet.create({
   modTitle: { fontSize: FONT_SIZES.sm, fontWeight: '700', marginBottom: SPACING.sm },
   modItem: { fontSize: FONT_SIZES.sm, color: COLORS.text, lineHeight: 22, marginBottom: 2 },
   shareFullBtn: {
-    backgroundColor: '#fff', borderRadius: RADIUS.full, paddingVertical: 14,
+    backgroundColor: '#fff', borderRadius: RADIUS.pill, paddingVertical: 14,
     alignItems: 'center', marginBottom: SPACING.lg, borderWidth: 1.5, borderColor: COLORS.purple,
   },
   shareFullBtnText: { color: COLORS.purple, fontWeight: '700', fontSize: FONT_SIZES.md },
-  footer: { fontSize: FONT_SIZES.xs, color: COLORS.textSecondary, textAlign: 'center' },
+  footer: { fontSize: FONT_SIZES.xs, color: COLORS.textLight, textAlign: 'center' },
 });
