@@ -8,8 +8,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, SPACING, FONT_SIZES, RADIUS } from '../../lib/theme';
 import { useIsPremium } from '../../hooks/useIsPremium';
 import {
-  scheduleWaiverFollowUpReminder,
-  cancelWaiverFollowUpReminder,
+  scheduleAdultWaitlistNudge,
+  cancelAdultWaitlistNudge,
 } from '../../lib/transitionNotification';
 
 const CHECKLIST_KEY = 'ap_transition_stage0_checklist';
@@ -26,17 +26,15 @@ const CHECKLIST_ITEMS = [
     id: 'find_waiver',
     emoji: '🗺️',
     title: "Find your state's DD/ID waiver program",
-    desc: "Every state has a different program name and application process. Tap \"Find Waivers in Your State\" below.",
+    desc: 'Every state has a different program name and application process. Tap "Find Waivers in Your State" below.',
     free: true,
   },
   {
     id: 'apply_waiver',
     emoji: '📝',
     title: 'Submit the waiver application NOW',
-    desc: "Don't wait until your child is older. In CO, CA, TX and many other states, the waitlist is 10+ years. Checking this will remind you to follow up in 3 months.",
+    desc: "Don't wait until your child is older. In CO, CA, TX and many other states, the waitlist is 10+ years.",
     free: true,
-    // Checking this item schedules a 90-day follow-up push notification
-    triggersFollowUp: true,
   },
   {
     id: 'open_able',
@@ -51,6 +49,15 @@ const CHECKLIST_ITEMS = [
     title: 'Start building the paper trail',
     desc: "Collect evaluations, IEPs, medical records, and therapy notes. You'll need them for every application.",
     free: true,
+  },
+  {
+    id: 'waiver_approved',
+    emoji: '✅',
+    title: 'Waiver approved!',
+    desc: "Mark this when your current waiver is approved. We'll remind you in 3 months to apply for the adult DD waitlist while the momentum is there.",
+    free: false,
+    // PREMIUM: checking this schedules the adult waitlist nudge notification
+    triggersAdultNudge: true,
   },
   {
     id: 'set_reminder',
@@ -75,7 +82,8 @@ export default function Stage0GetOnList() {
     });
   }, []);
 
-  const toggleItem = async (id: string, free: boolean, triggersFollowUp?: boolean) => {
+  const toggleItem = async (id: string, free: boolean, triggersAdultNudge?: boolean) => {
+    // Non-free items require premium
     if (!free && !isPremium) {
       router.push('/paywall' as any);
       return;
@@ -85,14 +93,12 @@ export default function Stage0GetOnList() {
     setChecked(updated);
     await AsyncStorage.setItem(CHECKLIST_KEY, JSON.stringify(updated));
 
-    // Wire the waiver follow-up notification to the "apply_waiver" item
-    if (triggersFollowUp) {
+    // PREMIUM ONLY: wire the adult waitlist nudge to the "waiver_approved" item
+    if (triggersAdultNudge && isPremium) {
       if (nowChecked) {
-        // Family just marked "submitted" — schedule a 90-day follow-up reminder
-        scheduleWaiverFollowUpReminder().catch(() => {});
+        scheduleAdultWaitlistNudge().catch(() => {});
       } else {
-        // Family un-checked it — cancel the pending reminder
-        cancelWaiverFollowUpReminder().catch(() => {});
+        cancelAdultWaitlistNudge().catch(() => {});
       }
     }
   };
@@ -151,7 +157,7 @@ export default function Stage0GetOnList() {
             <TouchableOpacity
               key={item.id}
               style={[styles.checkItem, isChecked && styles.checkItemDone]}
-              onPress={() => toggleItem(item.id, item.free, (item as any).triggersFollowUp)}
+              onPress={() => toggleItem(item.id, item.free, (item as any).triggersAdultNudge)}
               activeOpacity={0.8}
             >
               <View style={[styles.checkbox, isChecked && styles.checkboxDone]}>
@@ -164,10 +170,10 @@ export default function Stage0GetOnList() {
                   {locked && <Text style={styles.lockIcon}>🔒</Text>}
                 </View>
                 <Text style={styles.checkDesc}>{item.desc}</Text>
-                {/* Notification badge shown when this item is checked */}
-                {(item as any).triggersFollowUp && isChecked && (
+                {/* Notification badge shown when the waiver-approved item is checked (premium) */}
+                {(item as any).triggersAdultNudge && isChecked && isPremium && (
                   <View style={styles.notifBadge}>
-                    <Text style={styles.notifBadgeText}>🔔 3-month follow-up reminder set</Text>
+                    <Text style={styles.notifBadgeText}>🔔 Adult waitlist reminder set for 3 months from now</Text>
                   </View>
                 )}
               </View>

@@ -1,26 +1,29 @@
 /**
- * Schedules a push notification 90 days after the family marks
- * "waiver application submitted" in the Stage 0 checklist.
+ * Schedules a push notification 90 days after the family marks their
+ * current waiver as "approved" in the Stage 0 checklist.
  *
- * The notification reminds them to follow up on the application status,
- * since most states have no automatic confirmation and families forget.
+ * The notification nudges them to apply for the adult DD/ID waiver waitlist
+ * now, while the momentum is there — since adult waitlists can be 10+ years.
+ *
+ * PREMIUM ONLY — callers must check isPremium before calling this.
  *
  * Safe to call multiple times — re-scheduling cancels the previous one
- * and sets a fresh 90-day window from the new submission date.
+ * and sets a fresh 90-day window.
  */
 import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const NOTIFICATION_ID_KEY = 'ap_waiver_followup_notification_id';
-const SUBMITTED_DATE_KEY = 'ap_waiver_submitted_date';
+const NOTIFICATION_ID_KEY = 'ap_adult_waitlist_nudge_id';
+const APPROVED_DATE_KEY = 'ap_waiver_approved_date';
 
 /**
- * Call this when the user checks off "Waiver application submitted" in Stage 0.
- * Cancels any previously scheduled follow-up and schedules a new one 90 days out.
+ * Call this (only for premium users) when the user checks
+ * "Waiver approved!" in Stage 0. Schedules a nudge 90 days out
+ * reminding them to get on the adult services waitlist.
  */
-export async function scheduleWaiverFollowUpReminder(): Promise<void> {
+export async function scheduleAdultWaitlistNudge(): Promise<void> {
   try {
-    // Cancel any existing follow-up notification
+    // Cancel any existing nudge first
     const existingId = await AsyncStorage.getItem(NOTIFICATION_ID_KEY);
     if (existingId) {
       await Notifications.cancelScheduledNotificationAsync(existingId).catch(() => {});
@@ -36,8 +39,8 @@ export async function scheduleWaiverFollowUpReminder(): Promise<void> {
 
     const notificationId = await Notifications.scheduleNotificationAsync({
       content: {
-        title: '🗺️ Time to Follow Up on Your Waiver Application',
-        body: "It's been about 3 months since you submitted your waiver application. Call your state's DD office to confirm it's on file and ask for your place on the waitlist.",
+        title: "🗺️ Time to Get on the Adult Waitlist",
+        body: "Your child's current waiver was approved a few months ago. Now is the time to apply for adult DD services — waitlists in many states are 10+ years. Tap to see your state's adult waiver info.",
         data: { route: '/transition/state-waivers' },
         sound: true,
       },
@@ -48,27 +51,25 @@ export async function scheduleWaiverFollowUpReminder(): Promise<void> {
     });
 
     await AsyncStorage.setItem(NOTIFICATION_ID_KEY, notificationId);
-    await AsyncStorage.setItem(SUBMITTED_DATE_KEY, new Date().toISOString());
+    await AsyncStorage.setItem(APPROVED_DATE_KEY, new Date().toISOString());
   } catch (e) {
-    // Silently fail — notification is helpful but not critical
-    console.warn('[TransitionNotification] Failed to schedule waiver follow-up:', e);
+    console.warn('[TransitionNotification] Failed to schedule adult waitlist nudge:', e);
   }
 }
 
 /**
- * Returns the date the family marked their waiver application as submitted,
+ * Returns the date the family marked their waiver as approved,
  * or null if they haven't done so yet.
  */
-export async function getWaiverSubmittedDate(): Promise<Date | null> {
-  const raw = await AsyncStorage.getItem(SUBMITTED_DATE_KEY);
+export async function getWaiverApprovedDate(): Promise<Date | null> {
+  const raw = await AsyncStorage.getItem(APPROVED_DATE_KEY);
   return raw ? new Date(raw) : null;
 }
 
 /**
- * Cancels the scheduled follow-up notification (e.g. if the user un-checks
- * the "submitted" item or marks the waiver as approved).
+ * Cancels the scheduled nudge (e.g. if the user un-checks "Waiver approved").
  */
-export async function cancelWaiverFollowUpReminder(): Promise<void> {
+export async function cancelAdultWaitlistNudge(): Promise<void> {
   try {
     const existingId = await AsyncStorage.getItem(NOTIFICATION_ID_KEY);
     if (existingId) {
@@ -76,6 +77,6 @@ export async function cancelWaiverFollowUpReminder(): Promise<void> {
       await AsyncStorage.removeItem(NOTIFICATION_ID_KEY);
     }
   } catch (e) {
-    console.warn('[TransitionNotification] Failed to cancel waiver follow-up:', e);
+    console.warn('[TransitionNotification] Failed to cancel adult waitlist nudge:', e);
   }
 }
