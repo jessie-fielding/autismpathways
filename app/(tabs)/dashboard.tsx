@@ -7,6 +7,7 @@ import { useAuth } from '../../services/useAuth';
 import { usePmipProviderStore } from '../../lib/pmip/pmipProviderStore';
 import { useIsPremium } from '../../hooks/useIsPremium';
 import { useLanguage } from '../../lib/LanguageContext';
+import { trackPathwayOpened, trackPaywallViewed, logScreenView } from '../../lib/analytics';
 
 // Exact colors from your web app
 const COLORS = {
@@ -845,7 +846,7 @@ export default function DashboardScreen() {
               const pct = p.total > 0 ? Math.round((p.progress / p.total) * 100) : 0;
               const done = pct >= 100;
               return (
-                <TouchableOpacity key={p.name} style={styles.pathwayTile} onPress={() => router.push(p.route as any)} activeOpacity={0.8}>
+                <TouchableOpacity key={p.name} style={styles.pathwayTile} onPress={() => { trackPathwayOpened(p.name.toLowerCase()); router.push(p.route as any); }} activeOpacity={0.8}>
                   {done && <Text style={styles.doneBadge}>✓</Text>}
                   <Text style={styles.ptIcon}>{p.icon}</Text>
                   <Text style={styles.ptName}>{p.name}</Text>
@@ -901,7 +902,7 @@ export default function DashboardScreen() {
           {/* TRANSITION PATHWAY HERO CARD */}
           <TouchableOpacity
             style={styles.transitionHeroCard}
-            onPress={() => router.push('/transition')}
+            onPress={() => { trackPathwayOpened('transition'); router.push('/transition'); }}
             activeOpacity={0.85}
           >
             <View style={styles.transitionHeroTop}>
@@ -963,7 +964,7 @@ export default function DashboardScreen() {
 
           {/* UPGRADE BANNER (non-premium only) */}
           {!isPremium && (
-            <TouchableOpacity style={styles.upgradeBanner} onPress={() => router.push('/paywall')} activeOpacity={0.9}>
+            <TouchableOpacity style={styles.upgradeBanner} onPress={() => { trackPaywallViewed('dashboard'); router.push('/paywall'); }} activeOpacity={0.9}>
               <View style={styles.upgradeLeft}>
                 <Text style={styles.upgradeTitle}>{t('Unlock Premium Access', 'Desbloquear Acceso Premium')}</Text>
                 <Text style={styles.upgradeSub}>{t('Appeal Tracker, unlimited contacts, all talking points scripts, and more.', 'Seguimiento de apelaciones, contactos ilimitados, todos los guiones y más.')}</Text>

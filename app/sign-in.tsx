@@ -28,6 +28,7 @@ import {
 } from '../services/secureCredentials';
 import { useBiometrics } from '../hooks/useBiometrics';
 import * as AppleAuthentication from 'expo-apple-authentication';
+import { trackSignIn } from '../lib/analytics';
 
 export default function SignInScreen() {
   const router    = useRouter();
@@ -142,6 +143,7 @@ export default function SignInScreen() {
       );
 
       const profile = await storage.getProfile();
+      trackSignIn('email');
       if (profile) {
         router.replace('/(tabs)/dashboard');
       } else {
@@ -164,6 +166,7 @@ export default function SignInScreen() {
     const result = await signInWithGoogle();
     if (result.success) {
       const profile = await storage.getProfile();
+      trackSignIn('google');
       router.replace(profile ? '/(tabs)/dashboard' : '/profile-setup');
     } else {
       setError(result.error || 'Google sign-in failed. Please try again.');
@@ -180,6 +183,7 @@ export default function SignInScreen() {
     const result = await signInWithApple();
     if (result.success) {
       const profile = await storage.getProfile();
+      trackSignIn('apple');
       router.replace(profile ? '/(tabs)/dashboard' : '/profile-setup');
     } else if (result.error) {
       // Empty string means user cancelled — don't show an error

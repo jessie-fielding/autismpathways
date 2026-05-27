@@ -5,6 +5,7 @@
  */
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { trackLanguageSwitched, setUserProperty } from './analytics';
 
 export type Language = 'en' | 'es';
 
@@ -36,6 +37,8 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   const setLanguage = async (lang: Language) => {
     setLanguageState(lang);
     await AsyncStorage.setItem(LANG_KEY, lang);
+    trackLanguageSwitched(lang);
+    setUserProperty('language', lang);
   };
 
   // Inline translation helper: t('English text', 'Texto en español')

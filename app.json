@@ -106,6 +106,8 @@
       "expo-video",
       "expo-apple-authentication",
       "react-native-iap",
+      "@react-native-firebase/app",
+      "@react-native-firebase/crashlytics",
       [
         "expo-notifications",
         {
