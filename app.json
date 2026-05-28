@@ -110,6 +110,7 @@
       "react-native-iap",
       "@react-native-firebase/app",
       "@react-native-firebase/crashlytics",
+      "./plugins/withModularHeaders",
       [
         "expo-notifications",
         {
