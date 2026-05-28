@@ -11,6 +11,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "app.autismpathways.app",
+      "googleServicesFile": "./GoogleService-Info.plist",
       "buildNumber": "54",
       "infoPlist": {
         "NSFaceIDUsageDescription": "Autism Pathways uses Face ID to sign you in quickly and securely.",
@@ -83,7 +84,8 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "versionCode": 6,
-      "package": "app.autismpathways.app"
+      "package": "app.autismpathways.app",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "output": "static",
