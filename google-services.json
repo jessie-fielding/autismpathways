@@ -7,6 +7,25 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:225502698771:android:883027ed2f81eb01a7cee6",
+        "android_client_info": {
+          "package_name": "app.autismpathways.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB3xyQTVjoq_4GET6nN7uZc-BXKqf5yhXc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:225502698771:android:d470f4b30f1e302da7cee6",
         "android_client_info": {
           "package_name": "com.autismpathways.app"
