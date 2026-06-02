@@ -763,6 +763,7 @@ export default function DashboardScreen() {
   ];
 
   const TOOL_TILES = [
+    { icon: '💬', name: t('Provider Translator', 'Traductor'), route: '/provider-translator' },
     { icon: '🆘', name: t('In-the-Moment', 'En el Momento'), route: '/parenting-pathways' },
     { icon: '📓', name: t('Observations', 'Observaciones'), route: '/observations' },
     { icon: '🩺', name: t('Provider Prep', 'Prep. Proveedor'), route: '/provider-prep' },

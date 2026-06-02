@@ -73,6 +73,19 @@ const SECTIONS: { label: string; tools: Tool[] }[] = [
     ],
   },
   {
+    label: 'AI TOOLS',
+    tools: [
+      {
+        icon: '💬',
+        title: 'Provider Translator',
+        description: 'Paste medical notes or provider quotes — we decode the jargon and explain what they actually meant.',
+        cta: 'Translate',
+        route: '/provider-translator',
+        accentColor: COLORS.lavenderAccent,
+      },
+    ],
+  },
+  {
     label: 'APPOINTMENT TOOLS',
     tools: [
       {
