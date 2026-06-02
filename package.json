@@ -15,7 +15,6 @@
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
     "@react-native-async-storage/async-storage": "2.2.0",
-    "@react-native-firebase/analytics": "^21.14.0",
     "@react-native-firebase/app": "^21.14.0",
     "@react-native-firebase/crashlytics": "^21.14.0",
     "@react-navigation/bottom-tabs": "^7.4.0",
@@ -49,6 +48,7 @@
     "expo-video": "~3.0.16",
     "expo-web-browser": "~15.0.11",
     "lottie-react-native": "7.3.6",
+    "mixpanel-react-native": "^3.3.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-native": "0.81.5",

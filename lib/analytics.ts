@@ -1,63 +1,99 @@
 /**
- * analytics.ts — Autism Pathways Firebase Analytics helper
+ * analytics.ts — Autism Pathways Mixpanel Analytics helper
+ *
+ * Replaces Firebase Analytics with Mixpanel for cleaner event dashboards.
  *
  * Usage:
- *   import { logEvent, logScreenView } from '../lib/analytics';
+ *   import { logEvent, logScreenView, identifyUser } from '../lib/analytics';
  *   logEvent('pathway_opened', { pathway: 'waiver' });
  *
- * All calls are no-ops in Expo Go (Firebase native module not available).
- * They activate automatically once the dev build / production build is used.
+ * All calls are safe to call in Expo Go — Mixpanel uses JS mode automatically
+ * when native modules are unavailable.
+ *
+ * Project: Autism Pathways
+ * Mixpanel Project Token: b2d115fd886e590ff58399184e38f918
  */
 
-let analytics: any = null;
+import { Mixpanel } from 'mixpanel-react-native';
 
-// Lazy-load Firebase Analytics — gracefully fails in Expo Go
-function getAnalytics() {
-  if (analytics) return analytics;
+const MIXPANEL_TOKEN = 'b2d115fd886e590ff58399184e38f918';
+
+// Singleton instance — initialized once, reused everywhere
+let _mixpanel: Mixpanel | null = null;
+
+function getMixpanel(): Mixpanel | null {
+  if (_mixpanel) return _mixpanel;
   try {
-    analytics = require('@react-native-firebase/analytics').default;
-  } catch (_) {
-    analytics = null;
+    // trackAutomaticEvents = false: we control all events manually
+    // useNative = false: JS mode works in Expo Go + Expo managed workflow
+    _mixpanel = new Mixpanel(MIXPANEL_TOKEN, false, false);
+    _mixpanel.init();
+
+    // Super properties sent with every event
+    _mixpanel.registerSuperProperties({
+      app: 'autism_pathways',
+      platform: 'mobile',
+    });
+  } catch (e) {
+    _mixpanel = null;
   }
-  return analytics;
+  return _mixpanel;
 }
 
-/** Log a custom event with optional params */
-export async function logEvent(
+/** Log a custom event with optional properties */
+export function logEvent(
   eventName: string,
   params?: Record<string, string | number | boolean>
-): Promise<void> {
+): void {
   try {
-    const fa = getAnalytics();
-    if (!fa) return;
-    await fa().logEvent(eventName, params);
+    const mp = getMixpanel();
+    if (!mp) return;
+    mp.track(eventName, params ?? {});
   } catch (_) {}
 }
 
-/** Log a screen view (call on every major screen mount) */
-export async function logScreenView(screenName: string): Promise<void> {
+/** Log a screen view — call on every major screen mount */
+export function logScreenView(screenName: string): void {
   try {
-    const fa = getAnalytics();
-    if (!fa) return;
-    await fa().logScreenView({ screen_name: screenName, screen_class: screenName });
+    const mp = getMixpanel();
+    if (!mp) return;
+    mp.track('screen_view', { screen_name: screenName });
   } catch (_) {}
 }
 
 /** Set a user property (e.g. language, premium status) */
-export async function setUserProperty(name: string, value: string): Promise<void> {
+export function setUserProperty(name: string, value: string): void {
   try {
-    const fa = getAnalytics();
-    if (!fa) return;
-    await fa().setUserProperty(name, value);
+    const mp = getMixpanel();
+    if (!mp) return;
+    mp.getPeople().set({ [name]: value });
   } catch (_) {}
 }
 
-/** Identify the user (call after login) */
-export async function identifyUser(userId: string): Promise<void> {
+/**
+ * Identify the user — call after login/signup with their user ID.
+ * This links all future events to this user in Mixpanel.
+ */
+export function identifyUser(userId: string, email?: string): void {
   try {
-    const fa = getAnalytics();
-    if (!fa) return;
-    await fa().setUserId(userId);
+    const mp = getMixpanel();
+    if (!mp) return;
+    mp.identify(userId);
+    if (email) {
+      mp.getPeople().set({ $email: email });
+    }
+  } catch (_) {}
+}
+
+/**
+ * Reset the Mixpanel identity — call on logout.
+ * Clears local storage and generates a new anonymous distinct_id.
+ */
+export function resetUser(): void {
+  try {
+    const mp = getMixpanel();
+    if (!mp) return;
+    mp.reset();
   } catch (_) {}
 }
 
@@ -135,6 +171,14 @@ export const trackChildProfileAdded = () =>
 export const trackSignIn = (method: 'apple' | 'email' | 'google') =>
   logEvent('sign_in', { method });
 
-/** User signs up (first open after install) */
+/** User signs up (first account creation) */
 export const trackSignUp = (method: 'apple' | 'email' | 'google') =>
-  logEvent('sign_up', { method });
+  logEvent('sign_up_completed', { sign_up_method: method, platform: 'mobile' });
+
+/** User opens Provider Translator */
+export const trackProviderTranslatorOpened = () =>
+  logEvent('provider_translator_opened');
+
+/** User runs a translation in Provider Translator */
+export const trackProviderTranslatorUsed = (mode: 'translate' | 'decode') =>
+  logEvent('provider_translator_used', { mode });
