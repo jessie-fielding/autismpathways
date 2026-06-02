@@ -36,6 +36,7 @@ import * as AuthSession from 'expo-auth-session';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { awsConfig } from '../aws-config';
 import { clearCredentials } from './secureCredentials';
+import { identifyUser, resetUser, trackSignIn } from '../lib/analytics';
 
 // ─── Cognito User Pool ────────────────────────────────────────────────────────
 
@@ -102,6 +103,7 @@ export function AuthProvider({ children }: any) {
         const email = await AsyncStorage.getItem(USER_EMAIL_KEY);
         setUserEmail(email);
         setIsSignedIn(true);
+        if (email) identifyUser(email, email);
         // Keep the stored token fresh
         await AsyncStorage.setItem(TOKEN_KEY, session.getIdToken().getJwtToken());
       } else {
@@ -111,6 +113,7 @@ export function AuthProvider({ children }: any) {
           const email = await AsyncStorage.getItem(USER_EMAIL_KEY);
           setUserEmail(email);
           setIsSignedIn(true);
+          if (email) identifyUser(email, email);
         }
       }
     } catch (e) {
@@ -142,6 +145,8 @@ export function AuthProvider({ children }: any) {
             await persistSession(session, email.toLowerCase().trim());
             setUserEmail(email.toLowerCase().trim());
             setIsSignedIn(true);
+            identifyUser(email.toLowerCase().trim(), email.toLowerCase().trim());
+            trackSignIn('email');
             resolve({ success: true });
           },
           onFailure: (err) => {
@@ -370,6 +375,8 @@ export function AuthProvider({ children }: any) {
 
       setUserEmail(email);
       setIsSignedIn(true);
+      identifyUser(email, email);
+      trackSignIn('google');
       return { success: true };
     } catch (e: any) {
       const msg = e.message || 'Google sign-in failed';
@@ -422,6 +429,8 @@ export function AuthProvider({ children }: any) {
       }
       setUserEmail(resolvedEmail);
       setIsSignedIn(true);
+      identifyUser(resolvedEmail, resolvedEmail);
+      trackSignIn('apple');
       return { success: true };
     } catch (e: any) {
       if (e.code === 'ERR_REQUEST_CANCELED') {
@@ -444,6 +453,7 @@ export function AuthProvider({ children }: any) {
       setIsSignedIn(false);
       setUserEmail(null);
       setError(null);
+      resetUser();
     } catch (e) {
       console.error('Sign out failed:', e);
     }
