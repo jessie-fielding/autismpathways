@@ -36,6 +36,7 @@ const VIDEO_SOURCES: Record<string, any> = {
   card3: require('../../assets/animations/onboarding/card3.mp4'),
   card4: require('../../assets/animations/onboarding/card4.mp4'),
   card5: require('../../assets/animations/onboarding/card5.mp4'),
+  card6: require('../../assets/animations/onboarding/card6.mp4'),
 };
 
 // ── Card definitions ──────────────────────────────────────────────────────────
@@ -91,8 +92,8 @@ const CARD_DEFS = [
     emoji: '🔍',
     headline: 'Find Providers Near You',
     body: 'Search 891+ curated ASD-specialized providers nearest to you by specialty (pediatricians, PTs, OTs, and more). Read caregiver reviews and add them to your services tracker.',
-    bg: ['#FFF3E0', '#F5F4FB'] as [string, string],
-    // lottie: require('../../assets/animations/onboarding/card6.json'),
+    bg: ['#FFF3E8', '#F5F4FB'] as [string, string],
+    video: 'card6',
     lottie: null,
   },
   {
