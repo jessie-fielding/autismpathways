@@ -40,14 +40,17 @@ const PRODUCT_ID_MONTHLY = 'app.autismpathways.premium.sub.monthly';
 const PRODUCT_IDS = [PRODUCT_ID_ANNUAL, PRODUCT_ID_MONTHLY];
 
 const FEATURES = [
-  { icon: '🗺️', title: 'All 50-State Waiver Data',      sub: 'Find agencies in every county across the US' },
-  { icon: '📋', title: 'Unlimited Daily Observations',   sub: 'Track patterns, moods, and IEP-ready notes' },
-  { icon: '🩺', title: 'Provider Prep Visit Summaries',  sub: 'Export visit notes and Smart Fill from observations' },
-  { icon: '📚', title: 'Full IEP Goal Tracker',          sub: 'Add, edit, archive goals and log meeting notes' },
-  { icon: '🚽', title: 'Bowel Diary & Potty Pathway',    sub: 'Full diary with per-day editing and export' },
-  { icon: '🧠', title: 'Diagnosis Pathway',              sub: 'Evaluator directory + appointment prep tools' },
-  { icon: '💳', title: 'Medicaid Pathway',               sub: 'Step-by-step Medicaid application guide' },
-  { icon: '📰', title: 'Full Article Library',           sub: 'Unlimited access to all guides and explainers' },
+  { icon: '🎙️', title: 'IEP Meeting Recorder',           sub: 'Record, transcribe & AI-summarize IEP meetings' },
+  { icon: '📋', title: 'Full IEP Goal Tracker',           sub: 'Unlimited goals, meeting notes, and progress logs' },
+  { icon: '✨', title: 'AI Transition Guide',             sub: 'Personalized action plan based on your child's profile' },
+  { icon: '🏥', title: '891+ Provider Directory',         sub: 'All 50 states · 5 specialties · Caregiver Verified' },
+  { icon: '🏠', title: 'Group Home & Housing Finder',     sub: 'Waitlist status, contacts, and application tips' },
+  { icon: '🎓', title: 'College & Vocational Lookup',     sub: 'Think College programs + VR services by state' },
+  { icon: '💼', title: 'Special Needs Jobs Finder',       sub: 'Supported employment, Project SEARCH, and more' },
+  { icon: '🏦', title: 'ABLE Account Finder',             sub: 'All 50 states — open an account, save tax-free' },
+  { icon: '🔔', title: 'Smart Reminders & Leave Alerts',  sub: 'Services Tracker with drive-time departure alerts' },
+  { icon: '🗺️', title: 'All 50-State Waiver & Waivers',  sub: 'Find agencies and waitlist data in every state' },
+  { icon: '📰', title: 'Full Article Library',            sub: 'Unlimited access to all guides and explainers' },
 ];
 
 export default function PaywallScreen() {
@@ -104,14 +107,14 @@ export default function PaywallScreen() {
         const subs = await getSubscriptions({ skus: PRODUCT_IDS });
         subs.forEach((sub) => {
           const price = (sub as any).localizedPrice ?? null;
-          if (sub.productId === PRODUCT_ID_ANNUAL)  setAnnualPrice(price  ?? '$79.99');
-          if (sub.productId === PRODUCT_ID_MONTHLY) setMonthlyPrice(price ?? '$9.99');
+          if (sub.productId === PRODUCT_ID_ANNUAL)  setAnnualPrice(price  ?? '$119.99');
+          if (sub.productId === PRODUCT_ID_MONTHLY) setMonthlyPrice(price ?? '$14.99');
         });
         setIapReady(true);
       } catch (e) {
         console.log('IAP setup error', e);
-        setAnnualPrice('$79.99');
-        setMonthlyPrice('$9.99');
+        setAnnualPrice('$119.99');
+        setMonthlyPrice('$14.99');
         setIapReady(true);
       }
     };

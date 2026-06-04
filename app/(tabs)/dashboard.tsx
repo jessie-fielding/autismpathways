@@ -964,11 +964,11 @@ export default function DashboardScreen() {
 
           {/* UPGRADE BANNER (non-premium only) */}
           {!isPremium && (
-            <TouchableOpacity style={styles.upgradeBanner} onPress={() => { trackPaywallViewed('dashboard'); router.push('/paywall'); }} activeOpacity={0.9}>
+            <TouchableOpacity style={styles.upgradeBanner} onPress={() => { trackPaywallViewed('dashboard'); router.push('/paywall/premium-features' as any); }} activeOpacity={0.9}>
               <View style={styles.upgradeLeft}>
-                <Text style={styles.upgradeTitle}>{t('Unlock Premium Access', 'Desbloquear Acceso Premium')}</Text>
-                <Text style={styles.upgradeSub}>{t('Appeal Tracker, unlimited contacts, all talking points scripts, and more.', 'Seguimiento de apelaciones, contactos ilimitados, todos los guiones y más.')}</Text>
-                <Text style={styles.upgradePrice}>$9.99/mo · $79.99/yr</Text>
+                <Text style={styles.upgradeTitle}>⭐ Unlock Premium Access</Text>
+                <Text style={styles.upgradeSub}>891+ providers, AI Transition Guide, IEP Meeting Recorder, Services Tracker alerts, and so much more.</Text>
+                <Text style={styles.upgradePrice}>Everything you need — for less than your weekly coffee run ☕</Text>
               </View>
               <Text style={styles.upgradeArrow}>→</Text>
             </TouchableOpacity>

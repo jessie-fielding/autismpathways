@@ -8,6 +8,7 @@ export default function IEPLayout() {
       <Stack.Screen name="telehealth-lookup" />
       <Stack.Screen name="evaluator-lookup" />
       <Stack.Screen name="submit-evaluator" />
+      <Stack.Screen name="meeting-recorder" />
     </Stack>
   );
 }

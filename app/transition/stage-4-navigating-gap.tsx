@@ -1,3 +1,4 @@
+import PremiumLockSheet from '../../components/PremiumLockSheet';
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -30,6 +31,7 @@ export default function Stage4NavigatingGap() {
   const insets = useSafeAreaInsets();
   const { isPremium } = useIsPremium();
   const [checked, setChecked] = useState<Record<string, boolean>>({});
+  const [lockSheet, setLockSheet] = useState<{ title: string; desc: string; emoji: string } | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
 
   useEffect(() => {
@@ -37,7 +39,11 @@ export default function Stage4NavigatingGap() {
   }, []);
 
   const toggleItem = async (id: string, free: boolean, triggersFollowUp?: boolean) => {
-    if (!free && !isPremium) { router.push('/paywall' as any); return; }
+    if (!free && !isPremium) {
+      const item = CHECKLIST_ITEMS.find((i) => i.id === id);
+      setLockSheet({ title: item?.title ?? 'Premium Feature', desc: item?.desc ?? '', emoji: item?.emoji ?? '⭐' });
+      return;
+    }
     const nowChecked = !checked[id];
     const updated = { ...checked, [id]: nowChecked };
     setChecked(updated);
@@ -126,6 +132,16 @@ export default function Stage4NavigatingGap() {
 
         <View style={{ height: insets.bottom + SPACING.xl }} />
       </ScrollView>
+
+      {lockSheet && (
+        <PremiumLockSheet
+          visible={!!lockSheet}
+          onClose={() => setLockSheet(null)}
+          featureTitle={lockSheet.title}
+          featureDesc={lockSheet.desc}
+          featureEmoji={lockSheet.emoji}
+        />
+      )}
     </View>
   );
 }

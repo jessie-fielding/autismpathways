@@ -497,6 +497,25 @@ export default function IEPScreen() {
               <Text style={s.districtLookupArrow}>→</Text>
             </TouchableOpacity>
 
+            {/* Meeting Recorder CTA */}
+            <TouchableOpacity
+              style={s.recorderCard}
+              onPress={() => router.push('/iep/meeting-recorder')}
+              activeOpacity={0.85}
+            >
+              <View style={s.districtLookupLeft}>
+                <Text style={s.districtLookupIcon}>🎙️</Text>
+                <View style={{ flex: 1 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Text style={s.districtLookupTitle}>Meeting Recorder</Text>
+                    {!isPremium && <View style={s.recorderPremiumBadge}><Text style={s.recorderPremiumBadgeText}>⭐ Premium</Text></View>}
+                  </View>
+                  <Text style={s.districtLookupSub}>Record, transcribe & get AI meeting summaries</Text>
+                </View>
+              </View>
+              <Text style={s.districtLookupArrow}>→</Text>
+            </TouchableOpacity>
+
             <Text style={s.sectionLabel}>MEETING PREP CHECKLIST</Text>
             <View style={s.checklist}>
               {PREP_CHECKLIST.map((item, i) => <Text key={i} style={s.checklistItem}>- {item}</Text>)}
@@ -924,6 +943,23 @@ const cs = StyleSheet.create({
   districtLookupTitle: { color: 'white', fontWeight: 'bold' as const, fontSize: FONT_SIZES.md },
   districtLookupSub: { color: 'rgba(255,255,255,0.85)', fontSize: FONT_SIZES.xs, marginTop: 2 },
   districtLookupArrow: { color: 'white', fontSize: 20, fontWeight: 'bold' as const },
+  recorderCard: {
+    backgroundColor: '#7C3A9E',
+    borderRadius: RADIUS.lg,
+    padding: SPACING.md,
+    marginBottom: SPACING.md,
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
+    ...SHADOWS.sm,
+  },
+  recorderPremiumBadge: {
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    borderRadius: RADIUS.pill,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  recorderPremiumBadgeText: { color: 'white', fontSize: FONT_SIZES.xs, fontWeight: '700' as const },
   // Checklist
   checklist: { backgroundColor: 'white', padding: SPACING.md, borderRadius: RADIUS.lg, ...SHADOWS.sm },
   checklistItem: { fontSize: FONT_SIZES.md, marginBottom: SPACING.sm, color: COLORS.text },

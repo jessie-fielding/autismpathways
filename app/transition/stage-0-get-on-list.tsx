@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import PremiumLockSheet from '../../components/PremiumLockSheet';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet, Linking,
 } from 'react-native';
@@ -75,6 +76,7 @@ export default function Stage0GetOnList() {
   const insets = useSafeAreaInsets();
   const { isPremium } = useIsPremium();
   const [checked, setChecked] = useState<Record<string, boolean>>({});
+  const [lockSheet, setLockSheet] = useState<{ title: string; desc: string; emoji: string } | null>(null);
 
   useEffect(() => {
     AsyncStorage.getItem(CHECKLIST_KEY).then((raw) => {
@@ -85,7 +87,8 @@ export default function Stage0GetOnList() {
   const toggleItem = async (id: string, free: boolean, triggersAdultNudge?: boolean) => {
     // Non-free items require premium
     if (!free && !isPremium) {
-      router.push('/paywall' as any);
+      const item = CHECKLIST_ITEMS.find((i) => i.id === id);
+      setLockSheet({ title: item?.title ?? 'Premium Feature', desc: item?.desc ?? '', emoji: item?.emoji ?? '⭐' });
       return;
     }
     const nowChecked = !checked[id];
@@ -220,6 +223,16 @@ export default function Stage0GetOnList() {
 
         <View style={{ height: insets.bottom + SPACING.xl }} />
       </ScrollView>
+
+      {lockSheet && (
+        <PremiumLockSheet
+          visible={!!lockSheet}
+          onClose={() => setLockSheet(null)}
+          featureTitle={lockSheet.title}
+          featureDesc={lockSheet.desc}
+          featureEmoji={lockSheet.emoji}
+        />
+      )}
     </View>
   );
 }
