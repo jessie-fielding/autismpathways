@@ -33,6 +33,7 @@ const { width } = Dimensions.get('window');
 const VIDEO_SOURCES: Record<string, any> = {
   card1: require('../../assets/animations/onboarding/card1.mp4'),
   card2: require('../../assets/animations/onboarding/card2.mp4'),
+  card4: require('../../assets/animations/onboarding/card4.mp4'),
 };
 
 // ── Card definitions ──────────────────────────────────────────────────────────
@@ -71,7 +72,7 @@ const CARD_DEFS = [
     headline: 'Need In-The-Moment Help?',
     body: 'Use the SOS tool to get timely strategies and tips to help with dysregulation, dangerous behavior, and more.',
     bg: ['#EDE9FC', '#F5F4FB'] as [string, string],
-    // lottie: require('../../assets/animations/onboarding/card4.json'),
+    video: 'card4',
     lottie: null,
   },
   {
