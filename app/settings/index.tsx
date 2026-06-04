@@ -500,6 +500,19 @@ export default function SettingsScreen() {
           />
         </View>
 
+        {/* 1:1 SUPPORT CALLOUT — always visible */}
+        <TouchableOpacity
+          style={styles.supportCallout}
+          onPress={() => router.push('/support' as any)}
+          activeOpacity={0.9}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={styles.supportCalloutTitle}>💜 Talk to Me Directly</Text>
+            <Text style={styles.supportCalloutSub}>Need an ear, a second opinion, or guidance from a parent who has lived this? Book a 1:1 call.</Text>
+          </View>
+          <Text style={styles.supportCalloutArrow}>→</Text>
+        </TouchableOpacity>
+
         <Text style={styles.version}>Autism Pathways v1.0</Text>
         <Text style={styles.copyright}>© 2026 Autism Pathways LLC</Text>
 
@@ -638,6 +651,35 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZES.xs,
     color: COLORS.infoText,
     lineHeight: 17,
+  },
+
+  // 1:1 Support callout
+  supportCallout: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E9E3FF',
+    borderRadius: RADIUS.sm,
+    padding: SPACING.lg,
+    marginTop: SPACING.xl,
+    marginBottom: SPACING.md,
+    borderWidth: 1,
+    borderColor: '#C5B8F0',
+  },
+  supportCalloutTitle: {
+    fontSize: FONT_SIZES.sm,
+    fontWeight: '800',
+    color: '#4a3f8f',
+    marginBottom: SPACING.xs,
+  },
+  supportCalloutSub: {
+    fontSize: FONT_SIZES.xs,
+    color: '#6b6490',
+    lineHeight: 16,
+  },
+  supportCalloutArrow: {
+    fontSize: 20,
+    color: '#7c6fd4',
+    marginLeft: SPACING.md,
   },
 
   // Footer

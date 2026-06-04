@@ -566,6 +566,32 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     marginLeft: 12,
   },
+  supportCallout: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E9E3FF',
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#C5B8F0',
+  },
+  supportCalloutTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#4a3f8f',
+    marginBottom: 4,
+  },
+  supportCalloutSub: {
+    fontSize: 11,
+    color: '#6b6490',
+    lineHeight: 16,
+  },
+  supportCalloutArrow: {
+    fontSize: 20,
+    color: '#7c6fd4',
+    marginLeft: 12,
+  },
   ppHeroCard: {
     backgroundColor: '#4a3f8f',
     borderRadius: 16,
@@ -973,6 +999,15 @@ export default function DashboardScreen() {
               <Text style={styles.upgradeArrow}>→</Text>
             </TouchableOpacity>
           )}
+
+          {/* 1:1 SUPPORT CALLOUT — always visible */}
+          <TouchableOpacity style={styles.supportCallout} onPress={() => router.push('/support' as any)} activeOpacity={0.9}>
+            <View style={styles.upgradeLeft}>
+              <Text style={styles.supportCalloutTitle}>💜 Talk to Me Directly</Text>
+              <Text style={styles.supportCalloutSub}>Need an ear, a second opinion, or guidance from a parent who has lived this? Book a 1:1 call.</Text>
+            </View>
+            <Text style={styles.supportCalloutArrow}>→</Text>
+          </TouchableOpacity>
 
         </View>
       </ScrollView>
