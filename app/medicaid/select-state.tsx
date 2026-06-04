@@ -4,7 +4,7 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-nati
 import { useMedicaidState } from '../../lib/MedicaidStateContext';
 import { STATE_OPTIONS } from '../../lib/medicaidStates';
 import { COLORS, FONT_SIZES, RADIUS, SPACING } from '../../lib/theme';
-
+import NearMeButton from '../../components/NearMeButton';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const STATE_FLAGS: Record<string, string> = {
   CO: '🏔️',
@@ -51,6 +51,15 @@ export default function SelectState() {
         </View>
 
         <View style={styles.content}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: SPACING.md }}>
+            <NearMeButton
+              onStateDetected={(code) => {
+                const match = STATE_OPTIONS.find((o) => o.code === code);
+                if (match) setSelected(code);
+              }}
+            />
+            <Text style={{ fontSize: 12, color: COLORS.textLight, fontStyle: 'italic' }}>or pick below</Text>
+          </View>
           <Text style={styles.choiceLabel}>Select your state</Text>
 
           {STATE_OPTIONS.map((option) => (

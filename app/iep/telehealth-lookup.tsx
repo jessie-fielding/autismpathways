@@ -5,6 +5,7 @@ import {
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '../../lib/theme';
+import NearMeButton from '../../components/NearMeButton';
 
 type AcceptanceLevel = 'accepted' | 'case-by-case' | 'not-accepted' | 'unknown';
 
@@ -135,7 +136,11 @@ export default function TelehealthLookupScreen() {
           ))}
       </View>
 
-      {/* Search */}
+      {/* Near Me + Search */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: SPACING.md, marginBottom: 4 }}>
+        <NearMeButton onStateDetected={(code) => setQuery(code)} />
+        <Text style={{ fontSize: 12, color: COLORS.textLight, fontStyle: 'italic' }}>or search below</Text>
+      </View>
       <View style={s.searchRow}>
         <TextInput
           style={s.searchInput}

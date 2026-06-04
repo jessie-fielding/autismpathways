@@ -4,6 +4,7 @@ export default function ProviderTranslatorLayout() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" />
+      <Stack.Screen name="dictionary" />
     </Stack>
   );
 }

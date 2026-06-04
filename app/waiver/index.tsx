@@ -8,7 +8,7 @@ import { COLORS, FONT_SIZES, RADIUS, SHADOWS, SPACING } from '../../lib/theme';
 import waiverData from '../../data/waiver-data.json';
 import { PathwayDisclaimer } from '../../components/PathwayDisclaimer';
 import { useLanguage } from '../../lib/LanguageContext';
-
+import NearMeButton from '../../components/NearMeButton';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const ALL_STATES = Object.entries(waiverData as Record<string, { stateName: string }>)
   .map(([abbr, data]) => ({ abbr, name: data.stateName }))
@@ -84,6 +84,14 @@ export default function WaiverStatePickerScreen() {
         </TouchableOpacity>
       )}
 
+      {/* Near Me */}
+      <View style={styles.nearMeRow}>
+        <NearMeButton
+          onStateDetected={(code) => handleSelect(code)}
+        />
+        <Text style={styles.orText}>or search below</Text>
+      </View>
+
       {/* Search */}
       <View style={styles.searchRow}>
         <TextInput
@@ -143,6 +151,18 @@ export default function WaiverStatePickerScreen() {
 }
 
 const styles = StyleSheet.create({
+  nearMeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.md,
+    paddingHorizontal: SPACING.lg,
+    marginBottom: SPACING.sm,
+  },
+  orText: {
+    fontSize: FONT_SIZES.xs,
+    color: COLORS.textLight,
+    fontStyle: 'italic',
+  },
   container: { flex: 1, backgroundColor: COLORS.bg },
   header: {
     flexDirection: 'row',

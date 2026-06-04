@@ -70,6 +70,72 @@ const STAGES = [
   },
 ];
 
+const PREMIUM_TOOLS = [
+  {
+    id: 'able',
+    emoji: '💰',
+    title: 'ABLE Account Finder',
+    desc: 'Find your state\'s ABLE program. Save up to $18K/year without affecting SSI.',
+    route: '/transition/able-account-finder',
+    accent: '#059669',
+    badge: '⭐ Premium',
+  },
+  {
+    id: 'preets',
+    emoji: '🛠️',
+    title: 'Pre-ETS Tool',
+    desc: 'Find Pre-Employment Transition Services in your state. Available at age 14.',
+    route: '/transition/pre-ets-tool',
+    accent: '#5B9BD5',
+    badge: '⭐ Premium',
+  },
+  {
+    id: 'dayprograms',
+    emoji: '🏢',
+    title: 'Day Program Finder',
+    desc: 'Adult day programs with life skills, vocational training & community access.',
+    route: '/transition/day-program-finder',
+    accent: '#2D6A4F',
+    badge: '⭐ Premium',
+  },
+  {
+    id: 'grouphomes',
+    emoji: '🏡',
+    title: 'Group Home Finder',
+    desc: 'State-funded group homes with waitlist status. Apply early — lists are long.',
+    route: '/transition/group-home-finder',
+    accent: '#4A1942',
+    badge: '⭐ Premium',
+  },
+  {
+    id: 'jobs',
+    emoji: '💼',
+    title: 'Special Needs Jobs',
+    desc: 'Supported employment, job boards, and employer programs by state.',
+    route: '/transition/special-needs-jobs',
+    accent: '#1E3A5F',
+    badge: '⭐ Premium',
+  },
+  {
+    id: 'college',
+    emoji: '🎓',
+    title: 'College & Vocational',
+    desc: 'Inclusive college programs and vocational training options by state.',
+    route: '/transition/college-vocational-lookup',
+    accent: '#1E3A5F',
+    badge: '⭐ Premium',
+  },
+  {
+    id: 'apartments',
+    emoji: '🔑',
+    title: 'Apartment & Housing Finder',
+    desc: 'Supported living and affordable housing options for adults with disabilities.',
+    route: '/transition/apartment-lookup',
+    accent: '#1A3C34',
+    badge: '⭐ Premium',
+  },
+];
+
 export default function TransitionHub() {
   const router = useRouter();
   const { t } = useLanguage();
@@ -139,8 +205,41 @@ export default function TransitionHub() {
           onPress={() => router.push('/transition/state-waivers' as any)}
           activeOpacity={0.85}
         >
-          <Text style={styles.checkStateBtnText}>Check Your State →</Text>
+          <Text style={styles.checkStateBtnText}>🗺️ Check Your State →</Text>
         </TouchableOpacity>
+
+        {/* Premium Tools Section */}
+        <View style={styles.premiumSection}>
+          <View style={styles.premiumHeader}>
+            <Text style={styles.premiumHeaderEmoji}>⭐</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.premiumHeaderTitle}>Premium Lookup Tools</Text>
+              <Text style={styles.premiumHeaderSub}>State-by-state directories with Near Me search</Text>
+            </View>
+          </View>
+
+          {PREMIUM_TOOLS.map((tool) => (
+            <TouchableOpacity
+              key={tool.id}
+              style={styles.toolCard}
+              onPress={() => router.push(tool.route as any)}
+              activeOpacity={0.8}
+            >
+              <View style={[styles.toolAccent, { backgroundColor: tool.accent }]} />
+              <View style={styles.toolContent}>
+                <Text style={styles.toolEmoji}>{tool.emoji}</Text>
+                <View style={styles.toolText}>
+                  <Text style={styles.toolTitle}>{tool.title}</Text>
+                  <Text style={styles.toolDesc}>{tool.desc}</Text>
+                </View>
+                <View style={styles.premiumBadge}>
+                  <Text style={styles.premiumBadgeText}>⭐</Text>
+                </View>
+              </View>
+              <Text style={styles.toolChevron}>›</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
 
         <View style={{ height: insets.bottom + SPACING.xl }} />
       </ScrollView>
@@ -233,7 +332,56 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.lg,
     paddingVertical: 14,
     alignItems: 'center',
-    marginBottom: SPACING.md,
+    marginBottom: SPACING.lg,
   },
   checkStateBtnText: { color: '#fff', fontSize: FONT_SIZES.md, fontWeight: '700' },
+
+  // Premium tools section
+  premiumSection: { marginTop: SPACING.sm },
+  premiumHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    backgroundColor: '#FFF8E7',
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    borderColor: '#F5D87A',
+    padding: SPACING.md,
+    marginBottom: SPACING.sm,
+  },
+  premiumHeaderEmoji: { fontSize: 24 },
+  premiumHeaderTitle: { fontSize: FONT_SIZES.md, fontWeight: '700', color: '#92400E' },
+  premiumHeaderSub: { fontSize: FONT_SIZES.xs, color: '#92400E', marginTop: 2 },
+
+  toolCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: RADIUS.lg,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  toolAccent: { width: 5, alignSelf: 'stretch' },
+  toolContent: { flex: 1, flexDirection: 'row', alignItems: 'center', padding: SPACING.md, gap: SPACING.sm },
+  toolEmoji: { fontSize: 24, width: 32, textAlign: 'center' },
+  toolText: { flex: 1 },
+  toolTitle: { fontSize: FONT_SIZES.sm, fontWeight: '700', color: COLORS.text },
+  toolDesc: { fontSize: FONT_SIZES.xs, color: COLORS.textLight, marginTop: 2, lineHeight: 16 },
+  premiumBadge: {
+    backgroundColor: '#FFF8E7',
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderWidth: 1,
+    borderColor: '#F5D87A',
+  },
+  premiumBadgeText: { fontSize: 14 },
+  toolChevron: { fontSize: 22, color: COLORS.textLight, paddingRight: SPACING.sm },
 });

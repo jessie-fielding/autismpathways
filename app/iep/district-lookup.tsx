@@ -8,6 +8,7 @@ import {
 import { useRouter } from 'expo-router';
 import { COLORS, FONT_SIZES, SPACING } from '../../lib/theme';
 import { searchDistricts, type SchoolDistrictState } from '../../data/school-districts';
+import NearMeButton from '../../components/NearMeButton';
 
 const US_STATES = [
   'AL','AK','AZ','AR','CA','CO','CT','DE','DC','FL','GA','HI','ID','IL','IN',
@@ -242,6 +243,12 @@ export default function DistrictLookupScreen() {
 
       <View style={s.searchBox}>
         <Text style={s.searchLabel}>Find your state's school evaluation rights, timelines, and contacts</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+          <NearMeButton
+            onStateDetected={(code) => setQuery(code)}
+          />
+          <Text style={{ fontSize: 12, color: COLORS.textLight, fontStyle: 'italic' }}>or search below</Text>
+        </View>
         <TextInput
           style={s.searchInput}
           value={query}

@@ -10,6 +10,13 @@ export default function TransitionLayout() {
       <Stack.Screen name="stage-4-navigating-gap" />
       <Stack.Screen name="stage-5-adult-life" />
       <Stack.Screen name="state-waivers" />
+      <Stack.Screen name="able-account-finder" />
+      <Stack.Screen name="pre-ets-tool" />
+      <Stack.Screen name="day-program-finder" />
+      <Stack.Screen name="group-home-finder" />
+      <Stack.Screen name="special-needs-jobs" />
+      <Stack.Screen name="college-vocational-lookup" />
+      <Stack.Screen name="apartment-lookup" />
     </Stack>
   );
 }

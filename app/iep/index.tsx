@@ -520,6 +520,37 @@ export default function IEPScreen() {
               <Text style={s.addBtnText}>+ Add New Goal</Text>
             </TouchableOpacity>
 
+            {!isPremium && (
+              <View style={s.usageBarWrap}>
+                <View style={s.usageBarRow}>
+                  <Text style={s.usageBarLabel}>
+                    {activeGoals.length} of {FREE_GOALS} free goals used
+                  </Text>
+                  {activeGoals.length >= FREE_GOALS - 1 && (
+                    <TouchableOpacity onPress={() => router.push('/paywall')}>
+                      <Text style={s.usageBarUpgrade}>Keep going with Premium →</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+                <View style={s.usageBarTrack}>
+                  <View
+                    style={[
+                      s.usageBarFill,
+                      {
+                        width: `${Math.min((activeGoals.length / FREE_GOALS) * 100, 100)}%` as any,
+                        backgroundColor:
+                          activeGoals.length >= FREE_GOALS
+                            ? '#e74c3c'
+                            : activeGoals.length >= FREE_GOALS - 1
+                            ? '#f39c12'
+                            : COLORS.purple,
+                      },
+                    ]}
+                  />
+                </View>
+              </View>
+            )}
+
             <Text style={s.sectionLabel}>ACTIVE GOALS</Text>
             {activeGoals.length === 0 ? (
               <View style={s.emptyState}>
@@ -582,6 +613,37 @@ export default function IEPScreen() {
             <TouchableOpacity style={s.addBtn} onPress={openAddMeeting}>
               <Text style={s.addBtnText}>+ Log IEP Meeting</Text>
             </TouchableOpacity>
+
+            {!isPremium && (
+              <View style={s.usageBarWrap}>
+                <View style={s.usageBarRow}>
+                  <Text style={s.usageBarLabel}>
+                    {meetings.length} of {FREE_MEETINGS} free meetings logged
+                  </Text>
+                  {meetings.length >= FREE_MEETINGS - 1 && (
+                    <TouchableOpacity onPress={() => router.push('/paywall')}>
+                      <Text style={s.usageBarUpgrade}>Keep going with Premium →</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+                <View style={s.usageBarTrack}>
+                  <View
+                    style={[
+                      s.usageBarFill,
+                      {
+                        width: `${Math.min((meetings.length / FREE_MEETINGS) * 100, 100)}%` as any,
+                        backgroundColor:
+                          meetings.length >= FREE_MEETINGS
+                            ? '#e74c3c'
+                            : meetings.length >= FREE_MEETINGS - 1
+                            ? '#f39c12'
+                            : COLORS.purple,
+                      },
+                    ]}
+                  />
+                </View>
+              </View>
+            )}
 
             {meetings.length === 0 ? (
               <View style={s.emptyState}>
@@ -952,4 +1014,11 @@ const cs = StyleSheet.create({
   progressText: { fontSize: FONT_SIZES.lg, fontWeight: 'bold', marginRight: SPACING.lg },
   progressBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: COLORS.lavender, alignItems: 'center', justifyContent: 'center', marginHorizontal: SPACING.sm },
   progressBtnText: { fontSize: 24, fontWeight: 'bold', color: COLORS.purple },
+  // Usage progress bar
+  usageBarWrap: { backgroundColor: 'white', borderRadius: RADIUS.md, padding: SPACING.md, marginBottom: SPACING.md, ...SHADOWS.sm },
+  usageBarRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  usageBarLabel: { fontSize: FONT_SIZES.sm, color: COLORS.textLight },
+  usageBarUpgrade: { fontSize: FONT_SIZES.sm, color: COLORS.purple, fontWeight: '600' },
+  usageBarTrack: { height: 6, backgroundColor: COLORS.lavender, borderRadius: 3, overflow: 'hidden' },
+  usageBarFill: { height: '100%', borderRadius: 3 },
 });

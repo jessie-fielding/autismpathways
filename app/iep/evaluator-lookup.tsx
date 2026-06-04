@@ -8,6 +8,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '../../lib/theme';
 import { EVALUATORS, Evaluator, EvaluatorType } from '../../data/evaluators';
+import NearMeButton from '../../components/NearMeButton';
 
 const TYPE_CONFIG: Record<EvaluatorType, { label: string; color: string; bg: string; icon: string }> = {
   inperson: { label: 'In-Person', color: '#2E6B3E', bg: '#E3F7EC', icon: '🏥' },
@@ -91,6 +92,9 @@ export default function EvaluatorLookupScreen() {
 
       {/* Filters */}
       <View style={s.filtersRow}>
+        <NearMeButton
+          onStateDetected={(code) => { setSelectedState(code); setShowStateDropdown(false); }}
+        />
         {/* State Picker */}
         <TouchableOpacity
           style={s.statePicker}

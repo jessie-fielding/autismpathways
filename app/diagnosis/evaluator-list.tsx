@@ -5,6 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '../../lib/theme';
 import { getEvaluatorsForState, normalizeState, type Evaluator } from '../../data/evaluators';
 import { useActiveChild } from '../../services/childManager';
+import NearMeButton from '../../components/NearMeButton';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const TOTAL_STEPS = 6;
@@ -156,12 +157,22 @@ export default function EvaluatorListScreen() {
               : 'Showing evaluators available in your area. Tap one to select.'}
           </Text>
           {!childState && (
-            <TouchableOpacity
-              style={styles.addStateBtn}
-              onPress={() => router.push('/(tabs)/start-here')}
-            >
-              <Text style={styles.addStateBtnText}>📍 Add your state for personalized results</Text>
-            </TouchableOpacity>
+            <View style={{ gap: 8, marginTop: 8 }}>
+              <NearMeButton
+                label="📍 Detect My State"
+                variant="full"
+                onStateDetected={(code) => {
+                  setChildState(code);
+                  setEvaluators(getEvaluatorsForState(code));
+                }}
+              />
+              <TouchableOpacity
+                style={styles.addStateBtn}
+                onPress={() => router.push('/(tabs)/start-here')}
+              >
+                <Text style={styles.addStateBtnText}>Or set your state in your profile →</Text>
+              </TouchableOpacity>
+            </View>
           )}
         </View>
 

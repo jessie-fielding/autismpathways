@@ -6,6 +6,7 @@ import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import NearMeButton from '../../components/NearMeButton';
 
 const COLORS = {
   bg: '#F5F4FB', card: '#FFFFFF', navy: '#1a1f5e', purple: '#7c6fd4',
@@ -229,6 +230,9 @@ export default function ProviderDirectoryScreen() {
 
       {/* FILTERS */}
       <View style={styles.filterRow}>
+        <NearMeButton
+          onStateDetected={(code) => { setSelectedState(code); setStatePickerOpen(false); }}
+        />
         <TouchableOpacity
           style={styles.stateBtn}
           onPress={() => setStatePickerOpen(!statePickerOpen)}

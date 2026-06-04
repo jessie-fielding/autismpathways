@@ -17,6 +17,7 @@
         "NSFaceIDUsageDescription": "Autism Pathways uses Face ID to sign you in quickly and securely.",
         "NSPhotoLibraryUsageDescription": "Autism Pathways accesses your photo library to let you attach documents to your vault.",
         "NSUserNotificationsUsageDescription": "Autism Pathways sends reminders for appeal deadlines, appointments, and waiver waitlist check-ins.",
+        "NSLocationWhenInUseUsageDescription": "Autism Pathways uses your location to automatically find resources, programs, and services in your state.",
         "ITSAppUsesNonExemptEncryption": false
       },
       "privacyManifests": {
@@ -85,7 +86,11 @@
       "predictiveBackGestureEnabled": false,
       "versionCode": 7,
       "package": "app.autismpathways.app",
-      "googleServicesFile": "./google-services.json"
+      "googleServicesFile": "./google-services.json",
+      "permissions": [
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ]
     },
     "web": {
       "output": "static",

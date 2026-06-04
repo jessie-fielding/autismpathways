@@ -22,16 +22,17 @@ import { useIsPremium } from '../../hooks/useIsPremium';
 
 const API_BASE = 'https://inu3nb5lrfvftfyiwprftqshpy0zcegu.lambda-url.us-east-2.on.aws';
 const USAGE_KEY = 'ap_provider_translator_count';
+const HISTORY_KEY = 'ap_provider_translator_history';
 const FREE_USES = 5;
 
 type Mode = 'translate' | 'decode';
 
-type HistoryItem = {
+export type DictionaryItem = {
   id: string;
   mode: Mode;
   input: string;
   output: string;
-  timestamp: Date;
+  savedAt: string; // ISO string for persistence
 };
 
 const MODE_CONFIG = {
@@ -85,8 +86,7 @@ export default function ProviderTranslatorScreen() {
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<string | null>(null);
-  const [history, setHistory] = useState<HistoryItem[]>([]);
-  const [showHistory, setShowHistory] = useState(false);
+  const [historyCount, setHistoryCount] = useState(0);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scrollRef = useRef<ScrollView>(null);
 
@@ -94,6 +94,10 @@ export default function ProviderTranslatorScreen() {
     useCallback(() => {
       AsyncStorage.getItem(USAGE_KEY).then((val) => {
         setUsageCount(val ? parseInt(val, 10) : 0);
+      });
+      AsyncStorage.getItem(HISTORY_KEY).then((val) => {
+        const items: DictionaryItem[] = val ? JSON.parse(val) : [];
+        setHistoryCount(items.length);
       });
     }, [])
   );
@@ -195,7 +199,14 @@ export default function ProviderTranslatorScreen() {
     }
 
     if (!isPremium && usageCount >= FREE_USES) {
-      router.push('/paywall' as any);
+      Alert.alert(
+        'Keep going with Premium 💜',
+        "You've used all 5 free translations. Upgrade to decode every report, note, and IEP — unlimited, forever.",
+        [
+          { text: 'Not now', style: 'cancel' },
+          { text: 'See Premium', onPress: () => router.push('/paywall' as any) },
+        ]
+      );
       return;
     }
 
@@ -219,15 +230,19 @@ export default function ProviderTranslatorScreen() {
         setUsageCount(next);
         await AsyncStorage.setItem(USAGE_KEY, String(next));
 
-        // Add to history
-        const newItem: HistoryItem = {
+        // Persist to dictionary
+        const stored = await AsyncStorage.getItem(HISTORY_KEY);
+        const existing: DictionaryItem[] = stored ? JSON.parse(stored) : [];
+        const newItem: DictionaryItem = {
           id: Date.now().toString(),
           mode,
-          input: inputText.trim().slice(0, 120),
+          input: inputText.trim().slice(0, 200),
           output: data.result,
-          timestamp: new Date(),
+          savedAt: new Date().toISOString(),
         };
-        setHistory((prev) => [newItem, ...prev.slice(0, 9)]);
+        const updated = [newItem, ...existing].slice(0, 50); // keep last 50
+        await AsyncStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
+        setHistoryCount(updated.length);
 
         // Animate result in
         fadeAnim.setValue(0);
@@ -259,6 +274,15 @@ export default function ProviderTranslatorScreen() {
     setResult(null);
   };
 
+  // Usage bar color
+  const usageRatio = Math.min(usageCount / FREE_USES, 1);
+  const barColor =
+    usageCount >= FREE_USES
+      ? '#e74c3c'
+      : usageCount >= FREE_USES - 1
+      ? '#f39c12'
+      : COLORS.purple;
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -274,13 +298,11 @@ export default function ProviderTranslatorScreen() {
           <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          onPress={() => setShowHistory(!showHistory)}
-          style={styles.historyBtn}
+          onPress={() => router.push('/provider-translator/dictionary' as any)}
+          style={styles.dictionaryBtn}
           hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
         >
-          <Text style={styles.historyBtnText}>
-            {showHistory ? 'Hide History' : `History (${history.length})`}
-          </Text>
+          <Text style={styles.dictionaryBtnText}>📖 Dictionary{historyCount > 0 ? ` (${historyCount})` : ''}</Text>
         </TouchableOpacity>
       </View>
 
@@ -299,6 +321,38 @@ export default function ProviderTranslatorScreen() {
             Medical speak, decoded. Paste text or snap a photo of any provider note, report, or document — we'll tell you what it actually means.
           </Text>
         </View>
+
+        {/* Usage progress bar (free users only) */}
+        {!isPremium && (
+          <View style={styles.usageBarWrap}>
+            <View style={styles.usageBarRow}>
+              <Text style={styles.usageBarLabel}>
+                {usageCount} of {FREE_USES} free translations used
+              </Text>
+              {usageCount >= FREE_USES - 1 && (
+                <TouchableOpacity onPress={() => router.push('/paywall' as any)}>
+                  <Text style={styles.usageBarUpgrade}>Keep going with Premium →</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+            <View style={styles.usageBarTrack}>
+              <View
+                style={[
+                  styles.usageBarFill,
+                  {
+                    width: `${usageRatio * 100}%` as any,
+                    backgroundColor: barColor,
+                  },
+                ]}
+              />
+            </View>
+            {usageCount >= FREE_USES && (
+              <Text style={styles.usageBarFullMsg}>
+                You've decoded {usageCount} documents — imagine having this for every report, every note, every IEP. 💜
+              </Text>
+            )}
+          </View>
+        )}
 
         {/* Mode Toggle */}
         <View style={styles.modeToggle}>
@@ -383,20 +437,6 @@ export default function ProviderTranslatorScreen() {
           </ScrollView>
         </View>
 
-        {/* Usage nudge */}
-        {!isPremium && usageCount >= FREE_USES - 1 && (
-          <View style={styles.usageNudge}>
-            <Text style={styles.usageNudgeText}>
-              {usageCount >= FREE_USES
-                ? `You've decoded ${usageCount} documents — imagine having this for every report, every note, every IEP. 💜`
-                : `1 free translation left — upgrade to decode every report, note, and IEP.`
-              }
-            </Text>
-            <TouchableOpacity onPress={() => router.push('/paywall' as any)} style={styles.usageNudgeBtn}>
-              <Text style={styles.usageNudgeBtnText}>Upgrade for unlimited →</Text>
-            </TouchableOpacity>
-          </View>
-        )}
         {/* Analyze button */}
         <TouchableOpacity
           style={[styles.analyzeBtn, isLoading && styles.analyzeBtnDisabled]}
@@ -416,7 +456,7 @@ export default function ProviderTranslatorScreen() {
           <Animated.View style={[styles.resultCard, { opacity: fadeAnim, borderColor: config.color }]}>
             <View style={[styles.resultHeader, { backgroundColor: config.bg }]}>
               <Text style={styles.resultHeaderIcon}>{config.icon}</Text>
-              <Text style={[styles.resultHeaderTitle, { color: COLORS.purpleDark }]}>
+              <Text style={styles.resultHeaderTitle}>
                 {config.resultTitle}
               </Text>
             </View>
@@ -427,47 +467,14 @@ export default function ProviderTranslatorScreen() {
               <Text style={styles.resultDisclaimer}>
                 💡 This is an AI-assisted interpretation to help you understand the language. Always follow up directly with your provider for medical decisions.
               </Text>
+              <TouchableOpacity
+                style={styles.dictionaryLinkBtn}
+                onPress={() => router.push('/provider-translator/dictionary' as any)}
+              >
+                <Text style={styles.dictionaryLinkText}>📖 View in Provider Dictionary →</Text>
+              </TouchableOpacity>
             </View>
           </Animated.View>
-        )}
-
-        {/* History */}
-        {showHistory && history.length > 0 && (
-          <View style={styles.historySection}>
-            <Text style={styles.historySectionTitle}>Recent Translations</Text>
-            {history.map((item) => {
-              const cfg = MODE_CONFIG[item.mode];
-              return (
-                <TouchableOpacity
-                  key={item.id}
-                  style={[styles.historyCard, { borderLeftColor: cfg.color }]}
-                  onPress={() => {
-                    setMode(item.mode);
-                    setInputText(item.input);
-                    setResult(item.output);
-                    setShowHistory(false);
-                  }}
-                  activeOpacity={0.8}
-                >
-                  <View style={styles.historyCardHeader}>
-                    <Text style={styles.historyCardMode}>{cfg.icon} {cfg.label}</Text>
-                    <Text style={styles.historyCardTime}>
-                      {item.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </Text>
-                  </View>
-                  <Text style={styles.historyCardInput} numberOfLines={2}>
-                    "{item.input}{item.input.length >= 120 ? '...' : ''}"
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        )}
-
-        {showHistory && history.length === 0 && (
-          <View style={styles.emptyHistory}>
-            <Text style={styles.emptyHistoryText}>No translations yet — try one above!</Text>
-          </View>
         )}
 
         <View style={{ height: 60 }} />
@@ -487,8 +494,8 @@ const styles = StyleSheet.create({
   },
   backBtn: { paddingVertical: 6, paddingRight: 12 },
   backText: { color: COLORS.purple, fontSize: FONT_SIZES.sm, fontWeight: '600' },
-  historyBtn: { paddingVertical: 6, paddingLeft: 12 },
-  historyBtnText: { color: COLORS.purple, fontSize: FONT_SIZES.sm, fontWeight: '600' },
+  dictionaryBtn: { paddingVertical: 6, paddingLeft: 12 },
+  dictionaryBtnText: { color: COLORS.purple, fontSize: FONT_SIZES.sm, fontWeight: '600' },
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: SPACING.lg },
 
@@ -513,6 +520,37 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 20,
     paddingHorizontal: SPACING.xl,
+  },
+
+  // Usage progress bar
+  usageBarWrap: {
+    backgroundColor: COLORS.white,
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
+    marginBottom: SPACING.lg,
+    ...SHADOWS.sm,
+  },
+  usageBarRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  usageBarLabel: { fontSize: FONT_SIZES.sm, color: COLORS.textLight },
+  usageBarUpgrade: { fontSize: FONT_SIZES.sm, color: COLORS.purple, fontWeight: '600' },
+  usageBarTrack: {
+    height: 6,
+    backgroundColor: COLORS.lavender,
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  usageBarFill: { height: '100%', borderRadius: 3 },
+  usageBarFullMsg: {
+    fontSize: FONT_SIZES.xs,
+    color: COLORS.purple,
+    fontStyle: 'italic',
+    marginTop: SPACING.sm,
+    textAlign: 'center',
   },
 
   // Mode toggle
@@ -646,10 +684,6 @@ const styles = StyleSheet.create({
   },
 
   // Analyze button
-  usageNudge: { backgroundColor: '#f3f0ff', borderRadius: 12, padding: 12, marginBottom: 10, borderWidth: 1, borderColor: '#e0d7ff' },
-  usageNudgeText: { fontSize: 13, color: '#6B4EFF', fontWeight: '500', textAlign: 'center', marginBottom: 4 },
-  usageNudgeBtn: { alignSelf: 'center' },
-  usageNudgeBtnText: { fontSize: 13, color: '#6B4EFF', fontWeight: '700', textDecorationLine: 'underline' },
   analyzeBtn: {
     backgroundColor: COLORS.purple,
     borderRadius: RADIUS.sm,
@@ -709,54 +743,12 @@ const styles = StyleSheet.create({
     color: COLORS.textLight,
     lineHeight: 18,
     fontStyle: 'italic',
-  },
-
-  // History
-  historySection: { marginBottom: SPACING.xl },
-  historySectionTitle: {
-    fontSize: FONT_SIZES.sm,
-    fontWeight: '700',
-    color: COLORS.textMid,
-    marginBottom: SPACING.md,
-    letterSpacing: 0.5,
-  },
-  historyCard: {
-    backgroundColor: COLORS.white,
-    borderRadius: RADIUS.sm,
-    padding: SPACING.md,
     marginBottom: SPACING.sm,
-    borderLeftWidth: 4,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    ...SHADOWS.sm,
   },
-  historyCardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: SPACING.xs,
-  },
-  historyCardMode: {
-    fontSize: FONT_SIZES.xs,
-    fontWeight: '700',
-    color: COLORS.purpleDark,
-  },
-  historyCardTime: {
-    fontSize: FONT_SIZES.xs,
-    color: COLORS.textLight,
-  },
-  historyCardInput: {
-    fontSize: FONT_SIZES.xs,
-    color: COLORS.textMid,
-    fontStyle: 'italic',
-    lineHeight: 18,
-  },
-  emptyHistory: {
-    alignItems: 'center',
-    paddingVertical: SPACING.xl,
-  },
-  emptyHistoryText: {
+  dictionaryLinkBtn: { alignSelf: 'flex-start' },
+  dictionaryLinkText: {
     fontSize: FONT_SIZES.sm,
-    color: COLORS.textLight,
-    fontStyle: 'italic',
+    color: COLORS.purple,
+    fontWeight: '600',
   },
 });

@@ -6,6 +6,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, SPACING, FONT_SIZES, RADIUS } from '../../lib/theme';
 import { STATE_WAIVER_DATA, StateWaiverInfo } from '../../data/stateWaivers';
+import NearMeButton from '../../components/NearMeButton';
 
 const URGENCY_CONFIG = {
   critical: { label: 'CRITICAL 10+ yrs', bg: '#FEE2E2', text: '#991B1B', border: '#FECACA' },
@@ -138,6 +139,16 @@ export default function StateWaivers() {
       </View>
 
       <View style={styles.searchContainer}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: SPACING.sm }}>
+          <NearMeButton
+            onStateDetected={(code, name) => {
+              const match = STATE_WAIVER_DATA.find((s) => s.state === name || s.state.toUpperCase().startsWith(code));
+              if (match) setSelected(match);
+              else setSearch(code);
+            }}
+          />
+          <Text style={{ fontSize: 12, color: COLORS.textLight, fontStyle: 'italic' }}>or search below</Text>
+        </View>
         <TextInput
           style={styles.searchInput}
           placeholder="Search your state..."
