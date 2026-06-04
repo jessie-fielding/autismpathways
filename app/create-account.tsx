@@ -60,7 +60,8 @@ export default function CreateAccountScreen() {
     const result = await confirmSignUp(email, code);
     setLoading(false);
     if (result.success) {
-      router.replace('/(tabs)/dashboard');
+      // New users go through onboarding; existing users go straight to dashboard
+      router.replace('/onboarding');
     } else {
       setError(result.error || 'Verification failed. Please check the code and try again.');
     }
@@ -78,7 +79,12 @@ export default function CreateAccountScreen() {
     const result = await signInWithGoogle();
     if (result.success) {
       const profile = await storage.getProfile();
-      router.replace(profile ? '/(tabs)/dashboard' : '/profile-setup');
+      // New social sign-up: no profile yet → show onboarding first
+      if (!profile) {
+        router.replace('/onboarding');
+      } else {
+        router.replace('/(tabs)/dashboard');
+      }
     } else {
       setError(result.error || 'Google sign-in failed. Please try again.');
     }
@@ -91,7 +97,12 @@ export default function CreateAccountScreen() {
     const result = await signInWithApple();
     if (result.success) {
       const profile = await storage.getProfile();
-      router.replace(profile ? '/(tabs)/dashboard' : '/profile-setup');
+      // New social sign-up: no profile yet → show onboarding first
+      if (!profile) {
+        router.replace('/onboarding');
+      } else {
+        router.replace('/(tabs)/dashboard');
+      }
     } else if (result.error) {
       setError(result.error);
     }
