@@ -20,6 +20,7 @@ import {
   FlatList, Animated, Platform,
 } from 'react-native';
 import LottieView from 'lottie-react-native';
+import { VideoView, useVideoPlayer } from 'expo-video';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -27,6 +28,12 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { COLORS, SPACING, FONT_SIZES, RADIUS } from '../../lib/theme';
 
 const { width } = Dimensions.get('window');
+
+// ── Video sources for cards with MP4 animations ─────────────────────────────
+const VIDEO_SOURCES: Record<string, any> = {
+  card1: require('../../assets/animations/onboarding/card1.mp4'),
+  card2: require('../../assets/animations/onboarding/card2.mp4'),
+};
 
 // ── Card definitions ──────────────────────────────────────────────────────────
 // headline / body support {{parentName}} and {{childName}} tokens
@@ -37,8 +44,7 @@ const CARD_DEFS = [
     headline: 'Welcome to Autism Pathways, {{parentName}}!',
     body: 'Take a moment to get familiar with all of the ways that we can help {{childName}}\'s journey be a little easier.',
     bg: ['#EDE9FC', '#F5F4FB'] as [string, string],
-    // ✅ Wire your card 1 Lottie here once card1.json is in assets/animations/onboarding/
-    // lottie: require('../../assets/animations/onboarding/card1.json'),
+    video: 'card1',
     lottie: null,
   },
   {
@@ -47,7 +53,7 @@ const CARD_DEFS = [
     headline: 'Daily Observations',
     body: 'Your daily observations fuel the app. Make observations daily (or as often as you\'d like) and attach them to your IEP pathway, provider report, and more. Over time, view trends to see common days, times, triggers, and more!',
     bg: ['#E3F7F1', '#F5F4FB'] as [string, string],
-    // lottie: require('../../assets/animations/onboarding/card2.json'),
+    video: 'card2',
     lottie: null,
   },
   {
@@ -113,6 +119,26 @@ function interpolate(text: string, parentName: string, childName: string) {
     .replace(/{{childName}}/g, childName);
 }
 
+/**
+ * VideoCard — looping muted video, same pattern as the landing page hero.
+ * Each card gets its own player instance so they don't interfere.
+ */
+function VideoCard({ source }: { source: any }) {
+  const player = useVideoPlayer(source, (p) => {
+    p.loop = true;
+    p.muted = true;
+    p.play();
+  });
+  return (
+    <VideoView
+      player={player}
+      contentFit="contain"
+      style={styles.lottie}
+      nativeControls={false}
+    />
+  );
+}
+
 export default function OnboardingScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -176,7 +202,9 @@ export default function OnboardingScreen() {
       >
         {/* Animation area */}
         <View style={styles.animationContainer}>
-          {item.lottie ? (
+          {item.video ? (
+            <VideoCard source={VIDEO_SOURCES[(item as any).video]} />
+          ) : item.lottie ? (
             <LottieView
               source={item.lottie}
               autoPlay
