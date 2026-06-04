@@ -20,24 +20,30 @@ const MIXPANEL_TOKEN = 'b2d115fd886e590ff58399184e38f918';
 
 // Singleton instance — initialized once, reused everywhere
 let _mixpanel: Mixpanel | null = null;
+let _initPromise: Promise<Mixpanel | null> | null = null;
 
-function getMixpanel(): Mixpanel | null {
+async function getMixpanel(): Promise<Mixpanel | null> {
   if (_mixpanel) return _mixpanel;
-  try {
-    // trackAutomaticEvents = false: we control all events manually
-    // useNative = false: JS mode works in Expo Go + Expo managed workflow
-    _mixpanel = new Mixpanel(MIXPANEL_TOKEN, false, false);
-    _mixpanel.init();
-
-    // Super properties sent with every event
-    _mixpanel.registerSuperProperties({
-      app: 'autism_pathways',
-      platform: 'mobile',
-    });
-  } catch (e) {
-    _mixpanel = null;
-  }
-  return _mixpanel;
+  if (_initPromise) return _initPromise;
+  _initPromise = (async () => {
+    try {
+      // trackAutomaticEvents = false: we control all events manually
+      // useNative = false: JS mode works in Expo Go + Expo managed workflow
+      const mp = new Mixpanel(MIXPANEL_TOKEN, false, false);
+      await mp.init();
+      // Super properties sent with every event
+      mp.registerSuperProperties({
+        app: 'autism_pathways',
+        platform: 'mobile',
+      });
+      _mixpanel = mp;
+      return _mixpanel;
+    } catch (e) {
+      _initPromise = null;
+      return null;
+    }
+  })();
+  return _initPromise;
 }
 
 /** Log a custom event with optional properties */
@@ -45,29 +51,26 @@ export function logEvent(
   eventName: string,
   params?: Record<string, string | number | boolean>
 ): void {
-  try {
-    const mp = getMixpanel();
+  getMixpanel().then((mp) => {
     if (!mp) return;
-    mp.track(eventName, params ?? {});
-  } catch (_) {}
+    try { mp.track(eventName, params ?? {}); } catch (_) {}
+  }).catch(() => {});
 }
 
 /** Log a screen view — call on every major screen mount */
 export function logScreenView(screenName: string): void {
-  try {
-    const mp = getMixpanel();
+  getMixpanel().then((mp) => {
     if (!mp) return;
-    mp.track('screen_view', { screen_name: screenName });
-  } catch (_) {}
+    try { mp.track('screen_view', { screen_name: screenName }); } catch (_) {}
+  }).catch(() => {});
 }
 
 /** Set a user property (e.g. language, premium status) */
 export function setUserProperty(name: string, value: string): void {
-  try {
-    const mp = getMixpanel();
+  getMixpanel().then((mp) => {
     if (!mp) return;
-    mp.getPeople().set({ [name]: value });
-  } catch (_) {}
+    try { mp.getPeople().set({ [name]: value }); } catch (_) {}
+  }).catch(() => {});
 }
 
 /**
@@ -75,14 +78,13 @@ export function setUserProperty(name: string, value: string): void {
  * This links all future events to this user in Mixpanel.
  */
 export function identifyUser(userId: string, email?: string): void {
-  try {
-    const mp = getMixpanel();
+  getMixpanel().then((mp) => {
     if (!mp) return;
-    mp.identify(userId);
-    if (email) {
-      mp.getPeople().set({ $email: email });
-    }
-  } catch (_) {}
+    try {
+      mp.identify(userId);
+      if (email) { mp.getPeople().set({ $email: email }); }
+    } catch (_) {}
+  }).catch(() => {});
 }
 
 /**
@@ -90,11 +92,10 @@ export function identifyUser(userId: string, email?: string): void {
  * Clears local storage and generates a new anonymous distinct_id.
  */
 export function resetUser(): void {
-  try {
-    const mp = getMixpanel();
+  getMixpanel().then((mp) => {
     if (!mp) return;
-    mp.reset();
-  } catch (_) {}
+    try { mp.reset(); } catch (_) {}
+  }).catch(() => {});
 }
 
 // ─── Pre-defined AP events ────────────────────────────────────────────────────
