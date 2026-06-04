@@ -208,6 +208,25 @@ export default function TransitionHub() {
           <Text style={styles.checkStateBtnText}>🗺️ Check Your State →</Text>
         </TouchableOpacity>
 
+        {/* AI Guide CTA */}
+        <TouchableOpacity
+          style={styles.aiGuideCard}
+          onPress={() => router.push('/transition/ai-guide' as any)}
+          activeOpacity={0.85}
+        >
+          <View style={styles.aiGuideLeft}>
+            <Text style={styles.aiGuideEmoji}>✨</Text>
+            <View style={{ flex: 1 }}>
+              <View style={styles.aiGuideTitleRow}>
+                <Text style={styles.aiGuideTitle}>Your Personalized Transition Guide</Text>
+                <View style={styles.aiGuideBadge}><Text style={styles.aiGuideBadgeText}>AI</Text></View>
+              </View>
+              <Text style={styles.aiGuideDesc}>Get a custom action plan based on your child's age, state, and goals — with deep links to every tool.</Text>
+            </View>
+          </View>
+          <Text style={styles.aiGuideArrow}>›</Text>
+        </TouchableOpacity>
+
         {/* Premium Tools Section */}
         <View style={styles.premiumSection}>
           <View style={styles.premiumHeader}>
@@ -384,4 +403,24 @@ const styles = StyleSheet.create({
   },
   premiumBadgeText: { fontSize: 14 },
   toolChevron: { fontSize: 22, color: COLORS.textLight, paddingRight: SPACING.sm },
+
+  // AI Guide card
+  aiGuideCard: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: COLORS.purple, borderRadius: RADIUS.lg,
+    padding: SPACING.md, marginBottom: SPACING.lg,
+    shadowColor: COLORS.purple, shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25, shadowRadius: 8, elevation: 4,
+  },
+  aiGuideLeft: { flex: 1, flexDirection: 'row', alignItems: 'flex-start', gap: SPACING.sm },
+  aiGuideEmoji: { fontSize: 28, marginTop: 2 },
+  aiGuideTitleRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, marginBottom: 4 },
+  aiGuideTitle: { fontSize: FONT_SIZES.sm, fontWeight: '800', color: '#fff', flex: 1 },
+  aiGuideBadge: {
+    backgroundColor: 'rgba(255,255,255,0.25)', borderRadius: RADIUS.pill,
+    paddingHorizontal: 8, paddingVertical: 2, borderWidth: 1, borderColor: 'rgba(255,255,255,0.4)',
+  },
+  aiGuideBadgeText: { fontSize: 10, fontWeight: '800', color: '#fff' },
+  aiGuideDesc: { fontSize: FONT_SIZES.xs, color: 'rgba(255,255,255,0.85)', lineHeight: 16 },
+  aiGuideArrow: { fontSize: 22, color: 'rgba(255,255,255,0.7)', paddingLeft: SPACING.sm },
 });

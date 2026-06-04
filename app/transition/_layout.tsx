@@ -17,6 +17,7 @@ export default function TransitionLayout() {
       <Stack.Screen name="special-needs-jobs" />
       <Stack.Screen name="college-vocational-lookup" />
       <Stack.Screen name="apartment-lookup" />
+      <Stack.Screen name="ai-guide" />
     </Stack>
   );
 }
