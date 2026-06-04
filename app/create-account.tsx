@@ -7,6 +7,7 @@ import {
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { useAuth } from '../services/useAuth';
 import { storage } from '../services/storage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '../lib/theme';
 
 export default function CreateAccountScreen() {
@@ -60,6 +61,8 @@ export default function CreateAccountScreen() {
     const result = await confirmSignUp(email, code);
     setLoading(false);
     if (result.success) {
+      // Save first name so onboarding can personalise the welcome card
+      await AsyncStorage.setItem('ap_parent_first_name', firstName.trim());
       // New users go through onboarding; existing users go straight to dashboard
       router.replace('/onboarding');
     } else {

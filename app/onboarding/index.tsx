@@ -2,19 +2,19 @@
  * Onboarding — 8-card walkthrough
  *
  * Shown once after account creation. Gated by AsyncStorage key 'ap_onboarding_complete'.
- * Each card has:
- *   - A Lottie animation (placeholder slot — drop in your .json file and update the source)
- *   - A headline + body copy
- *   - Progress dots
- *   - Skip link (top right) and Next/Get Started button (bottom)
+ *
+ * Personalisation:
+ *   - parentName: read from AsyncStorage 'ap_parent_first_name' (set during create-account)
+ *   - childName:  read from AsyncStorage 'profile' JSON → childName field
  *
  * To add your Lottie animations:
  *   1. Place your .json files in assets/animations/onboarding/
- *      e.g. card1.json, card2.json ... card8.json
- *   2. Uncomment the `source={CARDS[index].lottie}` line in the LottieView below
- *   3. Remove the placeholder <View> that currently shows the emoji fallback
+ *      named card1.json, card2.json … card8.json
+ *   2. For each card, set lottie: require('../../assets/animations/onboarding/cardN.json')
+ *      (Card 1 is already wired — just add the file!)
+ *   3. The emoji placeholder disappears automatically when lottie is non-null
  */
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, Dimensions,
   FlatList, Animated, Platform,
@@ -28,84 +28,90 @@ import { COLORS, SPACING, FONT_SIZES, RADIUS } from '../../lib/theme';
 
 const { width } = Dimensions.get('window');
 
-// ── Card content ──────────────────────────────────────────────────────────────
-// lottie: path to your animation file (uncomment source= below when ready)
-// emoji: shown as a placeholder until the Lottie file is added
-const CARDS = [
+// ── Card definitions ──────────────────────────────────────────────────────────
+// headline / body support {{parentName}} and {{childName}} tokens
+const CARD_DEFS = [
   {
     id: '1',
-    emoji: '🗺️',
-    headline: 'Your family's navigation system',
-    body: 'Autism Pathways guides you step by step through diagnosis, Medicaid, waivers, IEPs, and more — so you never have to figure it out alone.',
+    emoji: '💜',
+    headline: 'Welcome to Autism Pathways, {{parentName}}!',
+    body: 'Take a moment to get familiar with all of the ways that we can help {{childName}}\'s journey be a little easier.',
     bg: ['#EDE9FC', '#F5F4FB'] as [string, string],
+    // ✅ Wire your card 1 Lottie here once card1.json is in assets/animations/onboarding/
     // lottie: require('../../assets/animations/onboarding/card1.json'),
     lottie: null,
   },
   {
     id: '2',
-    emoji: '🔍',
-    headline: 'Start with the Diagnosis Pathway',
-    body: 'Not sure where to begin? Our guided diagnosis pathway walks you through every step, from first concerns to official evaluation.',
+    emoji: '📓',
+    headline: 'Daily Observations',
+    body: 'Your daily observations fuel the app. Make observations daily (or as often as you\'d like) and attach them to your IEP pathway, provider report, and more. Over time, view trends to see common days, times, triggers, and more!',
     bg: ['#E3F7F1', '#F5F4FB'] as [string, string],
     // lottie: require('../../assets/animations/onboarding/card2.json'),
     lottie: null,
   },
   {
     id: '3',
-    emoji: '🏥',
-    headline: 'Medicaid and waivers, simplified',
-    body: 'We break down Medicaid eligibility, waiver waitlists, and how to use your benefits — in plain language, not government-speak.',
+    emoji: '🗺️',
+    headline: 'Your Pathways',
+    body: 'Diagnosis, Medicaid, Waiver, IEP, Potty, and Transition Pathways are designed to be your guide through every step (and curveball) you experience. Follow the pathways and answer checkpoint questions to get the full advantage of the tool.',
     bg: ['#FFF3E0', '#F5F4FB'] as [string, string],
     // lottie: require('../../assets/animations/onboarding/card3.json'),
     lottie: null,
   },
   {
     id: '4',
-    emoji: '🏫',
-    headline: 'Walk into every IEP meeting prepared',
-    body: 'Generate talking points, record meetings, and track goals. You deserve to feel confident in that room.',
+    emoji: '🆘',
+    headline: 'Need In-The-Moment Help?',
+    body: 'Use the SOS tool to get timely strategies and tips to help with dysregulation, dangerous behavior, and more.',
     bg: ['#EDE9FC', '#F5F4FB'] as [string, string],
     // lottie: require('../../assets/animations/onboarding/card4.json'),
     lottie: null,
   },
   {
     id: '5',
-    emoji: '📓',
-    headline: 'Log observations that matter',
-    body: 'Track behaviors, milestones, and daily moments. Your observations are powerful evidence — keep them organized.',
+    emoji: '📅',
+    headline: 'Stay Organized and Never Miss a Deadline Again',
+    body: 'Set reminders for waiver check-ins, SSI applications, IEP meetings, service renewals, and more! Store all of your documents in one place for easy referencing when you need it most.',
     bg: ['#E3F7F1', '#F5F4FB'] as [string, string],
     // lottie: require('../../assets/animations/onboarding/card5.json'),
     lottie: null,
   },
   {
     id: '6',
-    emoji: '💬',
-    headline: 'Talk to providers with confidence',
-    body: 'Our Provider Translator and Talking Points tools help you communicate clearly with doctors, therapists, and school staff.',
+    emoji: '🔍',
+    headline: 'Find Providers Near You',
+    body: 'Search 891+ curated ASD-specialized providers nearest to you by specialty (pediatricians, PTs, OTs, and more). Read caregiver reviews and add them to your services tracker.',
     bg: ['#FFF3E0', '#F5F4FB'] as [string, string],
     // lottie: require('../../assets/animations/onboarding/card6.json'),
     lottie: null,
   },
   {
     id: '7',
-    emoji: '🧘',
-    headline: 'You need support too',
-    body: 'The Safe Space, In-the-Moment tools, and 1:1 calls with Jessie are here for the hard days. You are not alone in this.',
+    emoji: '🤍',
+    headline: 'Just Know You Are Safe Here',
+    body: 'Share, learn, and grow together in the Safe Space... or just vent privately and keep your thoughts completely to yourself. Either way, you belong here.',
     bg: ['#EDE9FC', '#F5F4FB'] as [string, string],
     // lottie: require('../../assets/animations/onboarding/card7.json'),
     lottie: null,
   },
   {
     id: '8',
-    emoji: '💜',
-    headline: 'You've got this',
-    body: 'Thousands of families are navigating this journey with Autism Pathways. Let\'s build your child\'s path together.',
+    emoji: '✨',
+    headline: 'There is so much to explore... and it\'s constantly growing',
+    body: 'I designed Autism Pathways to be the one place you can go to get everything you need — because I was so tired of having to scour through hundreds of different sites and agencies. If you have an idea for a feature, email me! I respond to every one.\n\nWith all the love,\nJessie, Founder',
     bg: ['#E3F7F1', '#F5F4FB'] as [string, string],
     // lottie: require('../../assets/animations/onboarding/card8.json'),
     lottie: null,
     isLast: true,
   },
 ];
+
+function interpolate(text: string, parentName: string, childName: string) {
+  return text
+    .replace(/{{parentName}}/g, parentName)
+    .replace(/{{childName}}/g, childName);
+}
 
 export default function OnboardingScreen() {
   const router = useRouter();
@@ -114,21 +120,35 @@ export default function OnboardingScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const scrollX = useRef(new Animated.Value(0)).current;
 
+  const [parentName, setParentName] = useState('');
+  const [childName, setChildName] = useState('your child');
+
+  useEffect(() => {
+    (async () => {
+      const pName = await AsyncStorage.getItem('ap_parent_first_name');
+      if (pName) setParentName(pName);
+
+      const profileRaw = await AsyncStorage.getItem('profile');
+      if (profileRaw) {
+        try {
+          const profile = JSON.parse(profileRaw);
+          if (profile?.childName) setChildName(profile.childName);
+        } catch {}
+      }
+    })();
+  }, []);
+
   const completeOnboarding = async () => {
     await AsyncStorage.setItem('ap_onboarding_complete', 'true');
     router.replace('/profile-setup');
   };
 
   const goNext = () => {
-    if (currentIndex < CARDS.length - 1) {
+    if (currentIndex < CARD_DEFS.length - 1) {
       flatListRef.current?.scrollToIndex({ index: currentIndex + 1, animated: true });
     } else {
       completeOnboarding();
     }
-  };
-
-  const handleSkip = () => {
-    completeOnboarding();
   };
 
   const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
@@ -139,51 +159,63 @@ export default function OnboardingScreen() {
 
   const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
 
-  const renderCard = ({ item }: { item: typeof CARDS[0] }) => (
-    <LinearGradient
-      colors={item.bg}
-      style={styles.card}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 0, y: 1 }}
-    >
-      {/* Animation area */}
-      <View style={styles.animationContainer}>
-        {item.lottie ? (
-          <LottieView
-            source={item.lottie}
-            autoPlay
-            loop
-            style={styles.lottie}
-          />
-        ) : (
-          // Placeholder until Lottie files are added
-          <View style={styles.lottiePlaceholder}>
-            <Text style={styles.placeholderEmoji}>{item.emoji}</Text>
-          </View>
-        )}
-      </View>
+  const renderCard = ({ item }: { item: typeof CARD_DEFS[0] }) => {
+    const headline = interpolate(item.headline, parentName || '!', childName);
+    // For card 1 with no parentName yet, clean up the trailing comma+space before !
+    const cleanHeadline = parentName
+      ? headline
+      : headline.replace(', !', '!');
+    const body = interpolate(item.body, parentName || 'you', childName);
 
-      {/* Text content */}
-      <View style={styles.textContent}>
-        <Text style={styles.headline}>{item.headline}</Text>
-        <Text style={styles.body}>{item.body}</Text>
-      </View>
-    </LinearGradient>
-  );
+    return (
+      <LinearGradient
+        colors={item.bg}
+        style={styles.card}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+      >
+        {/* Animation area */}
+        <View style={styles.animationContainer}>
+          {item.lottie ? (
+            <LottieView
+              source={item.lottie}
+              autoPlay
+              loop
+              style={styles.lottie}
+            />
+          ) : (
+            <View style={styles.lottiePlaceholder}>
+              <Text style={styles.placeholderEmoji}>{item.emoji}</Text>
+            </View>
+          )}
+        </View>
 
-  const isLast = currentIndex === CARDS.length - 1;
+        {/* Text content */}
+        <View style={styles.textContent}>
+          <Text style={styles.headline}>{cleanHeadline}</Text>
+          <Text style={styles.body}>{body}</Text>
+        </View>
+      </LinearGradient>
+    );
+  };
+
+  const isLast = currentIndex === CARD_DEFS.length - 1;
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Skip button */}
-      <TouchableOpacity style={styles.skipBtn} onPress={handleSkip} activeOpacity={0.7}>
+      <TouchableOpacity
+        style={styles.skipBtn}
+        onPress={completeOnboarding}
+        activeOpacity={0.7}
+      >
         <Text style={styles.skipText}>Skip</Text>
       </TouchableOpacity>
 
       {/* Cards */}
       <Animated.FlatList
         ref={flatListRef}
-        data={CARDS}
+        data={CARD_DEFS}
         keyExtractor={(item) => item.id}
         renderItem={renderCard}
         horizontal
@@ -203,7 +235,7 @@ export default function OnboardingScreen() {
       <View style={[styles.bottomControls, { paddingBottom: insets.bottom + SPACING.lg }]}>
         {/* Progress dots */}
         <View style={styles.dots}>
-          {CARDS.map((_, i) => {
+          {CARD_DEFS.map((_, i) => {
             const inputRange = [(i - 1) * width, i * width, (i + 1) * width];
             const dotWidth = scrollX.interpolate({
               inputRange,
@@ -231,13 +263,13 @@ export default function OnboardingScreen() {
           activeOpacity={0.85}
         >
           <Text style={styles.nextBtnText}>
-            {isLast ? "Let's Get Started →" : 'Next →'}
+            {isLast ? "Let's Get Started \u2192" : 'Next \u2192'}
           </Text>
         </TouchableOpacity>
 
         {/* "I've got it" skip link */}
         {!isLast && (
-          <TouchableOpacity onPress={handleSkip} style={styles.gotItBtn} activeOpacity={0.7}>
+          <TouchableOpacity onPress={completeOnboarding} style={styles.gotItBtn} activeOpacity={0.7}>
             <Text style={styles.gotItText}>I've got it, take me in</Text>
           </TouchableOpacity>
         )}
@@ -267,8 +299,8 @@ const styles = StyleSheet.create({
   },
 
   animationContainer: {
-    width: width * 0.75,
-    height: width * 0.75,
+    width: width * 0.72,
+    height: width * 0.72,
     marginBottom: SPACING.xl,
     alignItems: 'center',
     justifyContent: 'center',
@@ -276,7 +308,7 @@ const styles = StyleSheet.create({
   lottie: { width: '100%', height: '100%' },
   lottiePlaceholder: {
     width: '100%', height: '100%',
-    backgroundColor: 'rgba(255,255,255,0.6)',
+    backgroundColor: 'rgba(255,255,255,0.65)',
     borderRadius: RADIUS.xl,
     alignItems: 'center', justifyContent: 'center',
     borderWidth: 2, borderColor: 'rgba(124,111,212,0.15)',
@@ -286,8 +318,8 @@ const styles = StyleSheet.create({
 
   textContent: { alignItems: 'center', paddingHorizontal: SPACING.sm },
   headline: {
-    fontSize: 24, fontWeight: '800', color: COLORS.text,
-    textAlign: 'center', marginBottom: SPACING.md, lineHeight: 30,
+    fontSize: 22, fontWeight: '800', color: COLORS.text,
+    textAlign: 'center', marginBottom: SPACING.md, lineHeight: 28,
   },
   body: {
     fontSize: FONT_SIZES.md, color: COLORS.textMid,
@@ -300,10 +332,8 @@ const styles = StyleSheet.create({
     borderTopWidth: 1, borderTopColor: 'rgba(212,208,239,0.3)',
   },
   dots: { flexDirection: 'row', gap: SPACING.xs, marginBottom: SPACING.lg },
-  dot: {
-    height: 8, borderRadius: 4,
-    backgroundColor: COLORS.purple,
-  },
+  dot: { height: 8, borderRadius: 4, backgroundColor: COLORS.purple },
+
   nextBtn: {
     backgroundColor: COLORS.purple, borderRadius: RADIUS.sm,
     paddingVertical: SPACING.lg, paddingHorizontal: SPACING.xxl,
@@ -311,6 +341,7 @@ const styles = StyleSheet.create({
   },
   nextBtnLast: { backgroundColor: COLORS.teal },
   nextBtnText: { color: COLORS.white, fontSize: FONT_SIZES.md, fontWeight: '800' },
+
   gotItBtn: { paddingVertical: SPACING.sm },
   gotItText: { fontSize: FONT_SIZES.sm, color: COLORS.textLight, fontWeight: '600' },
 });
