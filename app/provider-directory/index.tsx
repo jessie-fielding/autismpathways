@@ -1,363 +1,435 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet, TextInput, Linking, Alert,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity,
+  TextInput, FlatList, Linking, Alert, Animated,
 } from 'react-native';
-import { useRouter } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
+import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '../../lib/theme';
+import { PROVIDERS, Provider } from '../../lib/providerData';
+import { useIsPremium } from '../../hooks/useIsPremium';
 import NearMeButton from '../../components/NearMeButton';
 
-const COLORS = {
-  bg: '#F5F4FB', card: '#FFFFFF', navy: '#1a1f5e', purple: '#7c6fd4',
-  purpleDk: '#4a3f8f', purpleLt: '#f0ebff', textMid: '#6b6490',
-  textLight: '#a09cbf', border: '#d4d0ef', teal: '#3BBFA3', tealLt: '#e3f7f1',
-  white: '#ffffff', orange: '#e67e22',
-};
-const SPACING = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 28 };
-
-type Provider = {
-  id: string;
-  name: string;
-  type: string;
-  specialty: string;
-  states: string[];
-  phone?: string;
-  website?: string;
-  medicaidAccepted: boolean;
-  waitlistNote?: string;
-  description: string;
-  tags: string[];
-};
-
-const SPECIALTIES = ['All', 'ABA Therapy', 'Speech', 'OT/PT', 'Psychiatry', 'Pediatrics', 'Advocacy'];
-
-const PROVIDERS: Provider[] = [
-  {
-    id: '1', name: 'Autism Speaks Resource Guide', type: 'National Directory',
-    specialty: 'Advocacy', states: ['ALL'],
-    website: 'https://www.autismspeaks.org/resource-guide',
-    medicaidAccepted: true,
-    description: 'Searchable national database of autism service providers by state, specialty, and insurance type.',
-    tags: ['National', 'Free Search', 'All Specialties'],
-  },
-  {
-    id: '2', name: 'ASHA ProFind', type: 'National Directory',
-    specialty: 'Speech', states: ['ALL'],
-    website: 'https://www.asha.org/profind/',
-    medicaidAccepted: true,
-    description: 'American Speech-Language-Hearing Association\'s directory of certified speech-language pathologists and audiologists.',
-    tags: ['National', 'SLP', 'Certified'],
-  },
-  {
-    id: '3', name: 'AOTA OT Finder', type: 'National Directory',
-    specialty: 'OT/PT', states: ['ALL'],
-    website: 'https://www.aota.org/practice/find-ot',
-    medicaidAccepted: true,
-    description: 'American Occupational Therapy Association\'s directory to find occupational therapists near you.',
-    tags: ['National', 'OT', 'Certified'],
-  },
-  {
-    id: '4', name: 'Psychology Today Therapist Finder', type: 'National Directory',
-    specialty: 'Psychiatry', states: ['ALL'],
-    website: 'https://www.psychologytoday.com/us/therapists',
-    medicaidAccepted: true,
-    description: 'Filter by insurance, specialty (autism, ADHD, anxiety), and location. Includes telehealth options.',
-    tags: ['National', 'Telehealth', 'Insurance Filter'],
-  },
-  {
-    id: '5', name: 'Behavioral Health Treatment Locator', type: 'Federal Directory',
-    specialty: 'ABA Therapy', states: ['ALL'],
-    phone: '1-800-662-4357',
-    website: 'https://findtreatment.samhsa.gov',
-    medicaidAccepted: true,
-    description: 'SAMHSA\'s national directory of behavioral health treatment providers. Free to search, includes Medicaid-accepting providers.',
-    tags: ['Federal', 'Free', 'Medicaid'],
-  },
-  {
-    id: '6', name: 'Kennedy Krieger Institute', type: 'Specialty Hospital',
-    specialty: 'ABA Therapy', states: ['MD', 'VA', 'DC'],
-    phone: '(443) 923-9200',
-    website: 'https://www.kennedykrieger.org',
-    medicaidAccepted: true,
-    waitlistNote: '6-18 month waitlist typical',
-    description: 'World-renowned autism and developmental disabilities center. Offers ABA, speech, OT, PT, psychiatry, and school programs.',
-    tags: ['Medicaid', 'Comprehensive', 'Research Center'],
-  },
-  {
-    id: '7', name: 'Marcus Autism Center', type: 'Specialty Hospital',
-    specialty: 'ABA Therapy', states: ['GA'],
-    phone: '(404) 785-9400',
-    website: 'https://www.marcus.org',
-    medicaidAccepted: true,
-    waitlistNote: '3-12 month waitlist',
-    description: 'One of the largest autism centers in the US. Offers diagnostic evaluations, ABA, feeding therapy, and family support.',
-    tags: ['Medicaid', 'Diagnostic', 'Comprehensive'],
-  },
-  {
-    id: '8', name: 'Children\'s Hospital Colorado Autism & Developmental Pediatrics', type: 'Specialty Hospital',
-    specialty: 'Pediatrics', states: ['CO'],
-    phone: '(720) 777-6200',
-    website: 'https://www.childrenscolorado.org/departments-and-programs/autism/',
-    medicaidAccepted: true,
-    waitlistNote: '3-9 month waitlist',
-    description: 'Comprehensive autism evaluation and treatment center. Accepts most insurance and Medicaid.',
-    tags: ['Medicaid', 'Diagnostic', 'Colorado'],
-  },
-  {
-    id: '9', name: 'Lurie Center for Autism (MGH)', type: 'Specialty Hospital',
-    specialty: 'Psychiatry', states: ['MA'],
-    phone: '(781) 860-1700',
-    website: 'https://www.massgeneral.org/lurie-center',
-    medicaidAccepted: true,
-    waitlistNote: '6-12 month waitlist',
-    description: 'Massachusetts General Hospital\'s autism center. Offers evaluation, medication management, and family support.',
-    tags: ['Medicaid', 'Research', 'Massachusetts'],
-  },
-  {
-    id: '10', name: 'PACER Center', type: 'Advocacy Organization',
-    specialty: 'Advocacy', states: ['MN', 'ALL'],
-    phone: '(952) 838-9000',
-    website: 'https://www.pacer.org',
-    medicaidAccepted: false,
-    description: 'Parent Training and Information Center. Free help with IEP advocacy, disability rights, and navigating school systems.',
-    tags: ['Free', 'IEP Help', 'Parent Training'],
-  },
-  {
-    id: '11', name: 'Easterseals', type: 'Nonprofit Provider',
-    specialty: 'ABA Therapy', states: ['ALL'],
-    phone: '1-800-221-6827',
-    website: 'https://www.easterseals.com',
-    medicaidAccepted: true,
-    description: 'National nonprofit providing ABA, speech, OT, and day programs for children with autism. Many locations accept Medicaid.',
-    tags: ['National', 'Medicaid', 'Nonprofit'],
-  },
-  {
-    id: '12', name: 'Autism Society of America', type: 'Advocacy Organization',
-    specialty: 'Advocacy', states: ['ALL'],
-    phone: '1-800-328-8476',
-    website: 'https://autismsociety.org',
-    medicaidAccepted: false,
-    description: 'Local chapters in all 50 states. Offers support groups, resource navigation, and advocacy assistance.',
-    tags: ['National', 'Free', 'Support Groups'],
-  },
-  {
-    id: '13', name: 'Nationwide Children\'s Hospital Autism Center', type: 'Specialty Hospital',
-    specialty: 'ABA Therapy', states: ['OH'],
-    phone: '(614) 722-2700',
-    website: 'https://www.nationwidechildrens.org/specialties/autism-center',
-    medicaidAccepted: true,
-    waitlistNote: '3-6 month waitlist',
-    description: 'Comprehensive autism evaluation and treatment. Strong research program and Medicaid acceptance.',
-    tags: ['Medicaid', 'Ohio', 'Comprehensive'],
-  },
-  {
-    id: '14', name: 'Texas Children\'s Hospital Autism Center', type: 'Specialty Hospital',
-    specialty: 'Pediatrics', states: ['TX'],
-    phone: '(832) 822-3600',
-    website: 'https://www.texaschildrens.org/departments/autism-center',
-    medicaidAccepted: true,
-    waitlistNote: '6-12 month waitlist',
-    description: 'Largest children\'s hospital in the US. Offers diagnostic evaluations, ABA, and family support services.',
-    tags: ['Medicaid', 'Texas', 'Diagnostic'],
-  },
-  {
-    id: '15', name: 'UCSF Autism Center', type: 'Specialty Hospital',
-    specialty: 'Psychiatry', states: ['CA'],
-    phone: '(415) 476-7199',
-    website: 'https://www.ucsfhealth.org/clinics/autism-center',
-    medicaidAccepted: true,
-    waitlistNote: '6-18 month waitlist',
-    description: 'University of California San Francisco\'s autism research and clinical center. Accepts Medi-Cal.',
-    tags: ['Medicaid', 'California', 'Research'],
-  },
-];
-
 const US_STATES = [
-  'All States', 'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
-  'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD', 'MA', 'MI',
-  'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ', 'NM', 'NY', 'NC', 'ND',
-  'OH', 'OK', 'OR', 'PA', 'RI', 'SC', 'SD', 'TN', 'TX', 'UT', 'VT', 'VA',
-  'WA', 'WV', 'WI', 'WY', 'DC',
+  { code: 'ALL', name: 'All States' },
+  { code: 'AL', name: 'Alabama' }, { code: 'AK', name: 'Alaska' }, { code: 'AZ', name: 'Arizona' },
+  { code: 'AR', name: 'Arkansas' }, { code: 'CA', name: 'California' }, { code: 'CO', name: 'Colorado' },
+  { code: 'CT', name: 'Connecticut' }, { code: 'DE', name: 'Delaware' }, { code: 'FL', name: 'Florida' },
+  { code: 'GA', name: 'Georgia' }, { code: 'HI', name: 'Hawaii' }, { code: 'ID', name: 'Idaho' },
+  { code: 'IL', name: 'Illinois' }, { code: 'IN', name: 'Indiana' }, { code: 'IA', name: 'Iowa' },
+  { code: 'KS', name: 'Kansas' }, { code: 'KY', name: 'Kentucky' }, { code: 'LA', name: 'Louisiana' },
+  { code: 'ME', name: 'Maine' }, { code: 'MD', name: 'Maryland' }, { code: 'MA', name: 'Massachusetts' },
+  { code: 'MI', name: 'Michigan' }, { code: 'MN', name: 'Minnesota' }, { code: 'MS', name: 'Mississippi' },
+  { code: 'MO', name: 'Missouri' }, { code: 'MT', name: 'Montana' }, { code: 'NE', name: 'Nebraska' },
+  { code: 'NV', name: 'Nevada' }, { code: 'NH', name: 'New Hampshire' }, { code: 'NJ', name: 'New Jersey' },
+  { code: 'NM', name: 'New Mexico' }, { code: 'NY', name: 'New York' }, { code: 'NC', name: 'North Carolina' },
+  { code: 'ND', name: 'North Dakota' }, { code: 'OH', name: 'Ohio' }, { code: 'OK', name: 'Oklahoma' },
+  { code: 'OR', name: 'Oregon' }, { code: 'PA', name: 'Pennsylvania' }, { code: 'RI', name: 'Rhode Island' },
+  { code: 'SC', name: 'South Carolina' }, { code: 'SD', name: 'South Dakota' }, { code: 'TN', name: 'Tennessee' },
+  { code: 'TX', name: 'Texas' }, { code: 'UT', name: 'Utah' }, { code: 'VT', name: 'Vermont' },
+  { code: 'VA', name: 'Virginia' }, { code: 'WA', name: 'Washington' }, { code: 'WV', name: 'West Virginia' },
+  { code: 'WI', name: 'Wisconsin' }, { code: 'WY', name: 'Wyoming' }, { code: 'DC', name: 'Washington D.C.' },
 ];
+
+const SPECIALTY_TABS = ['All', 'ABA Therapy', 'Speech & OT', 'Psychiatry', 'Advocacy', 'National Directory'] as const;
+type SpecialtyTab = typeof SPECIALTY_TABS[number];
+
+const SPECIALTY_COLORS: Record<string, string> = {
+  'ABA Therapy':        COLORS.purple,
+  'Speech & OT':        COLORS.teal,
+  'Psychiatry':         '#E07B6A',
+  'Advocacy':           '#F59E0B',
+  'National Directory': '#6366F1',
+};
+
+const SPECIALTY_EMOJIS: Record<string, string> = {
+  'ABA Therapy':        '🧩',
+  'Speech & OT':        '🗣️',
+  'Psychiatry':         '🧠',
+  'Advocacy':           '🤝',
+  'National Directory': '🌐',
+};
+
+// Free users see only these 2 featured national providers per specialty
+const FREE_FEATURED_IDS = PROVIDERS
+  .filter(p => p.featured || p.states.includes('ALL'))
+  .slice(0, 6)
+  .map(p => p.id);
+
+function ProviderCard({
+  provider,
+  onPress,
+  isPremium,
+  isLocked,
+}: {
+  provider: Provider;
+  onPress: () => void;
+  isPremium: boolean;
+  isLocked: boolean;
+}) {
+  const accentColor = SPECIALTY_COLORS[provider.specialty] || COLORS.purple;
+
+  return (
+    <TouchableOpacity
+      style={[styles.card, isLocked && styles.cardLocked]}
+      onPress={onPress}
+      activeOpacity={0.8}
+    >
+      {/* Left accent */}
+      <View style={[styles.cardAccent, { backgroundColor: accentColor }]} />
+
+      <View style={styles.cardBody}>
+        {/* Top row */}
+        <View style={styles.cardTopRow}>
+          <View style={[styles.cardAvatar, { backgroundColor: accentColor + '18' }]}>
+            <Text style={styles.cardEmoji}>{SPECIALTY_EMOJIS[provider.specialty] || '🏥'}</Text>
+          </View>
+          <View style={styles.cardTitleBlock}>
+            <Text style={styles.cardName} numberOfLines={2}>{provider.name}</Text>
+            <Text style={styles.cardType} numberOfLines={1}>{provider.type}</Text>
+          </View>
+          {isLocked && (
+            <View style={styles.lockBadge}>
+              <Text style={styles.lockIcon}>🔒</Text>
+            </View>
+          )}
+        </View>
+
+        {/* Badges */}
+        <View style={styles.cardBadges}>
+          {provider.acceptingPatients ? (
+            <View style={styles.acceptingBadge}>
+              <Text style={styles.acceptingText}>✓ Accepting</Text>
+            </View>
+          ) : (
+            <View style={styles.waitlistBadge}>
+              <Text style={styles.waitlistText}>⏳ Waitlist</Text>
+            </View>
+          )}
+          {provider.medicaidAccepted && (
+            <View style={styles.medicaidBadge}>
+              <Text style={styles.medicaidText}>Medicaid ✓</Text>
+            </View>
+          )}
+          {provider.caregiverVerified && isPremium && (
+            <View style={styles.verifiedBadge}>
+              <Text style={styles.verifiedText}>🏅 Verified</Text>
+            </View>
+          )}
+        </View>
+
+        {/* Description */}
+        {!isLocked && (
+          <Text style={styles.cardDesc} numberOfLines={2}>{provider.description}</Text>
+        )}
+
+        {/* Tags */}
+        {!isLocked && provider.tags.length > 0 && (
+          <View style={styles.cardTags}>
+            {provider.tags.slice(0, 3).map((tag, i) => (
+              <View key={i} style={styles.tag}>
+                <Text style={styles.tagText}>{tag}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* Action row */}
+        {!isLocked ? (
+          <View style={styles.cardActions}>
+            {provider.phone && (
+              <TouchableOpacity
+                style={styles.callBtn}
+                onPress={() => Linking.openURL(`tel:${provider.phone!.replace(/[^0-9+]/g, '')}`)}
+              >
+                <Text style={styles.callBtnText}>📞 Call</Text>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity style={styles.detailBtn} onPress={onPress}>
+              <Text style={styles.detailBtnText}>View Details →</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <Text style={styles.lockedHint}>⭐ Unlock with Premium to view details</Text>
+        )}
+      </View>
+    </TouchableOpacity>
+  );
+}
 
 export default function ProviderDirectoryScreen() {
-  const router = useRouter();
   const insets = useSafeAreaInsets();
-  const [search, setSearch] = useState('');
-  const [selectedState, setSelectedState] = useState('All States');
-  const [selectedSpecialty, setSelectedSpecialty] = useState('All');
-  const [medicaidOnly, setMedicaidOnly] = useState(false);
-  const [statePickerOpen, setStatePickerOpen] = useState(false);
+  const router = useRouter();
+  const { isPremium } = useIsPremium();
 
-  const filtered = PROVIDERS.filter((p) => {
-    const matchSearch = !search || p.name.toLowerCase().includes(search.toLowerCase()) ||
-      p.description.toLowerCase().includes(search.toLowerCase()) ||
-      p.tags.some((t) => t.toLowerCase().includes(search.toLowerCase()));
-    const matchState = selectedState === 'All States' || p.states.includes('ALL') || p.states.includes(selectedState);
-    const matchSpecialty = selectedSpecialty === 'All' || p.specialty === selectedSpecialty;
-    const matchMedicaid = !medicaidOnly || p.medicaidAccepted;
-    return matchSearch && matchState && matchSpecialty && matchMedicaid;
-  });
+  const [selectedState, setSelectedState] = useState('ALL');
+  const [selectedTab, setSelectedTab] = useState<SpecialtyTab>('All');
+  const [searchText, setSearchText] = useState('');
+  const [medicaidOnly, setMedicaidOnly] = useState(false);
+  const [acceptingOnly, setAcceptingOnly] = useState(false);
+  const [showStatePicker, setShowStatePicker] = useState(false);
+
+  const stateName = US_STATES.find(s => s.code === selectedState)?.name || 'All States';
+
+  const filtered = useMemo(() => {
+    let list = PROVIDERS;
+
+    // State filter
+    if (selectedState !== 'ALL') {
+      list = list.filter(p => p.states.includes(selectedState) || p.states.includes('ALL'));
+    }
+
+    // Specialty tab
+    if (selectedTab !== 'All') {
+      list = list.filter(p => p.specialty === selectedTab);
+    }
+
+    // Search
+    if (searchText.trim()) {
+      const q = searchText.toLowerCase();
+      list = list.filter(p =>
+        p.name.toLowerCase().includes(q) ||
+        p.description.toLowerCase().includes(q) ||
+        p.tags.some(t => t.toLowerCase().includes(q))
+      );
+    }
+
+    // Filters
+    if (medicaidOnly) list = list.filter(p => p.medicaidAccepted);
+    if (acceptingOnly) list = list.filter(p => p.acceptingPatients);
+
+    return list;
+  }, [selectedState, selectedTab, searchText, medicaidOnly, acceptingOnly]);
+
+  // Featured = top providers for the selected state
+  const featured = useMemo(() => {
+    if (selectedState === 'ALL') {
+      return PROVIDERS.filter(p => p.featured).slice(0, 3);
+    }
+    return PROVIDERS
+      .filter(p => (p.states.includes(selectedState) || p.states.includes('ALL')) && p.featured)
+      .slice(0, 3);
+  }, [selectedState]);
+
+  // For free users: show 2 providers, rest locked
+  const displayList = useMemo(() => {
+    if (isPremium) return filtered;
+    return filtered.slice(0, 2);
+  }, [filtered, isPremium]);
+
+  const lockedCount = isPremium ? 0 : Math.max(0, filtered.length - 2);
 
   return (
     <View style={styles.container}>
-      {/* HEADER */}
+      {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}
+          hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
           <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Provider Directory</Text>
-        <View style={{ width: 60 }} />
-      </View>
-
-      {/* SEARCH */}
-      <View style={styles.searchBar}>
-        <Text style={styles.searchIcon}>🔍</Text>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search providers..."
-          placeholderTextColor={COLORS.textLight}
-          value={search}
-          onChangeText={setSearch}
-        />
-        {search.length > 0 && (
-          <TouchableOpacity onPress={() => setSearch('')}>
-            <Text style={styles.clearBtn}>✕</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-
-      {/* FILTERS */}
-      <View style={styles.filterRow}>
-        <NearMeButton
-          onStateDetected={(code) => { setSelectedState(code); setStatePickerOpen(false); }}
-        />
         <TouchableOpacity
-          style={styles.stateBtn}
-          onPress={() => setStatePickerOpen(!statePickerOpen)}
+          style={styles.submitBtn}
+          onPress={() => isPremium ? router.push('/provider-directory/submit') : router.push('/paywall')}
         >
-          <Text style={styles.stateBtnText}>📍 {selectedState}</Text>
-          <Text style={styles.stateBtnChevron}>▼</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.medicaidToggle, medicaidOnly && styles.medicaidToggleOn]}
-          onPress={() => setMedicaidOnly(!medicaidOnly)}
-        >
-          <Text style={[styles.medicaidToggleText, medicaidOnly && styles.medicaidToggleTextOn]}>
-            Medicaid Only
-          </Text>
+          <Text style={styles.submitBtnText}>+ Submit</Text>
         </TouchableOpacity>
       </View>
 
-      {/* STATE PICKER */}
-      {statePickerOpen && (
-        <View style={styles.statePicker}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.statePickerContent}>
-            {US_STATES.map((s) => (
-              <TouchableOpacity
-                key={s}
-                style={[styles.stateChip, selectedState === s && styles.stateChipActive]}
-                onPress={() => { setSelectedState(s); setStatePickerOpen(false); }}
-              >
-                <Text style={[styles.stateChipText, selectedState === s && styles.stateChipTextActive]}>{s}</Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-      )}
-
-      {/* SPECIALTY CHIPS */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.specialtyScroll} contentContainerStyle={styles.specialtyContent}>
-        {SPECIALTIES.map((s) => (
-          <TouchableOpacity
-            key={s}
-            style={[styles.specialtyChip, selectedSpecialty === s && styles.specialtyChipActive]}
-            onPress={() => setSelectedSpecialty(s)}
-          >
-            <Text style={[styles.specialtyChipText, selectedSpecialty === s && styles.specialtyChipTextActive]}>{s}</Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-
-      {/* RESULTS */}
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.resultCount}>{filtered.length} provider{filtered.length !== 1 ? 's' : ''} found</Text>
-
-        {filtered.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyIcon}>🔍</Text>
-            <Text style={styles.emptyTitle}>No providers found</Text>
-            <Text style={styles.emptySub}>Try changing your filters or searching for a different specialty.</Text>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {/* Search + Near Me */}
+        <View style={styles.searchSection}>
+          <View style={styles.searchRow}>
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search providers..."
+              placeholderTextColor={COLORS.textLight}
+              value={searchText}
+              onChangeText={setSearchText}
+              returnKeyType="search"
+            />
+            <NearMeButton
+              onStateDetected={(code) => setSelectedState(code)}
+              label="📍 Near Me"
+              variant="pill"
+            />
           </View>
-        ) : (
-          filtered.map((provider) => (
-            <View key={provider.id} style={styles.providerCard}>
-              <View style={styles.providerHeader}>
-                <View style={styles.providerAvatar}>
-                  <Text style={styles.providerAvatarText}>
-                    {provider.specialty === 'ABA Therapy' ? '🧩' :
-                     provider.specialty === 'Speech' ? '🗣️' :
-                     provider.specialty === 'OT/PT' ? '🤸' :
-                     provider.specialty === 'Psychiatry' ? '🧠' :
-                     provider.specialty === 'Pediatrics' ? '👶' : '🤝'}
+
+          {/* State picker */}
+          <TouchableOpacity
+            style={styles.statePickerBtn}
+            onPress={() => setShowStatePicker(!showStatePicker)}
+          >
+            <Text style={styles.statePickerText}>📍 {stateName}</Text>
+            <Text style={styles.statePickerChevron}>{showStatePicker ? '▲' : '▼'}</Text>
+          </TouchableOpacity>
+
+          {showStatePicker && (
+            <ScrollView style={styles.stateDropdown} nestedScrollEnabled showsVerticalScrollIndicator={false}>
+              {US_STATES.map(s => (
+                <TouchableOpacity
+                  key={s.code}
+                  style={[styles.stateOption, selectedState === s.code && styles.stateOptionActive]}
+                  onPress={() => { setSelectedState(s.code); setShowStatePicker(false); }}
+                >
+                  <Text style={[styles.stateOptionText, selectedState === s.code && styles.stateOptionTextActive]}>
+                    {s.name}
                   </Text>
-                </View>
-                <View style={styles.providerInfo}>
-                  <Text style={styles.providerName}>{provider.name}</Text>
-                  <Text style={styles.providerType}>{provider.type}</Text>
-                </View>
-                {provider.medicaidAccepted && (
-                  <View style={styles.medicaidBadge}>
-                    <Text style={styles.medicaidBadgeText}>Medicaid</Text>
-                  </View>
-                )}
-              </View>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          )}
 
-              <Text style={styles.providerDesc}>{provider.description}</Text>
+          {/* Filter pills */}
+          <View style={styles.filterRow}>
+            <TouchableOpacity
+              style={[styles.filterPill, medicaidOnly && styles.filterPillActive]}
+              onPress={() => setMedicaidOnly(!medicaidOnly)}
+            >
+              <Text style={[styles.filterPillText, medicaidOnly && styles.filterPillTextActive]}>Medicaid</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.filterPill, acceptingOnly && styles.filterPillActive]}
+              onPress={() => setAcceptingOnly(!acceptingOnly)}
+            >
+              <Text style={[styles.filterPillText, acceptingOnly && styles.filterPillTextActive]}>Accepting Now</Text>
+            </TouchableOpacity>
+            {(medicaidOnly || acceptingOnly || selectedState !== 'ALL' || searchText) && (
+              <TouchableOpacity
+                style={styles.clearBtn}
+                onPress={() => { setMedicaidOnly(false); setAcceptingOnly(false); setSelectedState('ALL'); setSearchText(''); }}
+              >
+                <Text style={styles.clearBtnText}>✕ Clear</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
 
-              {provider.waitlistNote && (
-                <View style={styles.waitlistNote}>
-                  <Text style={styles.waitlistText}>⏳ {provider.waitlistNote}</Text>
-                </View>
-              )}
+        {/* Specialty tabs */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.tabsContainer}
+        >
+          {SPECIALTY_TABS.map(tab => {
+            const isActive = selectedTab === tab;
+            const color = tab === 'All' ? COLORS.purple : (SPECIALTY_COLORS[tab] || COLORS.purple);
+            return (
+              <TouchableOpacity
+                key={tab}
+                style={[styles.tab, isActive && { borderBottomColor: color, borderBottomWidth: 2 }]}
+                onPress={() => setSelectedTab(tab)}
+              >
+                {tab !== 'All' && <Text style={styles.tabEmoji}>{SPECIALTY_EMOJIS[tab]}</Text>}
+                <Text style={[styles.tabText, isActive && { color, fontWeight: '700' }]}>{tab}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
 
-              <View style={styles.tagRow}>
-                {provider.tags.map((tag, i) => (
-                  <View key={i} style={styles.tag}>
-                    <Text style={styles.tagText}>{tag}</Text>
-                  </View>
-                ))}
-              </View>
-
-              <View style={styles.actionRow}>
-                {provider.phone && (
-                  <TouchableOpacity
-                    style={styles.actionBtn}
-                    onPress={() => Linking.openURL(`tel:${provider.phone!.replace(/[^0-9]/g, '')}`)}
-                  >
-                    <Text style={styles.actionBtnText}>📞 Call</Text>
-                  </TouchableOpacity>
-                )}
-                {provider.website && (
-                  <TouchableOpacity
-                    style={[styles.actionBtn, styles.actionBtnPrimary]}
-                    onPress={() => Linking.openURL(provider.website!)}
-                  >
-                    <Text style={[styles.actionBtnText, styles.actionBtnTextPrimary]}>🌐 Visit Website</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
+        {/* Featured section */}
+        {featured.length > 0 && selectedTab === 'All' && !searchText && (
+          <View style={styles.featuredSection}>
+            <View style={styles.featuredHeader}>
+              <Text style={styles.featuredTitle}>
+                ⭐ Best Match{selectedState !== 'ALL' ? ` for ${selectedState}` : ''}
+              </Text>
             </View>
-          ))
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.featuredScroll}>
+              {featured.map(provider => (
+                <TouchableOpacity
+                  key={provider.id}
+                  style={styles.featuredCard}
+                  onPress={() => isPremium ? router.push({ pathname: '/provider-directory/detail', params: { id: provider.id } }) : router.push('/paywall')}
+                  activeOpacity={0.8}
+                >
+                  <View style={[styles.featuredCardTop, { backgroundColor: (SPECIALTY_COLORS[provider.specialty] || COLORS.purple) + '18' }]}>
+                    <Text style={styles.featuredEmoji}>{SPECIALTY_EMOJIS[provider.specialty] || '🏥'}</Text>
+                    {provider.acceptingPatients ? (
+                      <View style={styles.acceptingBadge}>
+                        <Text style={styles.acceptingText}>✓ Accepting</Text>
+                      </View>
+                    ) : (
+                      <View style={styles.waitlistBadge}>
+                        <Text style={styles.waitlistText}>⏳ Waitlist</Text>
+                      </View>
+                    )}
+                  </View>
+                  <View style={styles.featuredCardBody}>
+                    <Text style={styles.featuredName} numberOfLines={2}>{provider.name}</Text>
+                    <Text style={styles.featuredSpecialty}>{provider.specialty}</Text>
+                    {provider.medicaidAccepted && (
+                      <Text style={styles.featuredMedicaid}>Medicaid ✓</Text>
+                    )}
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
         )}
 
-        {/* FOOTER NOTE */}
-        <View style={styles.footerNote}>
-          <Text style={styles.footerNoteText}>
-            📋 This directory is curated by the Autism Pathways team and updated regularly. Provider availability and Medicaid acceptance can change — always verify directly with the provider.
+        {/* Results count */}
+        <View style={styles.resultsHeader}>
+          <Text style={styles.resultsCount}>
+            {isPremium
+              ? `${filtered.length} provider${filtered.length !== 1 ? 's' : ''} found`
+              : `${Math.min(2, filtered.length)} of ${filtered.length} providers shown`}
           </Text>
         </View>
+
+        {/* Provider list */}
+        {displayList.length === 0 && (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyEmoji}>🔍</Text>
+            <Text style={styles.emptyTitle}>No providers found</Text>
+            <Text style={styles.emptyText}>Try a different state, specialty, or search term.</Text>
+          </View>
+        )}
+
+        {displayList.map(provider => (
+          <ProviderCard
+            key={provider.id}
+            provider={provider}
+            isPremium={isPremium}
+            isLocked={false}
+            onPress={() => router.push({ pathname: '/provider-directory/detail', params: { id: provider.id } })}
+          />
+        ))}
+
+        {/* Premium gate */}
+        {!isPremium && lockedCount > 0 && (
+          <View style={styles.premiumGate}>
+            <View style={styles.premiumGateInner}>
+              <Text style={styles.premiumGateEmoji}>⭐</Text>
+              <Text style={styles.premiumGateTitle}>
+                {lockedCount} more provider{lockedCount !== 1 ? 's' : ''} in {stateName}
+              </Text>
+              <Text style={styles.premiumGateText}>
+                Unlock the full directory, Caregiver Verified badges, community reviews, and provider submission with Premium.
+              </Text>
+              <TouchableOpacity style={styles.premiumGateBtn} onPress={() => router.push('/paywall')}>
+                <Text style={styles.premiumGateBtnText}>Unlock Premium →</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
+        {/* Submit CTA */}
+        {isPremium && (
+          <TouchableOpacity
+            style={styles.submitCta}
+            onPress={() => router.push('/provider-directory/submit')}
+          >
+            <Text style={styles.submitCtaEmoji}>🏅</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.submitCtaTitle}>Know a great provider?</Text>
+              <Text style={styles.submitCtaText}>Submit them for Caregiver Verification</Text>
+            </View>
+            <Text style={styles.submitCtaArrow}>→</Text>
+          </TouchableOpacity>
+        )}
+
+        <View style={{ height: insets.bottom + 40 }} />
       </ScrollView>
     </View>
   );
@@ -367,106 +439,160 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: SPACING.lg, paddingBottom: SPACING.md,
-    backgroundColor: COLORS.bg, borderBottomWidth: 1, borderBottomColor: COLORS.border,
-  },
-  backBtn: { paddingVertical: SPACING.xs },
-  backText: { fontSize: 14, color: COLORS.purple, fontWeight: '600' },
-  headerTitle: { fontSize: 16, fontWeight: '700', color: COLORS.navy },
-  searchBar: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.white,
-    marginHorizontal: SPACING.lg, marginTop: SPACING.md, marginBottom: SPACING.sm,
-    borderRadius: 12, borderWidth: 1, borderColor: COLORS.border,
-    paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm,
-  },
-  searchIcon: { fontSize: 16, marginRight: SPACING.sm },
-  searchInput: { flex: 1, fontSize: 14, color: COLORS.navy },
-  clearBtn: { fontSize: 14, color: COLORS.textLight, padding: SPACING.xs },
-  filterRow: {
-    flexDirection: 'row', alignItems: 'center', gap: SPACING.sm,
-    paddingHorizontal: SPACING.lg, marginBottom: SPACING.sm,
-  },
-  stateBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: SPACING.xs,
-    backgroundColor: COLORS.white, borderRadius: 20, paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm, borderWidth: 1, borderColor: COLORS.border,
-  },
-  stateBtnText: { fontSize: 13, color: COLORS.navy, fontWeight: '600' },
-  stateBtnChevron: { fontSize: 10, color: COLORS.textMid },
-  medicaidToggle: {
-    backgroundColor: COLORS.white, borderRadius: 20, paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm, borderWidth: 1, borderColor: COLORS.border,
-  },
-  medicaidToggleOn: { backgroundColor: COLORS.teal, borderColor: COLORS.teal },
-  medicaidToggleText: { fontSize: 13, color: COLORS.textMid, fontWeight: '600' },
-  medicaidToggleTextOn: { color: COLORS.white },
-  statePicker: {
+    paddingHorizontal: SPACING.lg, paddingBottom: SPACING.sm,
     backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.border,
-    paddingVertical: SPACING.sm,
   },
-  statePickerContent: { paddingHorizontal: SPACING.lg, gap: SPACING.sm },
-  stateChip: {
+  backBtn: { width: 60 },
+  backText: { fontSize: FONT_SIZES.sm, color: COLORS.purple, fontWeight: '600' },
+  headerTitle: { fontSize: FONT_SIZES.lg, fontWeight: '800', color: COLORS.text },
+  submitBtn: {
+    backgroundColor: COLORS.lavender, borderRadius: RADIUS.pill,
     paddingHorizontal: SPACING.md, paddingVertical: SPACING.xs,
-    borderRadius: 16, backgroundColor: COLORS.bg, borderWidth: 1, borderColor: COLORS.border,
+    borderWidth: 1, borderColor: COLORS.lavenderAccent,
   },
-  stateChipActive: { backgroundColor: COLORS.purple, borderColor: COLORS.purple },
-  stateChipText: { fontSize: 12, color: COLORS.textMid, fontWeight: '600' },
-  stateChipTextActive: { color: COLORS.white },
-  specialtyScroll: { maxHeight: 44 },
-  specialtyContent: { paddingHorizontal: SPACING.lg, gap: SPACING.sm, paddingVertical: SPACING.sm },
-  specialtyChip: {
-    paddingHorizontal: SPACING.lg, paddingVertical: SPACING.xs,
-    borderRadius: 20, backgroundColor: COLORS.white, borderWidth: 1, borderColor: COLORS.border,
+  submitBtnText: { fontSize: FONT_SIZES.xs, fontWeight: '700', color: COLORS.purple },
+  searchSection: { padding: SPACING.lg, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  searchRow: { flexDirection: 'row', gap: SPACING.sm, alignItems: 'center', marginBottom: SPACING.sm },
+  searchInput: {
+    flex: 1, backgroundColor: COLORS.bg, borderRadius: RADIUS.sm, borderWidth: 1, borderColor: COLORS.border,
+    paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm, fontSize: FONT_SIZES.sm, color: COLORS.text,
   },
-  specialtyChipActive: { backgroundColor: COLORS.purpleDark, borderColor: COLORS.purpleDark },
-  specialtyChipText: { fontSize: 13, color: COLORS.textMid, fontWeight: '600' },
-  specialtyChipTextActive: { color: COLORS.white },
-  scrollContent: { padding: SPACING.lg, paddingBottom: 40 },
-  resultCount: { fontSize: 12, color: COLORS.textMid, marginBottom: SPACING.md, fontWeight: '600' },
-  emptyState: { alignItems: 'center', paddingVertical: 60 },
-  emptyIcon: { fontSize: 40, marginBottom: SPACING.md },
-  emptyTitle: { fontSize: 16, fontWeight: '700', color: COLORS.navy, marginBottom: SPACING.sm },
-  emptySub: { fontSize: 13, color: COLORS.textMid, textAlign: 'center' },
-  providerCard: {
-    backgroundColor: COLORS.white, borderRadius: 14, padding: SPACING.lg,
-    marginBottom: SPACING.md, borderWidth: 1, borderColor: COLORS.border,
+  statePickerBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    backgroundColor: COLORS.bg, borderRadius: RADIUS.sm, borderWidth: 1, borderColor: COLORS.border,
+    paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm, marginBottom: SPACING.sm,
   },
-  providerHeader: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: SPACING.md, gap: SPACING.md },
-  providerAvatar: {
-    width: 44, height: 44, borderRadius: 10, backgroundColor: COLORS.purpleLt,
-    alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+  statePickerText: { fontSize: FONT_SIZES.sm, color: COLORS.text, fontWeight: '600' },
+  statePickerChevron: { fontSize: 12, color: COLORS.textMid },
+  stateDropdown: {
+    backgroundColor: COLORS.white, borderRadius: RADIUS.sm, borderWidth: 1, borderColor: COLORS.border,
+    maxHeight: 200, marginBottom: SPACING.sm,
   },
-  providerAvatarText: { fontSize: 22 },
-  providerInfo: { flex: 1 },
-  providerName: { fontSize: 14, fontWeight: '700', color: COLORS.navy, marginBottom: 2 },
-  providerType: { fontSize: 12, color: COLORS.textMid },
+  stateOption: { paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  stateOptionActive: { backgroundColor: COLORS.lavender },
+  stateOptionText: { fontSize: FONT_SIZES.sm, color: COLORS.text },
+  stateOptionTextActive: { color: COLORS.purple, fontWeight: '700' },
+  filterRow: { flexDirection: 'row', gap: SPACING.sm, flexWrap: 'wrap' },
+  filterPill: {
+    borderRadius: RADIUS.pill, paddingHorizontal: SPACING.md, paddingVertical: SPACING.xs,
+    borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.bg,
+  },
+  filterPillActive: { backgroundColor: COLORS.purple, borderColor: COLORS.purple },
+  filterPillText: { fontSize: FONT_SIZES.xs, fontWeight: '600', color: COLORS.textMid },
+  filterPillTextActive: { color: COLORS.white },
+  clearBtn: {
+    borderRadius: RADIUS.pill, paddingHorizontal: SPACING.md, paddingVertical: SPACING.xs,
+    borderWidth: 1, borderColor: COLORS.errorBorder, backgroundColor: COLORS.errorBg,
+  },
+  clearBtnText: { fontSize: FONT_SIZES.xs, fontWeight: '600', color: COLORS.errorText },
+  tabsContainer: { paddingHorizontal: SPACING.lg, paddingVertical: SPACING.sm, gap: SPACING.xs },
+  tab: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm,
+    borderBottomWidth: 2, borderBottomColor: 'transparent',
+  },
+  tabEmoji: { fontSize: 14 },
+  tabText: { fontSize: FONT_SIZES.sm, color: COLORS.textMid, fontWeight: '500' },
+  featuredSection: { paddingTop: SPACING.md },
+  featuredHeader: { paddingHorizontal: SPACING.lg, marginBottom: SPACING.sm },
+  featuredTitle: { fontSize: FONT_SIZES.base, fontWeight: '700', color: COLORS.text },
+  featuredScroll: { paddingHorizontal: SPACING.lg, gap: SPACING.md, paddingBottom: SPACING.sm },
+  featuredCard: {
+    width: 160, backgroundColor: COLORS.white, borderRadius: RADIUS.lg,
+    borderWidth: 1, borderColor: COLORS.border, overflow: 'hidden', ...SHADOWS.sm,
+  },
+  featuredCardTop: {
+    padding: SPACING.md, alignItems: 'center', gap: SPACING.xs,
+  },
+  featuredEmoji: { fontSize: 28 },
+  featuredCardBody: { padding: SPACING.sm },
+  featuredName: { fontSize: FONT_SIZES.xs, fontWeight: '700', color: COLORS.text, marginBottom: 2 },
+  featuredSpecialty: { fontSize: 11, color: COLORS.textMid },
+  featuredMedicaid: { fontSize: 11, color: COLORS.successText, fontWeight: '600', marginTop: 2 },
+  resultsHeader: { paddingHorizontal: SPACING.lg, paddingVertical: SPACING.sm },
+  resultsCount: { fontSize: FONT_SIZES.xs, color: COLORS.textMid, fontWeight: '600' },
+  card: {
+    flexDirection: 'row', backgroundColor: COLORS.white, marginHorizontal: SPACING.lg,
+    marginBottom: SPACING.sm, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: COLORS.border,
+    overflow: 'hidden', ...SHADOWS.sm,
+  },
+  cardLocked: { opacity: 0.7 },
+  cardAccent: { width: 4 },
+  cardBody: { flex: 1, padding: SPACING.md },
+  cardTopRow: { flexDirection: 'row', gap: SPACING.sm, alignItems: 'flex-start', marginBottom: SPACING.sm },
+  cardAvatar: {
+    width: 40, height: 40, borderRadius: RADIUS.sm, alignItems: 'center', justifyContent: 'center',
+  },
+  cardEmoji: { fontSize: 20 },
+  cardTitleBlock: { flex: 1 },
+  cardName: { fontSize: FONT_SIZES.sm, fontWeight: '700', color: COLORS.text, lineHeight: 18 },
+  cardType: { fontSize: 11, color: COLORS.textMid, marginTop: 2 },
+  lockBadge: {
+    width: 28, height: 28, borderRadius: RADIUS.xs, backgroundColor: COLORS.warningBg,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  lockIcon: { fontSize: 14 },
+  cardBadges: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.xs, marginBottom: SPACING.sm },
+  acceptingBadge: {
+    backgroundColor: COLORS.successBg, borderRadius: RADIUS.pill, paddingHorizontal: SPACING.sm,
+    paddingVertical: 2, borderWidth: 1, borderColor: COLORS.successBorder,
+  },
+  acceptingText: { fontSize: 10, fontWeight: '700', color: COLORS.successText },
+  waitlistBadge: {
+    backgroundColor: COLORS.warningBg, borderRadius: RADIUS.pill, paddingHorizontal: SPACING.sm,
+    paddingVertical: 2, borderWidth: 1, borderColor: COLORS.warningBorder,
+  },
+  waitlistText: { fontSize: 10, fontWeight: '700', color: COLORS.warningText },
   medicaidBadge: {
-    backgroundColor: COLORS.tealLt, borderRadius: 6, paddingHorizontal: SPACING.sm,
+    backgroundColor: COLORS.mint, borderRadius: RADIUS.pill, paddingHorizontal: SPACING.sm,
     paddingVertical: 2, borderWidth: 1, borderColor: COLORS.teal,
   },
-  medicaidBadgeText: { fontSize: 10, fontWeight: '700', color: '#0A7A5A' },
-  providerDesc: { fontSize: 13, color: COLORS.textMid, lineHeight: 19, marginBottom: SPACING.sm },
-  waitlistNote: {
-    backgroundColor: '#fff8e1', borderRadius: 6, padding: SPACING.sm,
-    marginBottom: SPACING.sm, borderLeftWidth: 3, borderLeftColor: '#f59e0b',
+  medicaidText: { fontSize: 10, fontWeight: '700', color: COLORS.successText },
+  verifiedBadge: {
+    backgroundColor: '#FFF8E1', borderRadius: RADIUS.pill, paddingHorizontal: SPACING.sm,
+    paddingVertical: 2, borderWidth: 1, borderColor: '#F59E0B',
   },
-  waitlistText: { fontSize: 12, color: '#92400e' },
-  tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.xs, marginBottom: SPACING.md },
-  tag: {
-    backgroundColor: COLORS.purpleLt, borderRadius: 6, paddingHorizontal: SPACING.sm, paddingVertical: 2,
+  verifiedText: { fontSize: 10, fontWeight: '700', color: '#92400E' },
+  cardDesc: { fontSize: FONT_SIZES.xs, color: COLORS.textMid, lineHeight: 17, marginBottom: SPACING.sm },
+  cardTags: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginBottom: SPACING.sm },
+  tag: { backgroundColor: COLORS.lavender, borderRadius: 4, paddingHorizontal: SPACING.sm, paddingVertical: 2 },
+  tagText: { fontSize: 10, color: COLORS.purpleDark, fontWeight: '600' },
+  cardActions: { flexDirection: 'row', gap: SPACING.sm, alignItems: 'center' },
+  callBtn: {
+    backgroundColor: COLORS.successBg, borderRadius: RADIUS.pill, paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.xs, borderWidth: 1, borderColor: COLORS.successBorder,
   },
-  tagText: { fontSize: 11, color: COLORS.purpleDark, fontWeight: '600' },
-  actionRow: { flexDirection: 'row', gap: SPACING.sm },
-  actionBtn: {
-    flex: 1, paddingVertical: SPACING.sm, borderRadius: 8,
-    borderWidth: 1, borderColor: COLORS.border, alignItems: 'center',
+  callBtnText: { fontSize: FONT_SIZES.xs, fontWeight: '700', color: COLORS.successText },
+  detailBtn: {
+    backgroundColor: COLORS.lavender, borderRadius: RADIUS.pill, paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.xs, borderWidth: 1, borderColor: COLORS.lavenderAccent,
   },
-  actionBtnPrimary: { backgroundColor: COLORS.purple, borderColor: COLORS.purple },
-  actionBtnText: { fontSize: 13, fontWeight: '600', color: COLORS.textMid },
-  actionBtnTextPrimary: { color: COLORS.white },
-  footerNote: {
-    backgroundColor: COLORS.purpleLt, borderRadius: 10, padding: SPACING.md,
-    marginTop: SPACING.sm,
+  detailBtnText: { fontSize: FONT_SIZES.xs, fontWeight: '700', color: COLORS.purple },
+  lockedHint: { fontSize: FONT_SIZES.xs, color: COLORS.textLight, fontStyle: 'italic', marginTop: SPACING.xs },
+  emptyState: { alignItems: 'center', padding: SPACING.xxxl },
+  emptyEmoji: { fontSize: 40, marginBottom: SPACING.md },
+  emptyTitle: { fontSize: FONT_SIZES.lg, fontWeight: '700', color: COLORS.text, marginBottom: SPACING.sm },
+  emptyText: { fontSize: FONT_SIZES.sm, color: COLORS.textMid, textAlign: 'center' },
+  premiumGate: { marginHorizontal: SPACING.lg, marginBottom: SPACING.md },
+  premiumGateInner: {
+    backgroundColor: COLORS.lavender, borderRadius: RADIUS.lg, padding: SPACING.xl,
+    alignItems: 'center', borderWidth: 1.5, borderColor: COLORS.lavenderAccent,
   },
-  footerNoteText: { fontSize: 11, color: COLORS.textMid, lineHeight: 17 },
+  premiumGateEmoji: { fontSize: 36, marginBottom: SPACING.sm },
+  premiumGateTitle: { fontSize: FONT_SIZES.lg, fontWeight: '800', color: COLORS.purpleDark, marginBottom: SPACING.sm, textAlign: 'center' },
+  premiumGateText: { fontSize: FONT_SIZES.xs, color: COLORS.textMid, textAlign: 'center', lineHeight: 18, marginBottom: SPACING.lg },
+  premiumGateBtn: {
+    backgroundColor: COLORS.purple, borderRadius: RADIUS.pill,
+    paddingHorizontal: SPACING.xxxl, paddingVertical: SPACING.md,
+  },
+  premiumGateBtnText: { fontSize: FONT_SIZES.sm, fontWeight: '700', color: COLORS.white },
+  submitCta: {
+    flexDirection: 'row', alignItems: 'center', gap: SPACING.md,
+    backgroundColor: '#FFF8E1', marginHorizontal: SPACING.lg, marginBottom: SPACING.md,
+    borderRadius: RADIUS.lg, padding: SPACING.lg, borderWidth: 1, borderColor: '#F59E0B',
+  },
+  submitCtaEmoji: { fontSize: 24 },
+  submitCtaTitle: { fontSize: FONT_SIZES.sm, fontWeight: '700', color: '#92400E' },
+  submitCtaText: { fontSize: FONT_SIZES.xs, color: COLORS.warningText },
+  submitCtaArrow: { fontSize: FONT_SIZES.lg, color: '#92400E', fontWeight: '700' },
 });
