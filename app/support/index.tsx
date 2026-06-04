@@ -28,8 +28,7 @@ const SESSIONS = [
     borderColor: COLORS.tealAccent,
     buttonStyle: 'outline' as const,
     buttonColor: COLORS.teal,
-    // Replace with your actual Calendly links per session type
-    calendlyUrl: 'https://calendly.com/autismpathways/quick-check-in',
+    calendlyUrl: 'https://calendly.com/contact-autismpathways/quick-check-in',
   },
   {
     id: 'deep',
@@ -45,7 +44,7 @@ const SESSIONS = [
     popular: true,
     buttonStyle: 'filled' as const,
     buttonColor: COLORS.purple,
-    calendlyUrl: 'https://calendly.com/autismpathways/deep-dive',
+    calendlyUrl: 'https://calendly.com/contact-autismpathways/deep-dive',
   },
   {
     id: 'ongoing',
@@ -60,7 +59,7 @@ const SESSIONS = [
     borderColor: COLORS.peachAccent,
     buttonStyle: 'outline' as const,
     buttonColor: '#D4702A',
-    calendlyUrl: 'https://calendly.com/autismpathways/ongoing-support',
+    calendlyUrl: 'https://calendly.com/contact-autismpathways/meet-greet',
   },
 ];
 

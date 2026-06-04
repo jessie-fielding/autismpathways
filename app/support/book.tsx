@@ -30,7 +30,7 @@ export default function BookSessionScreen() {
 
   const handleContinue = async () => {
     // Build Calendly URL with optional pre-fill notes
-    let url = calendlyUrl || 'https://calendly.com/autismpathways';
+    let url = calendlyUrl || 'https://calendly.com/contact-autismpathways';
     if (notes.trim()) {
       // Calendly supports ?a1= for custom questions, but notes go in the name/email fields
       // We append as a utm_content param so Jessie can see it in Calendly notifications
