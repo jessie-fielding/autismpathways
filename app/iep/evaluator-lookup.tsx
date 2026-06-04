@@ -29,7 +29,6 @@ const FREE_LOOKUPS = 1;
 export default function EvaluatorLookupScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const router = useRouter();
   const { isPremium } = useIsPremium();
   const [lookupCount, setLookupCount] = useState(0);
   const [query, setQuery] = useState('');
