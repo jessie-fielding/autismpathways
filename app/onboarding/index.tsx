@@ -104,9 +104,15 @@ const CARD_DEFS = [
   {
     id: '8',
     emoji: '✨',
-    headline: 'There is so much to explore... and it\'s constantly growing',
-    body: 'I designed Autism Pathways to be the one place you can go to get everything you need — because I was so tired of having to scour through hundreds of different sites and agencies. If you have an idea for a feature, email me! I respond to every one.\n\nWith all the love,\nJessie, Founder',
-    bg: ['#E3F7F1', '#F5F4FB'] as [string, string],
+    headline: 'There is so much to explore...',
+    noteLines: [
+      'Hi, I\'m Jessie, founder of Autism Pathways and an autism parent myself.',
+      'I built this because I needed it.',
+      'Every feature in this app came from a real moment in my family\'s journey.',
+      'If there\'s something you need that isn\'t here yet, email me at jessie@autismpathways.app. I read every message.',
+    ],
+    body: '',
+    bg: ['#F5F3FF', '#FDFCFF'] as [string, string],
     // lottie: require('../../assets/animations/onboarding/card8.json'),
     lottie: null,
     isLast: true,
@@ -192,6 +198,47 @@ export default function OnboardingScreen() {
       ? headline
       : headline.replace(', !', '!');
     const body = interpolate(item.body, parentName || 'you', childName);
+    const isLastCard = item.id === '8';
+
+    // Card 8 gets a special layout — large headline + handwritten-note card + signature
+    if (isLastCard) {
+      return (
+        <LinearGradient
+          colors={item.bg}
+          style={[styles.card, styles.card8]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+        >
+          {/* Animation area (placeholder until Lottie/video added) */}
+          <View style={styles.animationContainer}>
+            {(item as any).video ? (
+              <VideoCard source={VIDEO_SOURCES[(item as any).video]} />
+            ) : item.lottie ? (
+              <LottieView source={item.lottie} autoPlay loop style={styles.lottie} />
+            ) : (
+              <View style={styles.lottiePlaceholder}>
+                <Text style={styles.placeholderEmoji}>{item.emoji}</Text>
+              </View>
+            )}
+          </View>
+
+          {/* Big headline */}
+          <Text style={styles.headline8}>{cleanHeadline}</Text>
+
+          {/* Handwritten-note card */}
+          <View style={styles.noteCard}>
+            <Text style={styles.noteHeart}>♡</Text>
+            {((item as any).noteLines as string[]).map((line, i) => (
+              <Text key={i} style={styles.noteLine}>{line}</Text>
+            ))}
+            <Text style={styles.noteHeartBottom}>♡</Text>
+          </View>
+
+          {/* Signature */}
+          <Text style={styles.signature}>Jessie Fielding, Founder ♡</Text>
+        </LinearGradient>
+      );
+    }
 
     return (
       <LinearGradient
@@ -202,7 +249,7 @@ export default function OnboardingScreen() {
       >
         {/* Animation area */}
         <View style={styles.animationContainer}>
-          {item.video ? (
+          {(item as any).video ? (
             <VideoCard source={VIDEO_SOURCES[(item as any).video]} />
           ) : item.lottie ? (
             <LottieView
@@ -284,14 +331,14 @@ export default function OnboardingScreen() {
           })}
         </View>
 
-        {/* Next / Get Started */}
+        {/* Next / Let's Explore */}
         <TouchableOpacity
           style={[styles.nextBtn, isLast && styles.nextBtnLast]}
           onPress={goNext}
           activeOpacity={0.85}
         >
           <Text style={styles.nextBtnText}>
-            {isLast ? "Let's Get Started \u2192" : 'Next \u2192'}
+            {isLast ? "Let's Explore \u2192" : 'Next \u2192'}
           </Text>
         </TouchableOpacity>
 
@@ -372,4 +419,60 @@ const styles = StyleSheet.create({
 
   gotItBtn: { paddingVertical: SPACING.sm },
   gotItText: { fontSize: FONT_SIZES.sm, color: COLORS.textLight, fontWeight: '600' },
+
+  // ── Card 8 special styles ──────────────────────────────────────────────────
+  card8: { justifyContent: 'flex-start', paddingTop: SPACING.xl },
+
+  headline8: {
+    fontSize: 26, fontWeight: '900', color: COLORS.text,
+    textAlign: 'center', marginBottom: SPACING.lg, lineHeight: 32,
+    paddingHorizontal: SPACING.md,
+  },
+
+  noteCard: {
+    backgroundColor: 'rgba(255,255,255,0.85)',
+    borderRadius: RADIUS.lg,
+    borderWidth: 1.5,
+    borderColor: 'rgba(124,111,212,0.25)',
+    paddingHorizontal: SPACING.xl,
+    paddingVertical: SPACING.lg,
+    marginHorizontal: SPACING.md,
+    marginBottom: SPACING.md,
+    shadowColor: '#7C6FD4',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+
+  noteHeart: {
+    fontSize: 20,
+    color: '#B8A8E8',
+    marginBottom: SPACING.sm,
+  },
+
+  noteHeartBottom: {
+    fontSize: 20,
+    color: '#B8A8E8',
+    textAlign: 'right',
+    marginTop: SPACING.sm,
+  },
+
+  noteLine: {
+    fontSize: FONT_SIZES.md,
+    color: COLORS.textMid,
+    lineHeight: 24,
+    marginBottom: SPACING.xs,
+    fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif',
+  },
+
+  signature: {
+    fontSize: FONT_SIZES.md,
+    color: '#7C6FD4',
+    fontStyle: 'italic',
+    fontWeight: '600',
+    textAlign: 'center',
+    marginTop: SPACING.xs,
+    fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif',
+  },
 });
