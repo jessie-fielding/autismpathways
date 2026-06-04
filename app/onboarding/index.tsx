@@ -33,7 +33,9 @@ const { width } = Dimensions.get('window');
 const VIDEO_SOURCES: Record<string, any> = {
   card1: require('../../assets/animations/onboarding/card1.mp4'),
   card2: require('../../assets/animations/onboarding/card2.mp4'),
+  card3: require('../../assets/animations/onboarding/card3.mp4'),
   card4: require('../../assets/animations/onboarding/card4.mp4'),
+  card5: require('../../assets/animations/onboarding/card5.mp4'),
 };
 
 // ── Card definitions ──────────────────────────────────────────────────────────
@@ -62,8 +64,8 @@ const CARD_DEFS = [
     emoji: '🗺️',
     headline: 'Your Pathways',
     body: 'Diagnosis, Medicaid, Waiver, IEP, Potty, and Transition Pathways are designed to be your guide through every step (and curveball) you experience. Follow the pathways and answer checkpoint questions to get the full advantage of the tool.',
-    bg: ['#FFF3E0', '#F5F4FB'] as [string, string],
-    // lottie: require('../../assets/animations/onboarding/card3.json'),
+    bg: ['#E8F4FF', '#F5F4FB'] as [string, string],
+    video: 'card3',
     lottie: null,
   },
   {
@@ -81,7 +83,7 @@ const CARD_DEFS = [
     headline: 'Stay Organized and Never Miss a Deadline Again',
     body: 'Set reminders for waiver check-ins, SSI applications, IEP meetings, service renewals, and more! Store all of your documents in one place for easy referencing when you need it most.',
     bg: ['#E3F7F1', '#F5F4FB'] as [string, string],
-    // lottie: require('../../assets/animations/onboarding/card5.json'),
+    video: 'card5',
     lottie: null,
   },
   {
