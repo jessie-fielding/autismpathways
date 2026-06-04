@@ -1,4 +1,6 @@
 import React, { useState, useCallback } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useIsPremium } from '../../hooks/useIsPremium';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   TextInput, Linking, Share, Platform,
@@ -13,6 +15,9 @@ const US_STATES = [
   'NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT',
   'VT','VA','WA','WV','WI','WY',
 ];
+
+const DISTRICT_LOOKUP_KEY = 'ap_iep_district_lookup_count';
+const FREE_LOOKUPS = 1;
 
 export default function DistrictLookupScreen() {
   const router = useRouter();

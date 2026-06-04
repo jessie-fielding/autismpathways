@@ -174,14 +174,7 @@ const SECTIONS: { label: string; tools: Tool[] }[] = [
         route: '/services-tracker',
         accentColor: COLORS.mintAccent,
       },
-      {
-        icon: '🏛️',
-        title: 'CCB Tool',
-        description: 'Understand the Community Centered Board process, eligibility, and what it funds.',
-        cta: 'Open',
-        route: '/ccb-tool',
-        accentColor: COLORS.blueAccent,
-      },
+
     ],
   },
   {

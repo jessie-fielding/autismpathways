@@ -768,7 +768,6 @@ export default function DashboardScreen() {
     { icon: '📓', name: t('Observations', 'Observaciones'), route: '/observations' },
     { icon: '🩺', name: t('Provider Prep', 'Prep. Proveedor'), route: '/provider-prep' },
     { icon: '🧘', name: t('Safe Space', 'Espacio Seguro'), route: '/safe-space' },
-    { icon: '🧮', name: t('CCB Tool', 'Herramienta CCB'), route: '/ccb-tool' },
     { icon: '📚', name: t('Learning', 'Aprendizaje'), route: '/(tabs)/explore' },
   ];
 

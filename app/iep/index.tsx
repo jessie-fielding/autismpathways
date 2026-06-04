@@ -19,8 +19,12 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, FONT_SIZES, RADIUS, SHADOWS, SPACING } from '../../lib/theme';
 import { useChildChanged } from '../../hooks/useChildChanged';
+import { useIsPremium } from '../../hooks/useIsPremium';
 import { PathwayDisclaimer } from '../../components/PathwayDisclaimer';
 import { useLanguage } from '../../lib/LanguageContext';
+
+const FREE_GOALS = 5;
+const FREE_MEETINGS = 3;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface IEPGoal {
@@ -259,6 +263,7 @@ export default function IEPScreen() {
   const router = useRouter();
   const { t } = useLanguage();
   const { child: activeChild } = useActiveChild();
+  const { isPremium } = useIsPremium();
   const [activeTab, setActiveTab] = useState('prep');
 
   const [goals, setGoals] = useState<IEPGoal[]>([]);
@@ -366,7 +371,15 @@ export default function IEPScreen() {
     );
   };
 
-  const openAddGoal = () => { setEditingGoal(null); setDraftGoal({ progress: 0, archived: false, year: new Date().getFullYear().toString() }); setShowGoalModal(true); };
+  const openAddGoal = () => {
+    if (!isPremium && activeGoals.length >= FREE_GOALS) {
+      router.push('/paywall' as any);
+      return;
+    }
+    setEditingGoal(null);
+    setDraftGoal({ progress: 0, archived: false, year: new Date().getFullYear().toString() });
+    setShowGoalModal(true);
+  };
   const openEditGoal = (goal: IEPGoal) => { setEditingGoal(goal); setDraftGoal(goal); setShowGoalModal(true); };
   const saveGoal = () => {
     const now = new Date().toISOString();
@@ -390,7 +403,15 @@ export default function IEPScreen() {
     saveGoals(updated);
   };
 
-  const openAddMeeting = () => { setEditingMeeting(null); setDraftMeeting({ date: new Date().toISOString().split('T')[0] }); setShowMeetingModal(true); };
+  const openAddMeeting = () => {
+    if (!isPremium && meetings.length >= FREE_MEETINGS) {
+      router.push('/paywall' as any);
+      return;
+    }
+    setEditingMeeting(null);
+    setDraftMeeting({ date: new Date().toISOString().split('T')[0] });
+    setShowMeetingModal(true);
+  };
   const saveMeeting = () => {
     const now = new Date().toISOString();
     if (editingMeeting) {

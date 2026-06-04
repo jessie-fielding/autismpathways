@@ -9,8 +9,10 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useChildChanged } from '../../hooks/useChildChanged';
 import { COLORS, SPACING, RADIUS, FONT_SIZES, SHADOWS } from '../../lib/theme';
+import { useIsPremium } from '../../hooks/useIsPremium';
 
 const STORAGE_KEY = 'ap_services_tracker';
+const FREE_SERVICES = 3;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type ServiceStatus = 'active' | 'pending' | 'paused' | 'ended';
@@ -84,6 +86,7 @@ function daysUntil(dateStr?: string): number | null {
 export default function ServicesTrackerScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { isPremium } = useIsPremium();
 
   const [services, setServices] = useState<Service[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
@@ -114,6 +117,10 @@ export default function ServicesTrackerScreen() {
   };
 
   const openAdd = () => {
+    if (!isPremium && services.length >= FREE_SERVICES) {
+      router.push('/paywall' as any);
+      return;
+    }
     setEditingId(null);
     setForm(EMPTY_FORM);
     setModalVisible(true);
@@ -200,6 +207,21 @@ export default function ServicesTrackerScreen() {
             <Text style={styles.statLabel}>Renewals Due</Text>
           </View>
         </View>
+
+        {/* Free tier nudge */}
+        {!isPremium && services.length >= FREE_SERVICES - 1 && (
+          <View style={styles.upgradeNudge}>
+            <Text style={styles.upgradeNudgeText}>
+              {services.length >= FREE_SERVICES
+                ? `You're tracking ${services.length} services — families on AP average 6+ active services. Upgrade to track them all. 💜`
+                : `You have 1 service slot left on the free plan — most families have 6+ services to track.`
+              }
+            </Text>
+            <TouchableOpacity onPress={() => router.push('/paywall' as any)} style={styles.upgradeNudgeBtn}>
+              <Text style={styles.upgradeNudgeBtnText}>Upgrade for unlimited →</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Urgent renewal alerts */}
         {urgentRenewals.map((s) => {
@@ -474,6 +496,10 @@ const styles = StyleSheet.create({
   },
   statNum: { fontSize: FONT_SIZES.xl, fontWeight: 'bold', color: COLORS.text, marginBottom: SPACING.xs },
   statLabel: { fontSize: FONT_SIZES.sm, color: COLORS.textLight, textAlign: 'center' },
+  upgradeNudge: { backgroundColor: '#f3f0ff', borderRadius: 12, padding: 14, marginBottom: 12, borderWidth: 1, borderColor: '#e0d7ff' },
+  upgradeNudgeText: { fontSize: 13, color: '#6B4EFF', fontWeight: '500', textAlign: 'center', marginBottom: 6 },
+  upgradeNudgeBtn: { alignSelf: 'center' },
+  upgradeNudgeBtnText: { fontSize: 13, color: '#6B4EFF', fontWeight: '700', textDecorationLine: 'underline' },
   urgentCard: {
     backgroundColor: COLORS.warningBg,
     borderRadius: RADIUS.lg,

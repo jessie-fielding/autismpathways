@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -14,10 +14,15 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, SPACING, RADIUS, FONT_SIZES, SHADOWS } from '../../lib/theme';
+import { useIsPremium } from '../../hooks/useIsPremium';
 
 const API_BASE = 'https://inu3nb5lrfvftfyiwprftqshpy0zcegu.lambda-url.us-east-2.on.aws';
+const USAGE_KEY = 'ap_provider_translator_count';
+const FREE_USES = 5;
 
 type Mode = 'translate' | 'decode';
 
@@ -74,6 +79,8 @@ const EXAMPLE_PROMPTS: Record<Mode, string[]> = {
 export default function ProviderTranslatorScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { isPremium } = useIsPremium();
+  const [usageCount, setUsageCount] = useState(0);
   const [mode, setMode] = useState<Mode>('translate');
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -82,6 +89,14 @@ export default function ProviderTranslatorScreen() {
   const [showHistory, setShowHistory] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scrollRef = useRef<ScrollView>(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      AsyncStorage.getItem(USAGE_KEY).then((val) => {
+        setUsageCount(val ? parseInt(val, 10) : 0);
+      });
+    }, [])
+  );
 
   const config = MODE_CONFIG[mode];
 
@@ -179,6 +194,11 @@ export default function ProviderTranslatorScreen() {
       return;
     }
 
+    if (!isPremium && usageCount >= FREE_USES) {
+      router.push('/paywall' as any);
+      return;
+    }
+
     setIsLoading(true);
     setResult(null);
 
@@ -193,6 +213,11 @@ export default function ProviderTranslatorScreen() {
 
       if (data.result) {
         setResult(data.result);
+
+        // Increment usage count
+        const next = usageCount + 1;
+        setUsageCount(next);
+        await AsyncStorage.setItem(USAGE_KEY, String(next));
 
         // Add to history
         const newItem: HistoryItem = {
@@ -358,6 +383,20 @@ export default function ProviderTranslatorScreen() {
           </ScrollView>
         </View>
 
+        {/* Usage nudge */}
+        {!isPremium && usageCount >= FREE_USES - 1 && (
+          <View style={styles.usageNudge}>
+            <Text style={styles.usageNudgeText}>
+              {usageCount >= FREE_USES
+                ? `You've decoded ${usageCount} documents — imagine having this for every report, every note, every IEP. 💜`
+                : `1 free translation left — upgrade to decode every report, note, and IEP.`
+              }
+            </Text>
+            <TouchableOpacity onPress={() => router.push('/paywall' as any)} style={styles.usageNudgeBtn}>
+              <Text style={styles.usageNudgeBtnText}>Upgrade for unlimited →</Text>
+            </TouchableOpacity>
+          </View>
+        )}
         {/* Analyze button */}
         <TouchableOpacity
           style={[styles.analyzeBtn, isLoading && styles.analyzeBtnDisabled]}
@@ -607,6 +646,10 @@ const styles = StyleSheet.create({
   },
 
   // Analyze button
+  usageNudge: { backgroundColor: '#f3f0ff', borderRadius: 12, padding: 12, marginBottom: 10, borderWidth: 1, borderColor: '#e0d7ff' },
+  usageNudgeText: { fontSize: 13, color: '#6B4EFF', fontWeight: '500', textAlign: 'center', marginBottom: 4 },
+  usageNudgeBtn: { alignSelf: 'center' },
+  usageNudgeBtnText: { fontSize: 13, color: '#6B4EFF', fontWeight: '700', textDecorationLine: 'underline' },
   analyzeBtn: {
     backgroundColor: COLORS.purple,
     borderRadius: RADIUS.sm,

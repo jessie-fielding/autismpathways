@@ -1,4 +1,6 @@
 import React, { useState, useMemo } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useIsPremium } from '../../hooks/useIsPremium';
 import {
   ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, Linking, Share,
 } from 'react-native';
@@ -21,13 +23,25 @@ const US_STATES = [
   'SD','TN','TX','UT','VT','VA','WA','WV','WI','WY','DC',
 ];
 
+const EVALUATOR_LOOKUP_KEY = 'ap_iep_evaluator_lookup_count';
+const FREE_LOOKUPS = 1;
+
 export default function EvaluatorLookupScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const { isPremium } = useIsPremium();
+  const [lookupCount, setLookupCount] = useState(0);
   const [query, setQuery] = useState('');
   const [selectedState, setSelectedState] = useState<string | null>(null);
   const [typeFilter, setTypeFilter] = useState<EvaluatorType | 'all'>('all');
   const [showStateDropdown, setShowStateDropdown] = useState(false);
+
+  React.useEffect(() => {
+    AsyncStorage.getItem(EVALUATOR_LOOKUP_KEY).then((val) => {
+      setLookupCount(val ? parseInt(val, 10) : 0);
+    });
+  }, []);
 
   const filtered = useMemo(() => {
     let list = EVALUATORS;
@@ -178,7 +192,16 @@ export default function EvaluatorLookupScreen() {
                   {ev.phone && (
                     <TouchableOpacity
                       style={s.contactBtn}
-                      onPress={() => Linking.openURL(`tel:${ev.phone}`)}
+                      onPress={async () => {
+                        if (!isPremium && lookupCount >= FREE_LOOKUPS) {
+                          router.push('/paywall' as any);
+                          return;
+                        }
+                        const next = lookupCount + 1;
+                        setLookupCount(next);
+                        await AsyncStorage.setItem(EVALUATOR_LOOKUP_KEY, String(next));
+                        Linking.openURL(`tel:${ev.phone}`);
+                      }}
                     >
                       <Text style={s.contactBtnText}>📞 Call</Text>
                     </TouchableOpacity>
@@ -186,7 +209,16 @@ export default function EvaluatorLookupScreen() {
                   {ev.url && (
                     <TouchableOpacity
                       style={[s.contactBtn, s.contactBtnSecondary]}
-                      onPress={() => Linking.openURL(ev.url!)}
+                      onPress={async () => {
+                        if (!isPremium && lookupCount >= FREE_LOOKUPS) {
+                          router.push('/paywall' as any);
+                          return;
+                        }
+                        const next = lookupCount + 1;
+                        setLookupCount(next);
+                        await AsyncStorage.setItem(EVALUATOR_LOOKUP_KEY, String(next));
+                        Linking.openURL(ev.url!);
+                      }}
                     >
                       <Text style={s.contactBtnText}>🌐 Website</Text>
                     </TouchableOpacity>

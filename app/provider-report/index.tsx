@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
+import { useIsPremium } from '../../hooks/useIsPremium';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Print from 'expo-print';
@@ -12,6 +13,8 @@ import * as Sharing from 'expo-sharing';
 
 // ─── Storage Keys (must match provider-prep) ──────────────────────────────────
 const SAVED_KEY = 'ap_provider_prep_saved';
+const REPORT_COUNT_KEY = 'ap_provider_report_count';
+const FREE_REPORTS = 3;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface PrepDraft {
@@ -470,8 +473,16 @@ export default function ProviderReportScreen() {
 
   const [savedNotes, setSavedNotes] = useState<SavedNote[]>([]);
   const [selected, setSelected] = useState<SavedNote | null>(null);
-  const [printing, setPrinting] = useState(false);
-
+    const [printing, setPrinting] = useState(false);
+  const [reportCount, setReportCount] = useState(0);
+  const { isPremium } = useIsPremium();
+  useFocusEffect(
+    useCallback(() => {
+      AsyncStorage.getItem(REPORT_COUNT_KEY).then((val) => {
+        setReportCount(val ? parseInt(val, 10) : 0);
+      });
+    }, [])
+  );
   useFocusEffect(
     useCallback(() => {
       AsyncStorage.getItem(SAVED_KEY).then((raw) => {
@@ -480,8 +491,20 @@ export default function ProviderReportScreen() {
     }, [])
   );
 
+    const incrementReportCount = async () => {
+    const next = reportCount + 1;
+    setReportCount(next);
+    await AsyncStorage.setItem(REPORT_COUNT_KEY, String(next));
+  };
+  const checkGate = (): boolean => {
+    if (isPremium) return true;
+    if (reportCount < FREE_REPORTS) return true;
+    router.push('/paywall' as any);
+    return false;
+  };
   const handlePrint = async () => {
     if (!selected) return;
+    if (!checkGate()) return;
     setPrinting(true);
     try {
       const html = buildHTML(selected);
@@ -496,20 +519,22 @@ export default function ProviderReportScreen() {
       } else {
         await Print.printAsync({ uri });
       }
+      await incrementReportCount();
     } catch (e) {
       Alert.alert('Error', 'Could not generate the PDF. Please try again.');
     } finally {
       setPrinting(false);
     }
   };
-
   const handleShare = async () => {
     if (!selected) return;
+    if (!checkGate()) return;
     try {
       await Share.share({
         message: buildPlainText(selected),
         title: `Provider Report — ${selected.draft.providerName || selected.title}`,
       });
+      await incrementReportCount();
     } catch (e) {
       Alert.alert('Error', 'Could not share the report.');
     }
@@ -627,6 +652,21 @@ export default function ProviderReportScreen() {
           </View>
 
           {/* Print/Share buttons */}
+          {!isPremium && (
+            <View style={styles.usageBar}>
+              <Text style={styles.usageText}>
+                {reportCount < FREE_REPORTS
+                  ? `Report ${reportCount + 1} of ${FREE_REPORTS} free — your care team is going to love these 💜`
+                  : `You've generated ${reportCount} reports — upgrade to keep sharing with your care team.`
+                }
+              </Text>
+              {reportCount >= FREE_REPORTS - 1 && (
+                <TouchableOpacity onPress={() => router.push('/paywall' as any)} style={styles.usageUpgradeBtn}>
+                  <Text style={styles.usageUpgradeBtnText}>Upgrade for unlimited →</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
           <View style={styles.actionRow}>
             <TouchableOpacity style={styles.shareBtn} onPress={handleShare}>
               <Text style={styles.shareBtnText}>📤 Share as Text</Text>
@@ -942,6 +982,10 @@ const styles = StyleSheet.create({
   heroFocusChipText: { fontSize: 11, fontWeight: '600', color: WHITE },
 
   actionRow: { flexDirection: 'row', gap: 12, marginBottom: 20 },
+  usageBar: { backgroundColor: '#f3f0ff', borderRadius: 12, padding: 12, marginBottom: 12, borderWidth: 1, borderColor: '#e0d7ff' },
+  usageText: { fontSize: 13, color: PURPLE, fontWeight: '500', textAlign: 'center', marginBottom: 4 },
+  usageUpgradeBtn: { alignSelf: 'center', marginTop: 4 },
+  usageUpgradeBtnText: { fontSize: 13, color: PURPLE, fontWeight: '700', textDecorationLine: 'underline' },
   shareBtn: {
     flex: 1,
     borderWidth: 1.5,
