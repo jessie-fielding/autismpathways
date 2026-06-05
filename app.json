@@ -73,7 +73,8 @@
         ],
         "NSPrivacyCollectedDataTypes": [],
         "NSPrivacyTracking": false
-      }
+      },
+      "appleTeamId": "H39J7QZ6KS"
     },
     "android": {
       "adaptiveIcon": {
