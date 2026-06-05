@@ -5,6 +5,7 @@ export default function ObservationsLayout() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" />
       <Stack.Screen name="new-entry" />
+      <Stack.Screen name="trends" />
     </Stack>
   );
 }

@@ -37,7 +37,8 @@ interface Service {
   // Schedule
   scheduleMode: ScheduleMode;
   scheduleDays: number[];    // 0=Sun … 6=Sat
-  scheduleTime: string;      // "HH:MM" 24h
+  scheduleTime: string;      // "HH:MM" 24h — legacy / same-time-for-all fallback
+  scheduleTimes?: Record<number, string>; // per-day times e.g. {2: '17:30', 4: '17:00'}
   scheduleDuration: string;  // e.g. "60" minutes
   occasionalDate?: string;   // "YYYY-MM-DD"
   // Reminders
@@ -100,6 +101,7 @@ const EMPTY_FORM: Omit<Service, 'id' | 'createdAt'> = {
   scheduleMode: 'weekly',
   scheduleDays: [],
   scheduleTime: '09:00',
+  scheduleTimes: {},
   scheduleDuration: '60',
   occasionalDate: '',
   reminders: [],
@@ -203,6 +205,7 @@ export default function ServicesTrackerScreen() {
       scheduleMode: s.scheduleMode ?? 'weekly',
       scheduleDays: s.scheduleDays ?? [],
       scheduleTime: s.scheduleTime ?? '09:00',
+      scheduleTimes: s.scheduleTimes ?? {},
       scheduleDuration: s.scheduleDuration ?? '60',
       occasionalDate: s.occasionalDate ?? '',
       reminders: s.reminders ?? [],
@@ -323,7 +326,10 @@ export default function ServicesTrackerScreen() {
     const days = form.scheduleDays.includes(dow)
       ? form.scheduleDays.filter((d) => d !== dow)
       : [...form.scheduleDays, dow];
-    setForm({ ...form, scheduleDays: days });
+    // Remove per-day time if day is deselected
+    const newTimes = { ...(form.scheduleTimes ?? {}) };
+    if (form.scheduleDays.includes(dow)) delete newTimes[dow];
+    setForm({ ...form, scheduleDays: days, scheduleTimes: newTimes });
   };
 
   const toggleReminder = (key: ReminderOption) => {
@@ -656,18 +662,44 @@ export default function ServicesTrackerScreen() {
                 </>
               )}
 
-              <View style={s.twoCol}>
-                <View style={{ flex: 1 }}>
-                  <Text style={s.fieldLabel}>Start Time (HH:MM)</Text>
-                  <TextInput style={s.input} value={form.scheduleTime} onChangeText={(v) => setForm({ ...form, scheduleTime: v })} placeholder="09:00" placeholderTextColor={COLORS.textLight} />
+              {/* Per-day times when multiple days selected */}
+              {form.scheduleDays.length > 1 ? (
+                <>
+                  <Text style={s.fieldLabel}>Start Times per Day</Text>
+                  <Text style={[s.fieldLabel, { fontWeight: '400', marginBottom: SPACING.sm }]}>Each day can have a different time</Text>
+                  {form.scheduleDays.slice().sort((a, b) => a - b).map((dow) => (
+                    <View key={dow} style={[s.twoCol, { marginBottom: SPACING.sm }]}>
+                      <Text style={[s.fieldLabel, { width: 44, marginBottom: 0, alignSelf: 'center' }]}>{DAY_FULL[dow]}</Text>
+                      <TextInput
+                        style={[s.input, { flex: 1 }]}
+                        value={(form.scheduleTimes ?? {})[dow] ?? form.scheduleTime}
+                        onChangeText={(v) => setForm({ ...form, scheduleTimes: { ...(form.scheduleTimes ?? {}), [dow]: v } })}
+                        placeholder="09:00"
+                        placeholderTextColor={COLORS.textLight}
+                      />
+                    </View>
+                  ))}
+                  <View style={{ marginTop: SPACING.xs }}>
+                    <Text style={s.fieldLabel}>Duration</Text>
+                    <TouchableOpacity style={[s.input, s.pickerBtn]} onPress={() => setShowDurationPicker(true)}>
+                      <Text style={s.pickerBtnText}>{form.scheduleDuration ? formatDuration(form.scheduleDuration) : 'Select...'}</Text>
+                    </TouchableOpacity>
+                  </View>
+                </>
+              ) : (
+                <View style={s.twoCol}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={s.fieldLabel}>Start Time (HH:MM)</Text>
+                    <TextInput style={s.input} value={form.scheduleTime} onChangeText={(v) => setForm({ ...form, scheduleTime: v })} placeholder="09:00" placeholderTextColor={COLORS.textLight} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={s.fieldLabel}>Duration</Text>
+                    <TouchableOpacity style={[s.input, s.pickerBtn]} onPress={() => setShowDurationPicker(true)}>
+                      <Text style={s.pickerBtnText}>{form.scheduleDuration ? formatDuration(form.scheduleDuration) : 'Select...'}</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={s.fieldLabel}>Duration</Text>
-                  <TouchableOpacity style={[s.input, s.pickerBtn]} onPress={() => setShowDurationPicker(true)}>
-                    <Text style={s.pickerBtnText}>{form.scheduleDuration ? formatDuration(form.scheduleDuration) : 'Select...'}</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
+              )}
 
               {/* ── Reminders ── */}
               <Text style={s.sectionLabel}>🔔 Reminders</Text>

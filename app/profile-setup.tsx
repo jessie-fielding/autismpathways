@@ -1,15 +1,16 @@
+/**
+ * Tell Us About Your Family
+ *
+ * Optional onboarding screen — collects parent info + first child info.
+ * All fields are optional. Skippable. Warm, low-pressure tone.
+ *
+ * Flow: create-account → profile-setup → onboarding
+ */
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-  StyleSheet,
-  Image,
-  Alert,
+  View, Text, TextInput, TouchableOpacity, ScrollView,
+  KeyboardAvoidingView, Platform, StyleSheet, Image, Alert,
+  Modal, FlatList,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -19,9 +20,14 @@ import { storage } from '../services/storage';
 import { addChild, setActiveChildId, loadChildren } from '../services/childManager';
 
 const AVATAR_EMOJIS = [
-  '\ud83e\udd8b', '\ud83c\udf08', '\ud83e\udd84', '\ud83d\udc3b',
-  '\u2b50', '\ud83c\udfa8', '\ud83d\ude80', '\ud83e\udd81',
-  '\ud83d\udc2c', '\ud83c\udf38', '\ud83c\udfaf', '\u26a1',
+  '🦋', '🌈', '🦄', '🐻',
+  '⭐', '🎨', '🚀', '🦁',
+  '🐬', '🌸', '🎯', '⚡',
+];
+
+const RELATIONSHIPS = [
+  'Parent', 'Guardian', 'Caregiver', 'Grandparent',
+  'Foster Parent', 'Therapist', 'Teacher', 'Other',
 ];
 
 const STATES = [
@@ -38,16 +44,22 @@ const STATES = [
 export default function ProfileSetupScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const [childName, setChildName] = useState('');
-  const [childAge, setChildAge] = useState('');
-  const [state, setState] = useState('');
-  const [selectedEmoji, setSelectedEmoji] = useState('');
-  const [photoUri, setPhotoUri] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+
+  const [parentName, setParentName]           = useState('');
+  const [relationship, setRelationship]       = useState('');
+  const [state, setState]                     = useState('');
+  const [county, setCounty]                   = useState('');
+  const [childName, setChildName]             = useState('');
+  const [childAge, setChildAge]               = useState('');
+  const [selectedEmoji, setSelectedEmoji]     = useState('');
+  const [photoUri, setPhotoUri]               = useState<string | null>(null);
+  const [loading, setLoading]                 = useState(false);
+  const [showRelPicker, setShowRelPicker]     = useState(false);
+  const [showStatePicker, setShowStatePicker] = useState(false);
 
   const pickPhoto = async () => {
     Alert.alert(
-      'Child\'s Photo',
+      "Child's Photo",
       'Choose how to add a photo',
       [
         {
@@ -58,15 +70,8 @@ export default function ProfileSetupScreen() {
               Alert.alert('Permission needed', 'Camera access is required to take a photo.');
               return;
             }
-            const result = await ImagePicker.launchCameraAsync({
-              allowsEditing: true,
-              aspect: [1, 1],
-              quality: 0.7,
-            });
-            if (!result.canceled && result.assets[0]) {
-              setPhotoUri(result.assets[0].uri);
-              setSelectedEmoji('');
-            }
+            const result = await ImagePicker.launchCameraAsync({ allowsEditing: true, aspect: [1, 1], quality: 0.7 });
+            if (!result.canceled && result.assets[0]) { setPhotoUri(result.assets[0].uri); setSelectedEmoji(''); }
           },
         },
         {
@@ -77,15 +82,8 @@ export default function ProfileSetupScreen() {
               Alert.alert('Permission needed', 'Photo library access is required.');
               return;
             }
-            const result = await ImagePicker.launchImageLibraryAsync({
-              allowsEditing: true,
-              aspect: [1, 1],
-              quality: 0.7,
-            });
-            if (!result.canceled && result.assets[0]) {
-              setPhotoUri(result.assets[0].uri);
-              setSelectedEmoji('');
-            }
+            const result = await ImagePicker.launchImageLibraryAsync({ allowsEditing: true, aspect: [1, 1], quality: 0.7 });
+            if (!result.canceled && result.assets[0]) { setPhotoUri(result.assets[0].uri); setSelectedEmoji(''); }
           },
         },
         { text: 'Cancel', style: 'cancel' },
@@ -93,269 +91,201 @@ export default function ProfileSetupScreen() {
     );
   };
 
+  const seedDefaults = async () => {
+    await storage.setPathway('medicaid', { title: 'Medicaid Pathway', currentStep: 1, totalSteps: 8, progress: 12.5 });
+    await storage.setPathway('diagnosis', { title: 'Diagnosis Pathway', currentStep: 1, totalSteps: 6, progress: 16.7 });
+    await storage.setTasks([
+      { id: 1, title: 'Verify contact info with waiver office', completed: false },
+      { id: 2, title: 'Submit annual waiver check-in', completed: false },
+      { id: 3, title: 'Complete the ICD support quiz', completed: false },
+    ]);
+  };
+
   const handleSave = async () => {
-    if (!childName || !childAge || !state) {
-      Alert.alert('Missing info', 'Please fill in your child\'s name, age, and state.');
-      return;
-    }
     setLoading(true);
     try {
-      const avatarValue = photoUri || selectedEmoji || childName.slice(0, 2).toUpperCase();
       await storage.setProfile({
-        childName,
-        childAge: parseInt(childAge),
-        state,
+        parentName: parentName.trim() || null,
+        relationship: relationship || null,
+        state: state || null,
+        county: county.trim() || null,
+        childName: childName.trim() || null,
+        childAge: childAge ? parseInt(childAge) : null,
         createdAt: new Date().toISOString(),
       });
       const existingChildren = await loadChildren();
-      if (existingChildren.length === 0) {
-        const newChild = await addChild({
-          name: childName.trim(),
-          avatar: avatarValue,
-        });
+      if (existingChildren.length === 0 && childName.trim()) {
+        const avatarValue = photoUri || selectedEmoji || childName.trim().slice(0, 2).toUpperCase();
+        const newChild = await addChild({ name: childName.trim(), avatar: avatarValue });
         await setActiveChildId(newChild.id);
       }
-      await storage.setPathway('medicaid', {
-        title: 'Medicaid Pathway',
-        currentStep: 1,
-        totalSteps: 8,
-        progress: 12.5,
-      });
-      await storage.setPathway('diagnosis', {
-        title: 'Diagnosis Pathway',
-        currentStep: 1,
-        totalSteps: 6,
-        progress: 16.7,
-      });
-      await storage.setTasks([
-        { id: 1, title: 'Verify contact info with waiver office', completed: false },
-        { id: 2, title: 'Submit annual waiver check-in', completed: false },
-        { id: 3, title: 'Complete the ICD support quiz', completed: false },
-      ]);
+      await seedDefaults();
       router.replace('/onboarding');
-    } catch (error) {
-      console.error('Failed to save profile:', error);
+    } catch (err) {
+      console.error('Failed to save profile:', err);
       Alert.alert('Error', 'Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
+  const handleSkip = async () => {
+    try { await seedDefaults(); } catch {}
+    router.replace('/onboarding');
+  };
+
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
-    >
-      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-        <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-          <Text style={styles.title}>Tell us about your child</Text>
-          <Text style={styles.subtitle}>
-            This helps us personalize everything for you
-          </Text>
-        </View>
+    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: COLORS.bg }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
+        <Text style={styles.headerTitle}>Tell Us About Your Family</Text>
+        <Text style={styles.headerSub}>Everything here is optional — share only what you're comfortable with 💜</Text>
+      </View>
 
-        {/* Avatar section */}
-        <View style={styles.avatarSection}>
-          <Text style={styles.sectionLabel}>Pick an avatar</Text>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 80 }]}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>About You</Text>
+          <Text style={styles.sectionSub}>We'll use this to personalise your experience</Text>
 
-          {/* Photo button */}
-          <TouchableOpacity onPress={pickPhoto} style={styles.photoBtn} activeOpacity={0.8}>
-            {photoUri ? (
-              <Image source={{ uri: photoUri }} style={styles.photoPreview} />
-            ) : (
-              <>
-                <Text style={styles.photoBtnIcon}>\ud83d\udcf7</Text>
-                <Text style={styles.photoBtnText}>Take or upload a photo</Text>
-              </>
-            )}
+          <Text style={styles.label}>Your Name or Nickname</Text>
+          <TextInput style={styles.input} placeholder="Whatever you'd like us to call you" placeholderTextColor={COLORS.textLight} value={parentName} onChangeText={setParentName} autoCapitalize="words" />
+
+          <Text style={styles.label}>Your Role</Text>
+          <TouchableOpacity style={styles.picker} onPress={() => setShowRelPicker(true)} activeOpacity={0.8}>
+            <Text style={[styles.pickerText, !relationship && styles.pickerPlaceholder]}>{relationship || 'Parent, Guardian, Caregiver…'}</Text>
+            <Text style={styles.pickerChevron}>›</Text>
           </TouchableOpacity>
 
-          {/* Emoji grid */}
-          <View style={styles.emojiGrid}>
-            {AVATAR_EMOJIS.map((emoji) => (
-              <TouchableOpacity
-                key={emoji}
-                style={[
-                  styles.emojiItem,
-                  selectedEmoji === emoji && styles.emojiSelected,
-                ]}
-                onPress={() => {
-                  setSelectedEmoji(emoji);
-                  setPhotoUri(null);
-                }}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.emojiText}>{emoji}</Text>
+          <Text style={styles.label}>State</Text>
+          <TouchableOpacity style={styles.picker} onPress={() => setShowStatePicker(true)} activeOpacity={0.8}>
+            <Text style={[styles.pickerText, !state && styles.pickerPlaceholder]}>{state || 'Select your state'}</Text>
+            <Text style={styles.pickerChevron}>›</Text>
+          </TouchableOpacity>
+
+          <Text style={styles.label}>County</Text>
+          <TextInput style={styles.input} placeholder="Your county (helps find local resources)" placeholderTextColor={COLORS.textLight} value={county} onChangeText={setCounty} autoCapitalize="words" />
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>About Your Child</Text>
+          <Text style={styles.sectionSub}>You can always add or update this later in Settings</Text>
+
+          <Text style={styles.label}>Child's Photo or Avatar</Text>
+          <View style={styles.avatarRow}>
+            <TouchableOpacity style={styles.photoBtn} onPress={pickPhoto} activeOpacity={0.8}>
+              {photoUri ? (
+                <Image source={{ uri: photoUri }} style={styles.photoPreview} />
+              ) : (
+                <View style={styles.photoBtnInner}>
+                  <Text style={styles.photoBtnIcon}>📷</Text>
+                  <Text style={styles.photoBtnText}>Add Photo</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+            <View style={styles.emojiGrid}>
+              {AVATAR_EMOJIS.map((emoji) => (
+                <TouchableOpacity
+                  key={emoji}
+                  style={[styles.emojiBtn, selectedEmoji === emoji && styles.emojiBtnSelected]}
+                  onPress={() => { setSelectedEmoji(emoji); setPhotoUri(null); }}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.emojiText}>{emoji}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          <Text style={styles.label}>Child's Name</Text>
+          <TextInput style={styles.input} placeholder="First name or nickname" placeholderTextColor={COLORS.textLight} value={childName} onChangeText={setChildName} autoCapitalize="words" />
+
+          <Text style={styles.label}>Child's Age</Text>
+          <TextInput style={styles.input} placeholder="Age in years" placeholderTextColor={COLORS.textLight} value={childAge} onChangeText={setChildAge} keyboardType="number-pad" maxLength={2} />
+        </View>
+
+        <TouchableOpacity style={[styles.saveBtn, loading && styles.saveBtnDisabled]} onPress={handleSave} disabled={loading} activeOpacity={0.85}>
+          <Text style={styles.saveBtnText}>{loading ? 'Saving…' : "Let's Get Started →"}</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.skipBtn} onPress={handleSkip} activeOpacity={0.7}>
+          <Text style={styles.skipBtnText}>Skip for now — I'll fill this in later</Text>
+        </TouchableOpacity>
+      </ScrollView>
+
+      <Modal visible={showRelPicker} transparent animationType="slide">
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowRelPicker(false)}>
+          <View style={styles.modalSheet}>
+            <Text style={styles.modalTitle}>Your Role</Text>
+            {RELATIONSHIPS.map((r) => (
+              <TouchableOpacity key={r} style={[styles.modalOption, relationship === r && styles.modalOptionSelected]} onPress={() => { setRelationship(r); setShowRelPicker(false); }}>
+                <Text style={[styles.modalOptionText, relationship === r && styles.modalOptionTextSelected]}>{r}</Text>
+                {relationship === r && <Text style={styles.modalCheck}>✓</Text>}
               </TouchableOpacity>
             ))}
           </View>
-        </View>
-
-        {/* Child name */}
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>Child\'s First Name</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Ellie"
-            placeholderTextColor={COLORS.textLight}
-            value={childName}
-            onChangeText={setChildName}
-            editable={!loading}
-            autoCapitalize="words"
-          />
-        </View>
-
-        {/* Age */}
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>Child\'s Age</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="6"
-            placeholderTextColor={COLORS.textLight}
-            value={childAge}
-            onChangeText={setChildAge}
-            keyboardType="number-pad"
-            editable={!loading}
-          />
-        </View>
-
-        {/* State */}
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>Your State</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Colorado"
-            placeholderTextColor={COLORS.textLight}
-            value={state}
-            onChangeText={setState}
-            editable={!loading}
-          />
-        </View>
-
-        <TouchableOpacity
-          style={[styles.button, loading && { opacity: 0.6 }]}
-          onPress={handleSave}
-          disabled={loading}
-          activeOpacity={0.85}
-        >
-          <Text style={styles.buttonText}>
-            {loading ? 'Saving...' : 'Continue to Dashboard \u2192'}
-          </Text>
         </TouchableOpacity>
-      </ScrollView>
+      </Modal>
+
+      <Modal visible={showStatePicker} transparent animationType="slide">
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowStatePicker(false)}>
+          <View style={[styles.modalSheet, { maxHeight: '70%' }]}>
+            <Text style={styles.modalTitle}>Select Your State</Text>
+            <FlatList
+              data={STATES}
+              keyExtractor={(s) => s}
+              renderItem={({ item: s }) => (
+                <TouchableOpacity style={[styles.modalOption, state === s && styles.modalOptionSelected]} onPress={() => { setState(s); setShowStatePicker(false); }}>
+                  <Text style={[styles.modalOptionText, state === s && styles.modalOptionTextSelected]}>{s}</Text>
+                  {state === s && <Text style={styles.modalCheck}>✓</Text>}
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.bg,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    padding: SPACING.xl,
-  },
-  header: {
-    marginBottom: SPACING.xl,
-  },
-  title: {
-    fontSize: FONT_SIZES.xxl,
-    fontWeight: '800',
-    color: COLORS.text,
-    marginBottom: SPACING.sm,
-  },
-  subtitle: {
-    fontSize: FONT_SIZES.base,
-    color: COLORS.textMid,
-    lineHeight: 24,
-  },
-  avatarSection: {
-    marginBottom: SPACING.xl,
-  },
-  sectionLabel: {
-    fontSize: FONT_SIZES.sm,
-    fontWeight: '700',
-    color: COLORS.text,
-    marginBottom: SPACING.md,
-  },
-  photoBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: SPACING.sm,
-    borderWidth: 1.5,
-    borderColor: COLORS.purple,
-    borderStyle: 'dashed',
-    borderRadius: RADIUS.md,
-    paddingVertical: SPACING.lg,
-    marginBottom: SPACING.md,
-    backgroundColor: '#F8F5FF',
-    minHeight: 64,
-    overflow: 'hidden',
-  },
-  photoPreview: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-  },
-  photoBtnIcon: { fontSize: 20 },
-  photoBtnText: {
-    fontSize: FONT_SIZES.sm,
-    color: COLORS.purple,
-    fontWeight: '600',
-  },
-  emojiGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: SPACING.sm,
-  },
-  emojiItem: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: COLORS.white,
-    borderWidth: 2,
-    borderColor: COLORS.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...SHADOWS.sm,
-  },
-  emojiSelected: {
-    borderColor: COLORS.purple,
-    backgroundColor: '#F0EBFF',
-  },
-  emojiText: { fontSize: 26 },
-  formGroup: {
-    marginBottom: SPACING.lg,
-  },
-  label: {
-    fontSize: FONT_SIZES.sm,
-    fontWeight: '700',
-    color: COLORS.text,
-    marginBottom: SPACING.sm,
-  },
-  input: {
-    borderWidth: 1.5,
-    borderColor: COLORS.border,
-    borderRadius: RADIUS.md,
-    padding: SPACING.lg,
-    fontSize: FONT_SIZES.base,
-    backgroundColor: COLORS.white,
-    color: COLORS.text,
-  },
-  button: {
-    backgroundColor: COLORS.purple,
-    borderRadius: RADIUS.md,
-    padding: SPACING.lg,
-    alignItems: 'center',
-    marginTop: SPACING.lg,
-    marginBottom: SPACING.xl,
-    ...SHADOWS.md,
-  },
-  buttonText: {
-    color: COLORS.white,
-    fontSize: FONT_SIZES.lg,
-    fontWeight: '700',
-  },
+  header: { backgroundColor: COLORS.purple, paddingHorizontal: SPACING.lg, paddingBottom: SPACING.xl },
+  headerTitle: { fontSize: FONT_SIZES.xl, fontWeight: '800', color: '#fff', marginBottom: SPACING.xs },
+  headerSub: { fontSize: FONT_SIZES.sm, color: 'rgba(255,255,255,0.85)', lineHeight: 20 },
+  content: { padding: SPACING.lg, gap: SPACING.md },
+  section: { backgroundColor: COLORS.white, borderRadius: RADIUS.lg, padding: SPACING.lg, gap: SPACING.sm, ...SHADOWS.sm },
+  sectionTitle: { fontSize: FONT_SIZES.md, fontWeight: '700', color: COLORS.text, marginBottom: 2 },
+  sectionSub: { fontSize: FONT_SIZES.xs, color: COLORS.textLight, marginBottom: SPACING.sm },
+  label: { fontSize: FONT_SIZES.sm, fontWeight: '600', color: COLORS.text, marginTop: SPACING.xs },
+  input: { backgroundColor: COLORS.bg, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.border, paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm, fontSize: FONT_SIZES.sm, color: COLORS.text },
+  picker: { backgroundColor: COLORS.bg, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.border, paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  pickerText: { fontSize: FONT_SIZES.sm, color: COLORS.text, flex: 1 },
+  pickerPlaceholder: { color: COLORS.textLight },
+  pickerChevron: { fontSize: 18, color: COLORS.textLight },
+  avatarRow: { flexDirection: 'row', gap: SPACING.sm, alignItems: 'flex-start' },
+  photoBtn: { width: 80, height: 80, borderRadius: RADIUS.lg, backgroundColor: COLORS.bg, borderWidth: 2, borderColor: COLORS.border, borderStyle: 'dashed', overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
+  photoPreview: { width: 80, height: 80, borderRadius: RADIUS.lg },
+  photoBtnInner: { alignItems: 'center', gap: 4 },
+  photoBtnIcon: { fontSize: 22 },
+  photoBtnText: { fontSize: FONT_SIZES.xs, color: COLORS.textLight, textAlign: 'center' },
+  emojiGrid: { flex: 1, flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  emojiBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.bg, borderWidth: 1.5, borderColor: COLORS.border, alignItems: 'center', justifyContent: 'center' },
+  emojiBtnSelected: { borderColor: COLORS.purple, backgroundColor: COLORS.lavender ?? '#EDE9FF' },
+  emojiText: { fontSize: 18 },
+  saveBtn: { backgroundColor: COLORS.purple, borderRadius: RADIUS.lg, paddingVertical: SPACING.md, alignItems: 'center', marginTop: SPACING.sm, ...SHADOWS.md },
+  saveBtnDisabled: { opacity: 0.6 },
+  saveBtnText: { fontSize: FONT_SIZES.md, fontWeight: '700', color: '#fff' },
+  skipBtn: { alignItems: 'center', paddingVertical: SPACING.sm },
+  skipBtnText: { fontSize: FONT_SIZES.sm, color: COLORS.textLight, textDecorationLine: 'underline' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
+  modalSheet: { backgroundColor: COLORS.white, borderTopLeftRadius: RADIUS.lg, borderTopRightRadius: RADIUS.lg, paddingTop: SPACING.lg, paddingBottom: SPACING.xxxl, paddingHorizontal: SPACING.lg, maxHeight: '50%' },
+  modalTitle: { fontSize: FONT_SIZES.md, fontWeight: '700', color: COLORS.text, marginBottom: SPACING.md, textAlign: 'center' },
+  modalOption: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: SPACING.sm, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  modalOptionSelected: { backgroundColor: COLORS.lavender ?? '#EDE9FF', borderRadius: RADIUS.sm, paddingHorizontal: SPACING.sm },
+  modalOptionText: { fontSize: FONT_SIZES.sm, color: COLORS.text },
+  modalOptionTextSelected: { color: COLORS.purple, fontWeight: '600' },
+  modalCheck: { fontSize: 16, color: COLORS.purple, fontWeight: '700' },
 });

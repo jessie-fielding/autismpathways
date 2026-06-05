@@ -165,6 +165,11 @@ export default function ParentingPathwaysTrends() {
         <View style={styles.gateContainer}>
           <Text style={styles.gateEmoji}>📊</Text>
           <Text style={styles.gateTitle}>Trends Dashboard</Text>
+          {trends && trends.totalEntries > 0 && (
+            <View style={styles.sessionCountBadge}>
+              <Text style={styles.sessionCountText}>💾 {trends.totalEntries} session{trends.totalEntries !== 1 ? 's' : ''} logged — your data is safe!</Text>
+            </View>
+          )}
           <Text style={styles.gateBody}>
             Upgrade to Premium to see when, where, and what triggers happen most — and which
             strategies work best for your child over time.
@@ -534,6 +539,20 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     marginBottom: SPACING.md,
     textAlign: 'center',
+  },
+  sessionCountBadge: {
+    backgroundColor: COLORS.mint,
+    borderRadius: RADIUS.pill,
+    paddingVertical: SPACING.xs,
+    paddingHorizontal: SPACING.lg,
+    marginBottom: SPACING.md,
+    borderWidth: 1,
+    borderColor: COLORS.mintAccent,
+  },
+  sessionCountText: {
+    fontSize: FONT_SIZES.sm,
+    color: COLORS.successText,
+    fontWeight: '600',
   },
   gateBody: {
     fontSize: FONT_SIZES.md,

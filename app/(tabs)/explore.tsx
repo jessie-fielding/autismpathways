@@ -302,7 +302,10 @@ export default function LearningScreen() {
     <View style={styles.container}>
       {/* Sticky header */}
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-        <Text style={styles.headerTitle}>
+        <TouchableOpacity onPress={() => router.push('/(tabs)/dashboard')} style={{ paddingRight: 12 }}>
+          <Text style={{ fontSize: 22 }}>🏠</Text>
+        </TouchableOpacity>
+        <Text style={[styles.headerTitle, { flex: 1 }]}>
           Autism <Text style={styles.headerTitlePink}>Pathways</Text>
         </Text>
       </View>
@@ -471,13 +474,14 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
 
   // Header
-  header: {
+    header: {
     backgroundColor: COLORS.white,
     paddingHorizontal: SPACING.lg,
-    
     paddingBottom: SPACING.md,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   headerTitle: {
     fontSize: FONT_SIZES.lg,

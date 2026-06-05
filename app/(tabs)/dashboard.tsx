@@ -598,15 +598,49 @@ const styles = StyleSheet.create({
     padding: SPACING.lg,
     marginBottom: SPACING.md,
   },
+  ppHeroCardBig: {
+    backgroundColor: '#4a3f8f',
+    borderRadius: 16,
+    padding: SPACING.lg,
+    marginBottom: SPACING.md,
+  },
   ppHeroTitle: {
     fontSize: 15,
     fontWeight: '800',
     color: '#ffffff',
     marginBottom: 3,
   },
+  ppHeroBigTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#ffffff',
+    marginBottom: SPACING.xs,
+  },
+  ppHeroBigSub: {
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.8)',
+    lineHeight: 19,
+  },
   ppHeroSub: {
     fontSize: 12,
     color: 'rgba(255,255,255,0.75)',
+    lineHeight: 16,
+  },
+  transitionCompactCard: {
+    backgroundColor: '#1a3a5c',
+    borderRadius: 16,
+    padding: SPACING.lg,
+    marginBottom: SPACING.md,
+  },
+  transitionCompactTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#ffffff',
+    marginBottom: 3,
+  },
+  transitionCompactSub: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.7)',
     lineHeight: 16,
   },
   // TRANSITION HERO CARD
@@ -925,43 +959,36 @@ export default function DashboardScreen() {
             ))}
           </View>
 
-          {/* TRANSITION PATHWAY HERO CARD */}
+          {/* I NEED HELP RIGHT NOW — BIG HERO CARD */}
           <TouchableOpacity
-            style={styles.transitionHeroCard}
-            onPress={() => { trackPathwayOpened('transition'); router.push('/transition'); }}
-            activeOpacity={0.85}
-          >
-            <View style={styles.transitionHeroTop}>
-              <View style={styles.transitionHeroBadge}>
-                <Text style={styles.transitionHeroBadgeText}>{t('PATHWAY', 'CAMINO')}</Text>
-              </View>
-              <Text style={styles.transitionHeroArrow}>›</Text>
-            </View>
-            <Text style={styles.transitionHeroEmoji}>🗺️</Text>
-            <Text style={styles.transitionHeroTitle}>{t('Transition to Adult Life', 'Transición a la Vida Adulta')}</Text>
-            <Text style={styles.transitionHeroSub}>{t('6 stages from under 13 to age 22+ — waitlists, IEP rights, SSI, housing & more.', '6 etapas desde menos de 13 hasta los 22+ años.')}</Text>
-            <View style={styles.transitionStageRow}>
-              {['🌱', '💬', '📋', '🎓', '🌉', '🏡'].map((emoji, i) => (
-                <View key={i} style={styles.transitionStageDot}>
-                  <Text style={{ fontSize: 14 }}>{emoji}</Text>
-                </View>
-              ))}
-            </View>
-          </TouchableOpacity>
-
-          {/* PARENTING PATHWAYS HERO CARD */}
-          <TouchableOpacity
-            style={styles.ppHeroCard}
+            style={styles.ppHeroCardBig}
             onPress={() => router.push('/parenting-pathways')}
             activeOpacity={0.85}
           >
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: SPACING.md }}>
-              <Text style={{ fontSize: 28 }}>🆘</Text>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.ppHeroTitle}>{t('I Need Help Right Now', 'Necesito Ayuda Ahora')}</Text>
-                <Text style={styles.ppHeroSub}>{t('Get an in-the-moment strategy in 30 seconds', 'Obtén una estrategia en 30 segundos')}</Text>
+            <View style={styles.transitionHeroTop}>
+              <View style={[styles.transitionHeroBadge, { backgroundColor: 'rgba(255,255,255,0.15)' }]}>
+                <Text style={[styles.transitionHeroBadgeText, { color: '#fff' }]}>{t('SOS TOOL', 'HERRAMIENTA SOS')}</Text>
               </View>
-              <Text style={{ fontSize: 20, color: COLORS.purple }}>›</Text>
+              <Text style={styles.transitionHeroArrow}>›</Text>
+            </View>
+            <Text style={styles.transitionHeroEmoji}>🆘</Text>
+            <Text style={styles.ppHeroBigTitle}>{t('I Need Help Right Now', 'Necesito Ayuda Ahora')}</Text>
+            <Text style={styles.ppHeroBigSub}>{t('Get an in-the-moment strategy in 30 seconds. Calm the moment, find the pattern.', 'Obtén una estrategia en 30 segundos.')}</Text>
+          </TouchableOpacity>
+
+          {/* TRANSITION PATHWAY — COMPACT CARD */}
+          <TouchableOpacity
+            style={styles.transitionCompactCard}
+            onPress={() => { trackPathwayOpened('transition'); router.push('/transition'); }}
+            activeOpacity={0.85}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: SPACING.md }}>
+              <Text style={{ fontSize: 28 }}>🗺️</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.transitionCompactTitle}>{t('Transition to Adult Life', 'Transición a la Vida Adulta')}</Text>
+                <Text style={styles.transitionCompactSub}>{t('6 stages: waitlists, IEP rights, SSI, housing & more', '6 etapas: listas de espera, derechos IEP, SSI')}</Text>
+              </View>
+              <Text style={{ fontSize: 20, color: 'rgba(255,255,255,0.6)' }}>›</Text>
             </View>
           </TouchableOpacity>
           {/* TOOLS SCROLLER */}

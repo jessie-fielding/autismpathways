@@ -342,42 +342,25 @@ export default function TransitionHub() {
           <Text style={styles.aiGuideArrow}>›</Text>
         </TouchableOpacity>
 
-        {/* Premium Tools Section */}
+        {/* Premium Tools Section — Accordion Groups */}
         <View style={styles.premiumSection}>
           <View style={styles.premiumHeader}>
             <Text style={styles.premiumHeaderEmoji}>⭐</Text>
             <View style={{ flex: 1 }}>
               <Text style={styles.premiumHeaderTitle}>Premium Lookup Tools</Text>
-              <Text style={styles.premiumHeaderSub}>State-by-state directories with Near Me search</Text>
+              <Text style={styles.premiumHeaderSub}>{isPremium ? 'Tap a category to expand' : '🔒 Unlock with Premium'}</Text>
             </View>
           </View>
-
-          {PREMIUM_TOOLS.map((tool) => (
-            <TouchableOpacity
-              key={tool.id}
-              style={styles.toolCard}
-              onPress={() => {
-                if (!isPremium) {
-                  router.push('/paywall' as any);
-                  return;
-                }
-                router.push(tool.route as any);
-              }}
-              activeOpacity={0.8}
-            >
-              <View style={[styles.toolAccent, { backgroundColor: tool.accent }]} />
-              <View style={styles.toolContent}>
-                <Text style={styles.toolEmoji}>{tool.emoji}</Text>
-                <View style={styles.toolText}>
-                  <Text style={styles.toolTitle}>{tool.title}</Text>
-                  <Text style={styles.toolDesc}>{tool.desc}</Text>
-                </View>
-                <View style={styles.premiumBadge}>
-                  <Text style={styles.premiumBadgeText}>⭐</Text>
-                </View>
-              </View>
-              <Text style={styles.toolChevron}>›</Text>
-            </TouchableOpacity>
+          {TOOL_GROUPS.map((group) => (
+            <AccordionGroup
+              key={group.id}
+              group={group}
+              isPremium={isPremium}
+              openGroupId={openGroupId}
+              setOpenGroupId={setOpenGroupId}
+              onToolPress={(route) => router.push(route as any)}
+              onPaywall={() => router.push('/paywall' as any)}
+            />
           ))}
         </View>
 

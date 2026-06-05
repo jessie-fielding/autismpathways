@@ -184,6 +184,9 @@ export default function ObservationsHomeScreen() {
         <TouchableOpacity style={styles.prepBtn} onPress={() => router.push('/provider-prep')} activeOpacity={0.85}>
           <Text style={styles.prepBtnText}>🩺 Provider Prep →</Text>
         </TouchableOpacity>
+        <TouchableOpacity style={styles.trendsBtn} onPress={() => router.push('/observations/trends')} activeOpacity={0.85}>
+          <Text style={styles.trendsBtnText}>📊 View Trends →</Text>
+        </TouchableOpacity>
 
         {/* Pattern insights */}
         {patterns.length > 0 && (
@@ -353,8 +356,18 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: COLORS.mintAccent,
   },
-  prepBtnText: { color: COLORS.successText, fontWeight: '700', fontSize: FONT_SIZES.sm },
-
+    prepBtnText: { color: COLORS.successText, fontWeight: '700', fontSize: FONT_SIZES.sm },
+  trendsBtn: {
+    marginHorizontal: SPACING.md,
+    marginBottom: SPACING.md,
+    backgroundColor: COLORS.lavender,
+    borderRadius: RADIUS.pill,
+    paddingVertical: SPACING.md,
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: COLORS.lavenderAccent,
+  },
+  trendsBtnText: { color: COLORS.purple, fontWeight: '700', fontSize: FONT_SIZES.sm },
   // Patterns
   patternCard: {
     marginHorizontal: SPACING.md,
@@ -380,6 +393,8 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.sm,
   },
   patternRowBorder: { borderBottomWidth: 1, borderBottomColor: COLORS.lavenderAccent },
+  patternRowWarning: { backgroundColor: COLORS.peach, borderRadius: RADIUS.sm, paddingHorizontal: SPACING.sm },
+  patternRowPositive: { backgroundColor: COLORS.mint, borderRadius: RADIUS.sm, paddingHorizontal: SPACING.sm },
   patternIcon: { fontSize: 14 },
   patternText: { flex: 1, fontSize: FONT_SIZES.sm, color: COLORS.text, lineHeight: 19 },
   patternLink: { fontSize: FONT_SIZES.sm, fontWeight: '600', color: COLORS.purple, marginTop: SPACING.sm },

@@ -166,7 +166,7 @@ export default function HardshipApplicationScreen() {
               <Text style={styles.heroSub}>
                 If the standard price is a barrier, we want to help. Approved applicants receive a special rate of{' '}
                 <Text style={styles.heroHighlight}>$4.99/mo</Text>
-                {' '}— no questions asked about your situation.
+                {' '}— share only what you’re comfortable with. We don’t judge.
               </Text>
               <Text style={styles.heroStandard}>Standard price: $14.99/mo</Text>
             </View>

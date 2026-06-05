@@ -256,8 +256,11 @@ export default function SafeSpaceScreen() {
         showToast(anonymous ? 'Shared anonymously 🌸' : 'Shared with the community 🌸');
         setShareEntry(null);
       } else {
-        const err = await res.json();
-        showToast(err.error || 'Could not share. Please try again.');
+        const err = await res.json().catch(() => ({}));
+        const msg = err.error === 'Invalid token.'
+          ? 'Session expired. Please sign out and sign back in, then try again.'
+          : err.error || 'Could not share. Please try again.';
+        showToast(msg);
       }
     } catch {
       showToast('Network error. Please try again.');

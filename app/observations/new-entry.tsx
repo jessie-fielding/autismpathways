@@ -400,6 +400,7 @@ const styles = StyleSheet.create({
   backText: { fontSize: FONT_SIZES.sm, color: COLORS.purple, fontWeight: '600' },
   headerTitle: { fontSize: FONT_SIZES.lg, fontWeight: '700', color: COLORS.text },
   headerPurple: { color: COLORS.purple },
+  dashText: { fontSize: FONT_SIZES.sm, color: COLORS.purple, fontWeight: '600' },
   scroll: { flex: 1 },
   scrollContent: { paddingBottom: 60 },
 

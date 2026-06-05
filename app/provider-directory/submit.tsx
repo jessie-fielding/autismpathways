@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '../../lib/theme';
 
 const API_BASE = 'https://inu3nb5lrfvftfyiwprftqshpy0zcegu.lambda-url.us-east-2.on.aws';
@@ -64,23 +65,16 @@ export default function SubmitProviderScreen() {
         status: 'pending_review',
       };
 
-      // Post to forum as a provider submission for owner review
-      const res = await fetch(`${API_BASE}/api/forum/posts`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: `[PROVIDER SUBMISSION] ${name.trim()} — ${state} — ${specialty}`,
-          content: JSON.stringify(submissionData),
-          category: 'provider_submission',
-          anonymous: true,
-        }),
+      // Save locally with pending_review status
+      const PENDING_KEY = 'ap_provider_submissions';
+      const existing = await AsyncStorage.getItem(PENDING_KEY);
+      const pending = existing ? JSON.parse(existing) : [];
+      pending.push({
+        ...submissionData,
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2),
       });
-
-      if (res.ok) {
-        setSubmitted(true);
-      } else {
-        Alert.alert('Submission Failed', 'Please try again later.');
-      }
+      await AsyncStorage.setItem(PENDING_KEY, JSON.stringify(pending));
+      setSubmitted(true);
     } catch {
       Alert.alert('Submission Failed', 'Please check your connection and try again.');
     } finally {
