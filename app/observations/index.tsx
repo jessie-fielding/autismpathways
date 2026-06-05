@@ -3,7 +3,7 @@ import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'rea
 import { useFocusEffect, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, FONT_SIZES, RADIUS, SHADOWS, SPACING } from '../../lib/theme';
-
+import { useActiveChild } from '../../services/childManager';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 export const OBS_KEY = 'ap_observations';
 export const IEP_FLAGGED_KEY = 'ap_iep_flagged_obs';
@@ -108,16 +108,18 @@ function detectPatterns(entries: Observation[]): { icon: string; text: string; s
 export default function ObservationsHomeScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { childId } = useActiveChild();
+  const obsKey = childId ? `${OBS_KEY}_${childId}` : OBS_KEY;
   const [entries, setEntries] = useState<Observation[]>([]);
 
   const loadEntries = useCallback(async () => {
     try {
-      const raw = await AsyncStorage.getItem(OBS_KEY);
+      const raw = await AsyncStorage.getItem(obsKey);
       setEntries(raw ? JSON.parse(raw) : []);
     } catch {
       setEntries([]);
     }
-  }, []);
+  }, [obsKey]);
 
   useFocusEffect(useCallback(() => { loadEntries(); }, [loadEntries]));
 
@@ -125,7 +127,7 @@ export default function ObservationsHomeScreen() {
     const updated = entries.map((e) =>
       e.savedAt === savedAt ? { ...e, iepFlag: !e.iepFlag } : e
     );
-    await AsyncStorage.setItem(OBS_KEY, JSON.stringify(updated));
+    await AsyncStorage.setItem(obsKey, JSON.stringify(updated));
     const flagged = updated.filter((e) => e.iepFlag);
     await AsyncStorage.setItem(IEP_FLAGGED_KEY, JSON.stringify(flagged));
     setEntries(updated);
@@ -138,7 +140,7 @@ export default function ObservationsHomeScreen() {
         text: 'Delete', style: 'destructive',
         onPress: async () => {
           const updated = entries.filter((e) => e.savedAt !== savedAt);
-          await AsyncStorage.setItem(OBS_KEY, JSON.stringify(updated));
+          await AsyncStorage.setItem(obsKey, JSON.stringify(updated));
           setEntries(updated);
         },
       },

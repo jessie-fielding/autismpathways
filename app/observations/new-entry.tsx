@@ -6,7 +6,7 @@ import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, FONT_SIZES, RADIUS, SHADOWS, SPACING } from '../../lib/theme';
 import { IEP_FLAGGED_KEY, OBS_KEY, type Observation } from './index';
-
+import { useActiveChild } from '../../services/childManager';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 // ── Data ──────────────────────────────────────────────────────────────────────
 
@@ -67,6 +67,7 @@ function uid(): string {
 export default function NewEntryScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { childId } = useActiveChild();
 
   const [date] = useState(todayISO());
   const [mood, setMood] = useState('');
@@ -111,10 +112,11 @@ export default function NewEntryScreen() {
         savedAt: new Date().toISOString(),
       };
 
-      const raw = await AsyncStorage.getItem(OBS_KEY);
+      const obsKey = childId ? `${OBS_KEY}_${childId}` : OBS_KEY;
+      const raw = await AsyncStorage.getItem(obsKey);
       const existing: Observation[] = raw ? JSON.parse(raw) : [];
       const updated = [entry, ...existing];
-      await AsyncStorage.setItem(OBS_KEY, JSON.stringify(updated));
+      await AsyncStorage.setItem(obsKey, JSON.stringify(updated));
 
       if (iepFlag) {
         const flagged = updated.filter((e) => e.iepFlag);
