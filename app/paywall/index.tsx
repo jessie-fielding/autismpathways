@@ -102,15 +102,11 @@ const countdownStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#2D1B69',
-    borderRadius: RADIUS.lg,
-    marginHorizontal: SPACING.lg,
-    marginTop: SPACING.md,
-    marginBottom: SPACING.sm,
+    marginTop: 0,
+    marginBottom: 0,
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.md,
     gap: SPACING.sm,
-    borderWidth: 1,
-    borderColor: 'rgba(197,184,240,0.3)',
   },
   lockIcon: { fontSize: 22 },
   textBlock: { flex: 1 },
@@ -322,18 +318,6 @@ export default function PaywallScreen() {
           <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>
       </View>
-      {/* Hardship / affordability link — above the fold */}
-      <TouchableOpacity
-        style={styles.hardshipBanner}
-        onPress={() => router.push('/paywall/hardship-application' as any)}
-        activeOpacity={0.8}
-      >
-        <Text style={styles.hardshipText}>
-          I believe everyone deserves affordable access to information — if you're experiencing difficulty paying,{' '}
-          <Text style={styles.hardshipLink}>there are options for you.</Text>
-        </Text>
-      </TouchableOpacity>
-
       <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         <CountdownBanner />
         <View style={styles.hero}>
@@ -371,6 +355,18 @@ export default function PaywallScreen() {
             )}
           </TouchableOpacity>
           <Text style={styles.priceNote}>{selectedPlan === 'annual' ? 'Billed annually · ~$6.67/mo' : 'Billed monthly · cancel anytime'}</Text>
+
+          {/* Hardship callout — light blue, above Get Premium in ctaSection */}
+          <TouchableOpacity
+            style={styles.hardshipCallout}
+            onPress={() => router.push('/paywall/hardship-application' as any)}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.hardshipCalloutText}>
+              💙 I believe everyone deserves affordable access — if you're experiencing difficulty paying,{' '}
+              <Text style={styles.hardshipCalloutLink}>there are options for you.</Text>
+            </Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.section}>
@@ -474,21 +470,24 @@ const styles = StyleSheet.create({
   header: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.sm, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.border },
   backBtn: { paddingVertical: 6 },
   backText: { color: COLORS.purple, fontSize: FONT_SIZES.sm, fontWeight: '600' },
-  hardshipBanner: {
-    backgroundColor: '#F0F4FF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#D8E0FF',
+  hardshipCallout: {
+    backgroundColor: '#E8F4FD',
+    borderRadius: RADIUS.sm,
+    borderWidth: 1,
+    borderColor: '#B3D9F0',
     paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.sm,
+    paddingVertical: SPACING.md,
+    marginTop: SPACING.md,
+    width: '100%',
   },
-  hardshipText: {
+  hardshipCalloutText: {
     fontSize: 12,
-    color: COLORS.textMid,
+    color: '#1A5276',
     textAlign: 'center',
-    lineHeight: 17,
+    lineHeight: 18,
   },
-  hardshipLink: {
-    color: COLORS.purple,
+  hardshipCalloutLink: {
+    color: '#1A7FC1',
     fontWeight: '700',
     textDecorationLine: 'underline',
   },

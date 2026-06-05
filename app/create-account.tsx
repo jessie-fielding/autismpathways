@@ -405,8 +405,8 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZES.sm,
     fontWeight: '600',
     color: COLORS.text,
-    marginBottom: 6,
-    marginTop: SPACING.sm,
+    marginBottom: 4,
+    marginTop: SPACING.xs,
   },
   pickerRow: {
     flexDirection: 'row',
@@ -490,7 +490,7 @@ const styles = StyleSheet.create({
   },
   dividerLine: { flex: 1, height: 1, backgroundColor: COLORS.border },
   dividerText: { fontSize: FONT_SIZES.xs, color: COLORS.textLight, fontWeight: '500' },
-  nameRow: { flexDirection: 'row', gap: SPACING.sm },
+  nameRow: { flexDirection: 'row', gap: SPACING.sm, alignItems: 'flex-start' },
   halfInput: { flex: 1 },
   input: {
     borderWidth: 1.5,

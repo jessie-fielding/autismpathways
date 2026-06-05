@@ -5,6 +5,7 @@ import { useLanguage } from '../../lib/LanguageContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, SPACING, FONT_SIZES, RADIUS } from '../../lib/theme';
 import { useIsPremium } from '../../hooks/useIsPremium';
+import { useActiveChild } from '../../services/childManager';
 
 const STAGES = [
   {
@@ -255,6 +256,8 @@ export default function TransitionHub() {
   const insets = useSafeAreaInsets();
   const { isPremium } = useIsPremium();
   const [openGroupId, setOpenGroupId] = useState<string | null>(null);
+  const { child } = useActiveChild();
+  const childName = child?.name ?? null;
 
   return (
     <View style={styles.container}>
@@ -277,10 +280,29 @@ export default function TransitionHub() {
             <Text style={styles.whereIconEmoji}>👤</Text>
           </View>
           <View style={styles.whereText}>
-            <Text style={styles.whereTitle}>Where is your child right now?</Text>
+            <Text style={styles.whereTitle}>Where is {childName ? childName : 'your child'} right now?</Text>
             <Text style={styles.whereDesc}>Select a stage to see your action plan</Text>
           </View>
         </View>
+
+        {/* AI Guide CTA — placed right after "Where is your child" */}
+        <TouchableOpacity
+          style={styles.aiGuideCard}
+          onPress={() => router.push('/transition/ai-guide' as any)}
+          activeOpacity={0.85}
+        >
+          <View style={styles.aiGuideLeft}>
+            <Text style={styles.aiGuideEmoji}>✨</Text>
+            <View style={{ flex: 1 }}>
+              <View style={styles.aiGuideTitleRow}>
+                <Text style={styles.aiGuideTitle}>Get {childName ? `${childName}'s` : 'a'} Personalized Transition Guide</Text>
+                <View style={styles.aiGuideBadge}><Text style={styles.aiGuideBadgeText}>AI</Text></View>
+              </View>
+              <Text style={styles.aiGuideDesc}>Custom action plan based on {childName ? `${childName}'s` : "your child's"} age, state, and goals — with deep links to every tool.</Text>
+            </View>
+          </View>
+          <Text style={styles.aiGuideArrow}>›</Text>
+        </TouchableOpacity>
 
         {/* Stage cards */}
         {STAGES.map((stage) => (
@@ -323,24 +345,6 @@ export default function TransitionHub() {
           <Text style={styles.checkStateBtnText}>🗺️ Check Your State →</Text>
         </TouchableOpacity>
 
-        {/* AI Guide CTA */}
-        <TouchableOpacity
-          style={styles.aiGuideCard}
-          onPress={() => router.push('/transition/ai-guide' as any)}
-          activeOpacity={0.85}
-        >
-          <View style={styles.aiGuideLeft}>
-            <Text style={styles.aiGuideEmoji}>✨</Text>
-            <View style={{ flex: 1 }}>
-              <View style={styles.aiGuideTitleRow}>
-                <Text style={styles.aiGuideTitle}>Your Personalized Transition Guide</Text>
-                <View style={styles.aiGuideBadge}><Text style={styles.aiGuideBadgeText}>AI</Text></View>
-              </View>
-              <Text style={styles.aiGuideDesc}>Get a custom action plan based on your child's age, state, and goals — with deep links to every tool.</Text>
-            </View>
-          </View>
-          <Text style={styles.aiGuideArrow}>›</Text>
-        </TouchableOpacity>
 
         {/* Premium Tools Section — Accordion Groups */}
         <View style={styles.premiumSection}>

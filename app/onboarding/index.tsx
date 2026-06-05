@@ -17,7 +17,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, Dimensions,
-  FlatList, Animated, Platform,
+  FlatList, Animated, Platform, ScrollView,
 } from 'react-native';
 import LottieView from 'lottie-react-native';
 import { VideoView, useVideoPlayer } from 'expo-video';
@@ -147,7 +147,7 @@ function VideoCard({ source }: { source: any }) {
     <View style={{ width: '100%', height: '100%' }}>
       <VideoView
         player={player}
-        contentFit="cover"
+        contentFit="contain"
         style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: RADIUS.lg }}
         nativeControls={false}
       />
@@ -226,33 +226,39 @@ export default function OnboardingScreen() {
           start={{ x: 0, y: 0 }}
           end={{ x: 0, y: 1 }}
         >
-          {/* Animation area (placeholder until Lottie/video added) */}
-          <View style={styles.animationContainer}>
-            {(item as any).video ? (
-              <VideoCard source={VIDEO_SOURCES[(item as any).video]} />
-            ) : item.lottie ? (
-              <LottieView source={item.lottie} autoPlay loop style={styles.lottie} />
-            ) : (
-              <View style={styles.lottiePlaceholder}>
-                <Text style={styles.placeholderEmoji}>{item.emoji}</Text>
-              </View>
-            )}
-          </View>
+          <ScrollView
+            contentContainerStyle={styles.card8ScrollContent}
+            showsVerticalScrollIndicator={false}
+            bounces={false}
+          >
+            {/* Animation area */}
+            <View style={styles.animationContainer}>
+              {(item as any).video ? (
+                <VideoCard source={VIDEO_SOURCES[(item as any).video]} />
+              ) : item.lottie ? (
+                <LottieView source={item.lottie} autoPlay loop style={styles.lottie} />
+              ) : (
+                <View style={styles.lottiePlaceholder}>
+                  <Text style={styles.placeholderEmoji}>{item.emoji}</Text>
+                </View>
+              )}
+            </View>
 
-          {/* Big headline */}
-          <Text style={styles.headline8}>{cleanHeadline}</Text>
+            {/* Big headline */}
+            <Text style={styles.headline8}>{cleanHeadline}</Text>
 
-          {/* Handwritten-note card */}
-          <View style={styles.noteCard}>
-            <Text style={styles.noteHeart}>♡</Text>
-            {((item as any).noteLines as string[]).map((line, i) => (
-              <Text key={i} style={styles.noteLine}>{line}</Text>
-            ))}
-            <Text style={styles.noteHeartBottom}>♡</Text>
-          </View>
+            {/* Handwritten-note card */}
+            <View style={styles.noteCard}>
+              <Text style={styles.noteHeart}>♡</Text>
+              {((item as any).noteLines as string[]).map((line, i) => (
+                <Text key={i} style={styles.noteLine}>{line}</Text>
+              ))}
+              <Text style={styles.noteHeartBottom}>♡</Text>
+            </View>
 
-          {/* Signature */}
-          <Text style={styles.signature}>Jessie Fielding, Founder ♡</Text>
+            {/* Signature */}
+            <Text style={styles.signature}>Jessie Fielding, Founder ♡</Text>
+          </ScrollView>
         </LinearGradient>
       );
     }
@@ -440,7 +446,8 @@ const styles = StyleSheet.create({
   gotItText: { fontSize: FONT_SIZES.sm, color: COLORS.textLight, fontWeight: '600' },
 
   // ── Card 8 special styles ──────────────────────────────────────────────────
-  card8: { justifyContent: 'flex-start', paddingTop: SPACING.xl },
+  card8: { justifyContent: 'flex-start', paddingTop: 0 },
+  card8ScrollContent: { alignItems: 'center', paddingTop: SPACING.xl, paddingHorizontal: SPACING.xl, paddingBottom: SPACING.xl },
 
   headline8: {
     fontSize: 26, fontWeight: '900', color: COLORS.text,
