@@ -87,34 +87,59 @@ export function AuthProvider({ children }: any) {
   }, []);
 
   const checkAuthStatus = async () => {
-    // Safety timeout — if Cognito or network is slow, never block the app forever
+    // ── Fast path: check stored token immediately (no network call) ──────────
+    // This lets returning users see the app instantly while we validate in bg.
+    try {
+      const [storedToken, storedEmail] = await Promise.all([
+        AsyncStorage.getItem(TOKEN_KEY),
+        AsyncStorage.getItem(USER_EMAIL_KEY),
+      ]);
+      if (storedToken) {
+        // Token exists locally — show the app right away
+        setUserEmail(storedEmail);
+        setIsSignedIn(true);
+        if (storedEmail) identifyUser(storedEmail, storedEmail);
+        setIsLoading(false);
+        // Validate / refresh with Cognito in the background (non-blocking)
+        getCurrentSession()
+          .then(async (session) => {
+            if (session) {
+              // Refresh the stored token with the latest one
+              await AsyncStorage.setItem(TOKEN_KEY, session.getIdToken().getJwtToken());
+            } else {
+              // Session expired — sign the user out silently
+              await AsyncStorage.multiRemove([TOKEN_KEY, USER_EMAIL_KEY]);
+              setIsSignedIn(false);
+              setUserEmail(null);
+            }
+          })
+          .catch(() => {
+            // Network error — keep the user signed in optimistically
+          });
+        return;
+      }
+    } catch (_) {
+      // AsyncStorage read failed — fall through to full check
+    }
+
+    // ── Slow path: no stored token, attempt full Cognito session check ────────
+    // Safety timeout reduced to 2 s (was 4 s) so first-time users aren't blocked
     let done = false;
     const safetyTimer = setTimeout(() => {
       if (!done) {
         done = true;
         setIsLoading(false);
       }
-    }, 4000);
+    }, 2000);
 
     try {
-      // First try to refresh via the Cognito SDK (handles token refresh automatically)
       const session = await getCurrentSession();
       if (session) {
         const email = await AsyncStorage.getItem(USER_EMAIL_KEY);
         setUserEmail(email);
         setIsSignedIn(true);
         if (email) identifyUser(email, email);
-        // Keep the stored token fresh
         await AsyncStorage.setItem(TOKEN_KEY, session.getIdToken().getJwtToken());
-      } else {
-        // Fall back to checking the stored token (covers Google sign-in case)
-        const token = await AsyncStorage.getItem(TOKEN_KEY);
-        if (token) {
-          const email = await AsyncStorage.getItem(USER_EMAIL_KEY);
-          setUserEmail(email);
-          setIsSignedIn(true);
-          if (email) identifyUser(email, email);
-        }
       }
     } catch (e) {
       console.error('Auth check failed:', e);

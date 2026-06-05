@@ -326,17 +326,19 @@ export default function PaywallScreen() {
           <Text style={styles.heroSub}>Everything you need to navigate the system — diagnosis, Medicaid, IEP, and beyond.</Text>
 
           <View style={styles.planToggle}>
+            <TouchableOpacity style={[styles.planOption, selectedPlan === 'monthly' && styles.planOptionActive]} onPress={() => setSelectedPlan('monthly')} activeOpacity={0.8}>
+              <Text style={[styles.planLabel, selectedPlan === 'monthly' && styles.planLabelActive]}>Monthly</Text>
+              <Text style={[styles.planPrice, selectedPlan === 'monthly' && styles.planPriceActive]}>{monthlyPrice ?? '$14.99'}</Text>
+              <Text style={[styles.planSub, selectedPlan === 'monthly' && styles.planSubActive]}>per month</Text>
+            </TouchableOpacity>
+
             <TouchableOpacity style={[styles.planOption, selectedPlan === 'annual' && styles.planOptionActive]} onPress={() => setSelectedPlan('annual')} activeOpacity={0.8}>
               <View style={styles.planBadgeRow}>
                 <Text style={[styles.planLabel, selectedPlan === 'annual' && styles.planLabelActive]}>Annual</Text>
                 <View style={styles.saveBadge}><Text style={styles.saveBadgeText}>BEST VALUE</Text></View>
               </View>
-              <Text style={[styles.planPrice, selectedPlan === 'annual' && styles.planPriceActive]}>{annualPrice ?? '—'}</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={[styles.planOption, selectedPlan === 'monthly' && styles.planOptionActive]} onPress={() => setSelectedPlan('monthly')} activeOpacity={0.8}>
-              <Text style={[styles.planLabel, selectedPlan === 'monthly' && styles.planLabelActive]}>Monthly</Text>
-              <Text style={[styles.planPrice, selectedPlan === 'monthly' && styles.planPriceActive]}>{monthlyPrice ?? '—'}</Text>
+              <Text style={[styles.planPrice, selectedPlan === 'annual' && styles.planPriceActive]}>{annualPrice ?? '$119.99'}</Text>
+              <Text style={[styles.planSub, selectedPlan === 'annual' && styles.planSubActive]}>~$9.99/mo</Text>
             </TouchableOpacity>
           </View>
 
@@ -354,7 +356,7 @@ export default function PaywallScreen() {
               <Text style={styles.purchaseBtnText}>{priceLoaded ? `Get Premium — ${currentPrice}` : 'Get Premium'}</Text>
             )}
           </TouchableOpacity>
-          <Text style={styles.priceNote}>{selectedPlan === 'annual' ? 'Billed annually · ~$6.67/mo' : 'Billed monthly · cancel anytime'}</Text>
+          <Text style={styles.priceNote}>{selectedPlan === 'annual' ? `Billed annually at ${annualPrice ?? '$119.99'} · ~$9.99/mo · cancel anytime` : `Billed monthly at ${monthlyPrice ?? '$14.99'} · cancel anytime`}</Text>
 
           {/* Hardship callout — light blue, above Get Premium in ctaSection */}
           <TouchableOpacity
@@ -448,8 +450,8 @@ export default function PaywallScreen() {
 
           <Text style={styles.legalText}>
             {selectedPlan === 'annual'
-              ? `Subscription auto-renews annually at ${annualPrice ?? '$79.99'} unless cancelled at least 24 hours before the renewal date.`
-              : `Subscription auto-renews monthly at ${monthlyPrice ?? '$9.99'} unless cancelled at least 24 hours before the renewal date.`}
+              ? `Subscription auto-renews annually at ${annualPrice ?? '$119.99'} unless cancelled at least 24 hours before the renewal date.`
+              : `Subscription auto-renews monthly at ${monthlyPrice ?? '$14.99'} unless cancelled at least 24 hours before the renewal date.`}
           </Text>
           <View style={styles.legalLinks}>
             <TouchableOpacity onPress={() => Linking.openURL('https://info.autismpathways.app/privacy-policy/')}><Text style={styles.legalLink}>Privacy Policy</Text></TouchableOpacity>
@@ -504,6 +506,8 @@ const styles = StyleSheet.create({
   planLabelActive: { color: COLORS.purpleDark },
   planPrice: { fontSize: FONT_SIZES.lg, fontWeight: '800', color: COLORS.white },
   planPriceActive: { color: COLORS.purpleDark },
+  planSub: { fontSize: 10, color: 'rgba(255,255,255,0.65)', marginTop: 2 },
+  planSubActive: { color: COLORS.textMid },
   saveBadge: { backgroundColor: '#22c55e', borderRadius: 6, paddingHorizontal: 5, paddingVertical: 1 },
   saveBadgeText: { fontSize: 9, fontWeight: '800', color: COLORS.white },
   section: { paddingHorizontal: SPACING.lg, paddingTop: SPACING.xl },

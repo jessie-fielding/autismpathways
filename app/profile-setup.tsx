@@ -1,12 +1,13 @@
 /**
  * Tell Us About Your Family
  *
- * Optional onboarding screen — collects parent info + first child info.
+ * Optional onboarding screen — collects parent info + dynamic child profiles.
+ * Asks "How many kids are on this journey?" (1–5) and shows that many child blocks.
  * All fields are optional. Skippable. Warm, low-pressure tone.
  *
  * Flow: create-account → profile-setup → onboarding
  */
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView,
   KeyboardAvoidingView, Platform, StyleSheet, Image, Alert,
@@ -41,23 +42,51 @@ const STATES = [
   'Virginia','Washington','West Virginia','Wisconsin','Wyoming',
 ];
 
+interface ChildForm {
+  name: string;
+  age: string;
+  emoji: string;
+  photoUri: string | null;
+}
+
+function makeChild(): ChildForm {
+  return { name: '', age: '', emoji: '', photoUri: null };
+}
+
 export default function ProfileSetupScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  const [parentName, setParentName]           = useState('');
-  const [relationship, setRelationship]       = useState('');
-  const [state, setState]                     = useState('');
-  const [county, setCounty]                   = useState('');
-  const [childName, setChildName]             = useState('');
-  const [childAge, setChildAge]               = useState('');
-  const [selectedEmoji, setSelectedEmoji]     = useState('');
-  const [photoUri, setPhotoUri]               = useState<string | null>(null);
-  const [loading, setLoading]                 = useState(false);
-  const [showRelPicker, setShowRelPicker]     = useState(false);
+  // Parent info
+  const [parentName, setParentName]       = useState('');
+  const [relationship, setRelationship]   = useState('');
+  const [state, setState]                 = useState('');
+  const [county, setCounty]               = useState('');
+
+  // Dynamic children
+  const [childCount, setChildCount]       = useState(1);
+  const [children, setChildren]           = useState<ChildForm[]>([makeChild()]);
+
+  const [loading, setLoading]             = useState(false);
+  const [showRelPicker, setShowRelPicker] = useState(false);
   const [showStatePicker, setShowStatePicker] = useState(false);
 
-  const pickPhoto = async () => {
+  // Adjust children array when count changes
+  const handleChildCountChange = (count: number) => {
+    setChildCount(count);
+    setChildren((prev) => {
+      if (count > prev.length) {
+        return [...prev, ...Array.from({ length: count - prev.length }, makeChild)];
+      }
+      return prev.slice(0, count);
+    });
+  };
+
+  const updateChild = useCallback((index: number, patch: Partial<ChildForm>) => {
+    setChildren((prev) => prev.map((c, i) => i === index ? { ...c, ...patch } : c));
+  }, []);
+
+  const pickPhoto = useCallback(async (index: number) => {
     Alert.alert(
       "Child's Photo",
       'Choose how to add a photo',
@@ -71,7 +100,9 @@ export default function ProfileSetupScreen() {
               return;
             }
             const result = await ImagePicker.launchCameraAsync({ allowsEditing: true, aspect: [1, 1], quality: 0.7 });
-            if (!result.canceled && result.assets[0]) { setPhotoUri(result.assets[0].uri); setSelectedEmoji(''); }
+            if (!result.canceled && result.assets[0]) {
+              updateChild(index, { photoUri: result.assets[0].uri, emoji: '' });
+            }
           },
         },
         {
@@ -83,13 +114,15 @@ export default function ProfileSetupScreen() {
               return;
             }
             const result = await ImagePicker.launchImageLibraryAsync({ allowsEditing: true, aspect: [1, 1], quality: 0.7 });
-            if (!result.canceled && result.assets[0]) { setPhotoUri(result.assets[0].uri); setSelectedEmoji(''); }
+            if (!result.canceled && result.assets[0]) {
+              updateChild(index, { photoUri: result.assets[0].uri, emoji: '' });
+            }
           },
         },
         { text: 'Cancel', style: 'cancel' },
       ]
     );
-  };
+  }, [updateChild]);
 
   const seedDefaults = async () => {
     await storage.setPathway('medicaid', { title: 'Medicaid Pathway', currentStep: 1, totalSteps: 8, progress: 12.5 });
@@ -104,21 +137,32 @@ export default function ProfileSetupScreen() {
   const handleSave = async () => {
     setLoading(true);
     try {
+      // Save parent profile using first child's info for legacy compat
+      const firstChild = children[0];
       await storage.setProfile({
         parentName: parentName.trim() || null,
         relationship: relationship || null,
         state: state || null,
         county: county.trim() || null,
-        childName: childName.trim() || null,
-        childAge: childAge ? parseInt(childAge) : null,
+        childName: firstChild.name.trim() || null,
+        childAge: firstChild.age ? parseInt(firstChild.age) : null,
         createdAt: new Date().toISOString(),
       });
+
+      // Add all children to the child manager
       const existingChildren = await loadChildren();
-      if (existingChildren.length === 0 && childName.trim()) {
-        const avatarValue = photoUri || selectedEmoji || childName.trim().slice(0, 2).toUpperCase();
-        const newChild = await addChild({ name: childName.trim(), avatar: avatarValue });
-        await setActiveChildId(newChild.id);
+      if (existingChildren.length === 0) {
+        let firstChildId: string | null = null;
+        for (let i = 0; i < children.length; i++) {
+          const c = children[i];
+          const name = c.name.trim() || `Child ${i + 1}`;
+          const avatarValue = c.photoUri || c.emoji || name.slice(0, 2).toUpperCase();
+          const newChild = await addChild({ name, avatar: avatarValue });
+          if (i === 0) firstChildId = newChild.id;
+        }
+        if (firstChildId) await setActiveChildId(firstChildId);
       }
+
       await seedDefaults();
       router.replace('/onboarding');
     } catch (err) {
@@ -140,82 +184,113 @@ export default function ProfileSetupScreen() {
         <Text style={styles.headerTitle}>Tell Us About Your Family</Text>
         <Text style={styles.headerSub}>Everything here is optional — share only what you're comfortable with 💜</Text>
       </View>
-
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 80 }]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
+        {/* About You */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>About You</Text>
           <Text style={styles.sectionSub}>We'll use this to personalise your experience</Text>
-
           <Text style={styles.label}>Your Name or Nickname</Text>
           <TextInput style={styles.input} placeholder="Whatever you'd like us to call you" placeholderTextColor={COLORS.textLight} value={parentName} onChangeText={setParentName} autoCapitalize="words" />
-
           <Text style={styles.label}>Your Role</Text>
           <TouchableOpacity style={styles.picker} onPress={() => setShowRelPicker(true)} activeOpacity={0.8}>
             <Text style={[styles.pickerText, !relationship && styles.pickerPlaceholder]}>{relationship || 'Parent, Guardian, Caregiver…'}</Text>
             <Text style={styles.pickerChevron}>›</Text>
           </TouchableOpacity>
-
           <Text style={styles.label}>State</Text>
           <TouchableOpacity style={styles.picker} onPress={() => setShowStatePicker(true)} activeOpacity={0.8}>
             <Text style={[styles.pickerText, !state && styles.pickerPlaceholder]}>{state || 'Select your state'}</Text>
             <Text style={styles.pickerChevron}>›</Text>
           </TouchableOpacity>
-
           <Text style={styles.label}>County</Text>
           <TextInput style={styles.input} placeholder="Your county (helps find local resources)" placeholderTextColor={COLORS.textLight} value={county} onChangeText={setCounty} autoCapitalize="words" />
         </View>
 
+        {/* How many kids */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>About Your Child</Text>
-          <Text style={styles.sectionSub}>You can always add or update this later in Settings</Text>
-
-          <Text style={styles.label}>Child's Photo or Avatar</Text>
-          <View style={styles.avatarRow}>
-            <TouchableOpacity style={styles.photoBtn} onPress={pickPhoto} activeOpacity={0.8}>
-              {photoUri ? (
-                <Image source={{ uri: photoUri }} style={styles.photoPreview} />
-              ) : (
-                <View style={styles.photoBtnInner}>
-                  <Text style={styles.photoBtnIcon}>📷</Text>
-                  <Text style={styles.photoBtnText}>Add Photo</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-            <View style={styles.emojiGrid}>
-              {AVATAR_EMOJIS.map((emoji) => (
-                <TouchableOpacity
-                  key={emoji}
-                  style={[styles.emojiBtn, selectedEmoji === emoji && styles.emojiBtnSelected]}
-                  onPress={() => { setSelectedEmoji(emoji); setPhotoUri(null); }}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.emojiText}>{emoji}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+          <Text style={styles.sectionTitle}>How many kids are on this journey?</Text>
+          <Text style={styles.sectionSub}>You can always add more children later in Settings</Text>
+          <View style={styles.countRow}>
+            {[1, 2, 3, 4, 5].map((n) => (
+              <TouchableOpacity
+                key={n}
+                style={[styles.countBtn, childCount === n && styles.countBtnSelected]}
+                onPress={() => handleChildCountChange(n)}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.countBtnText, childCount === n && styles.countBtnTextSelected]}>{n}</Text>
+              </TouchableOpacity>
+            ))}
           </View>
-
-          <Text style={styles.label}>Child's Name</Text>
-          <TextInput style={styles.input} placeholder="First name or nickname" placeholderTextColor={COLORS.textLight} value={childName} onChangeText={setChildName} autoCapitalize="words" />
-
-          <Text style={styles.label}>Child's Age</Text>
-          <TextInput style={styles.input} placeholder="Age in years" placeholderTextColor={COLORS.textLight} value={childAge} onChangeText={setChildAge} keyboardType="number-pad" maxLength={2} />
         </View>
+
+        {/* Child profile blocks */}
+        {children.map((child, index) => (
+          <View key={index} style={styles.section}>
+            <Text style={styles.sectionTitle}>
+              {childCount === 1 ? 'About Your Child' : `Child ${index + 1}`}
+            </Text>
+            <Text style={styles.sectionSub}>You can always update this later in Settings</Text>
+            <Text style={styles.label}>Photo or Avatar</Text>
+            <View style={styles.avatarRow}>
+              <TouchableOpacity style={styles.photoBtn} onPress={() => pickPhoto(index)} activeOpacity={0.8}>
+                {child.photoUri ? (
+                  <Image source={{ uri: child.photoUri }} style={styles.photoPreview} />
+                ) : (
+                  <View style={styles.photoBtnInner}>
+                    <Text style={styles.photoBtnIcon}>📷</Text>
+                    <Text style={styles.photoBtnText}>Add Photo</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+              <View style={styles.emojiGrid}>
+                {AVATAR_EMOJIS.map((emoji) => (
+                  <TouchableOpacity
+                    key={emoji}
+                    style={[styles.emojiBtn, child.emoji === emoji && styles.emojiBtnSelected]}
+                    onPress={() => updateChild(index, { emoji, photoUri: null })}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.emojiText}>{emoji}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+            <Text style={styles.label}>Name</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="First name or nickname"
+              placeholderTextColor={COLORS.textLight}
+              value={child.name}
+              onChangeText={(v) => updateChild(index, { name: v })}
+              autoCapitalize="words"
+            />
+            <Text style={styles.label}>Age</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Age in years"
+              placeholderTextColor={COLORS.textLight}
+              value={child.age}
+              onChangeText={(v) => updateChild(index, { age: v })}
+              keyboardType="number-pad"
+              maxLength={2}
+            />
+          </View>
+        ))}
 
         <TouchableOpacity style={[styles.saveBtn, loading && styles.saveBtnDisabled]} onPress={handleSave} disabled={loading} activeOpacity={0.85}>
           <Text style={styles.saveBtnText}>{loading ? 'Saving…' : "Let's Get Started →"}</Text>
         </TouchableOpacity>
-
         <TouchableOpacity style={styles.skipBtn} onPress={handleSkip} activeOpacity={0.7}>
           <Text style={styles.skipBtnText}>Skip for now — I'll fill this in later</Text>
         </TouchableOpacity>
       </ScrollView>
 
+      {/* Role picker */}
       <Modal visible={showRelPicker} transparent animationType="slide">
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowRelPicker(false)}>
           <View style={styles.modalSheet}>
@@ -230,6 +305,7 @@ export default function ProfileSetupScreen() {
         </TouchableOpacity>
       </Modal>
 
+      {/* State picker */}
       <Modal visible={showStatePicker} transparent animationType="slide">
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowStatePicker(false)}>
           <View style={[styles.modalSheet, { maxHeight: '70%' }]}>
@@ -265,6 +341,13 @@ const styles = StyleSheet.create({
   pickerText: { fontSize: FONT_SIZES.sm, color: COLORS.text, flex: 1 },
   pickerPlaceholder: { color: COLORS.textLight },
   pickerChevron: { fontSize: 18, color: COLORS.textLight },
+  // Child count stepper
+  countRow: { flexDirection: 'row', gap: SPACING.sm, marginTop: SPACING.xs },
+  countBtn: { width: 44, height: 44, borderRadius: 22, borderWidth: 2, borderColor: COLORS.border, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.bg },
+  countBtnSelected: { borderColor: COLORS.purple, backgroundColor: COLORS.lavender ?? '#EDE9FF' },
+  countBtnText: { fontSize: FONT_SIZES.md, fontWeight: '700', color: COLORS.textMid },
+  countBtnTextSelected: { color: COLORS.purple },
+  // Avatar
   avatarRow: { flexDirection: 'row', gap: SPACING.sm, alignItems: 'flex-start' },
   photoBtn: { width: 80, height: 80, borderRadius: RADIUS.lg, backgroundColor: COLORS.bg, borderWidth: 2, borderColor: COLORS.border, borderStyle: 'dashed', overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
   photoPreview: { width: 80, height: 80, borderRadius: RADIUS.lg },
@@ -275,11 +358,13 @@ const styles = StyleSheet.create({
   emojiBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.bg, borderWidth: 1.5, borderColor: COLORS.border, alignItems: 'center', justifyContent: 'center' },
   emojiBtnSelected: { borderColor: COLORS.purple, backgroundColor: COLORS.lavender ?? '#EDE9FF' },
   emojiText: { fontSize: 18 },
+  // Buttons
   saveBtn: { backgroundColor: COLORS.purple, borderRadius: RADIUS.lg, paddingVertical: SPACING.md, alignItems: 'center', marginTop: SPACING.sm, ...SHADOWS.md },
   saveBtnDisabled: { opacity: 0.6 },
   saveBtnText: { fontSize: FONT_SIZES.md, fontWeight: '700', color: '#fff' },
   skipBtn: { alignItems: 'center', paddingVertical: SPACING.sm },
   skipBtnText: { fontSize: FONT_SIZES.sm, color: COLORS.textLight, textDecorationLine: 'underline' },
+  // Modals
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
   modalSheet: { backgroundColor: COLORS.white, borderTopLeftRadius: RADIUS.lg, borderTopRightRadius: RADIUS.lg, paddingTop: SPACING.lg, paddingBottom: SPACING.xxxl, paddingHorizontal: SPACING.lg, maxHeight: '50%' },
   modalTitle: { fontSize: FONT_SIZES.md, fontWeight: '700', color: COLORS.text, marginBottom: SPACING.md, textAlign: 'center' },

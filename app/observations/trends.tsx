@@ -126,10 +126,28 @@ export default function ObservationsTrends() {
 
   useEffect(() => {
     if (childLoading) return;
-    const key = childId ? `${OBS_KEY}_${childId}` : OBS_KEY;
-    AsyncStorage.getItem(key).then((raw) => {
-      const obs: Observation[] = raw ? JSON.parse(raw) : [];
-      setTrends(computeObsTrends(obs));
+    const childKey = childId ? `${OBS_KEY}_${childId}` : null;
+    // Load both the child-specific key and the bare key (legacy data before
+    // multi-child support was added) and merge them so no observations are missed.
+    const keys = childKey ? [childKey, OBS_KEY] : [OBS_KEY];
+    Promise.all(keys.map((k) => AsyncStorage.getItem(k))).then((raws) => {
+      const seen = new Set<string>();
+      const merged: Observation[] = [];
+      for (const raw of raws) {
+        if (!raw) continue;
+        try {
+          const parsed: Observation[] = JSON.parse(raw);
+          for (const o of parsed) {
+            // Deduplicate by timestamp+mood to avoid counting the same entry twice
+            const dedupeKey = `${o.date}_${o.mood}`;
+            if (!seen.has(dedupeKey)) {
+              seen.add(dedupeKey);
+              merged.push(o);
+            }
+          }
+        } catch {}
+      }
+      setTrends(computeObsTrends(merged));
       setLoading(false);
     });
   }, [childId, childLoading]);

@@ -22,10 +22,61 @@ import {
   fetchAvailability, createSchedulingLink, formatDateLabel, formatTimeLabel,
   EVENT_TYPE_URIS, DaySlots, TimeSlot,
 } from '../../services/calendly';
+import { useIsPremium } from '../../hooks/useIsPremium';
 
 type SessionFormat = 'video' | 'phone';
 
-export default function BookSessionScreen() {
+function PremiumGate() {
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  return (
+    <View style={{ flex: 1, backgroundColor: COLORS.bg }}>
+      <View style={{ paddingHorizontal: SPACING.lg, paddingBottom: SPACING.sm, paddingTop: insets.top + SPACING.sm, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.border }}>
+        <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
+          <Text style={{ color: COLORS.purple, fontSize: FONT_SIZES.sm, fontWeight: '600' }}>← Back</Text>
+        </TouchableOpacity>
+      </View>
+      <ScrollView contentContainerStyle={{ padding: SPACING.xl, alignItems: 'center' }} showsVerticalScrollIndicator={false}>
+        <Text style={{ fontSize: 48, marginBottom: SPACING.lg }}>📅</Text>
+        <View style={{ backgroundColor: COLORS.lavender, borderRadius: 20, paddingHorizontal: SPACING.md, paddingVertical: 4, marginBottom: SPACING.md }}>
+          <Text style={{ color: COLORS.purple, fontSize: 12, fontWeight: '700' }}>⭐ Premium Feature</Text>
+        </View>
+        <Text style={{ fontSize: FONT_SIZES.xl, fontWeight: '800', color: COLORS.text, textAlign: 'center', marginBottom: SPACING.sm }}>1:1 Coaching Sessions</Text>
+        <Text style={{ fontSize: FONT_SIZES.sm, color: COLORS.textMid, textAlign: 'center', lineHeight: 22, marginBottom: SPACING.xl }}>
+          Book a private session with Jessie — a certified autism parent coach — to get personalized guidance on IEPs, Medicaid, behaviors, and more.
+        </Text>
+        {[
+          { icon: '🎯', title: 'Personalized to your child', desc: 'Sessions are tailored to your specific situation, goals, and challenges.' },
+          { icon: '📋', title: 'IEP & Medicaid help', desc: 'Get expert guidance on navigating school meetings and government benefits.' },
+          { icon: '💬', title: 'Video or phone', desc: 'Choose the format that works best for you — flexible scheduling available.' },
+          { icon: '🔒', title: 'Private & confidential', desc: 'Everything shared in your session stays between you and your coach.' },
+        ].map((f, i) => (
+          <View key={i} style={{ flexDirection: 'row', alignItems: 'flex-start', gap: SPACING.md, marginBottom: SPACING.lg, width: '100%' }}>
+            <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: COLORS.lavender, alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ fontSize: 22 }}>{f.icon}</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: FONT_SIZES.sm, fontWeight: '700', color: COLORS.text, marginBottom: 2 }}>{f.title}</Text>
+              <Text style={{ fontSize: FONT_SIZES.xs, color: COLORS.textMid, lineHeight: 17 }}>{f.desc}</Text>
+            </View>
+          </View>
+        ))}
+        <TouchableOpacity
+          style={{ width: '100%', backgroundColor: COLORS.purple, borderRadius: RADIUS.sm, paddingVertical: SPACING.lg, alignItems: 'center', marginTop: SPACING.md }}
+          onPress={() => router.push('/paywall' as any)}
+          activeOpacity={0.85}
+        >
+          <Text style={{ color: COLORS.white, fontSize: FONT_SIZES.md, fontWeight: '800' }}>Unlock with Premium</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={{ paddingVertical: SPACING.md }} onPress={() => router.back()} activeOpacity={0.7}>
+          <Text style={{ color: COLORS.textMid, fontSize: FONT_SIZES.sm }}>Maybe later</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </View>
+  );
+}
+
+function BookSessionContent() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { title, price, duration, sessionId } = useLocalSearchParams<{
@@ -264,6 +315,12 @@ export default function BookSessionScreen() {
       </ScrollView>
     </KeyboardAvoidingView>
   );
+}
+
+export default function BookSessionScreen() {
+  const { isPremium, loading } = useIsPremium();
+  if (loading) return null;
+  return isPremium ? <BookSessionContent /> : <PremiumGate />;
 }
 
 const styles = StyleSheet.create({

@@ -75,10 +75,21 @@ export function useNearMeState() {
         return null;
       }
 
-      // geo.region is the full state name on iOS/Android
-      // geo.isoCountryCode should be "US"
-      const rawRegion = (geo.region ?? '').toLowerCase().trim();
-      const stateCode = STATE_NAME_TO_CODE[rawRegion] ?? null;
+      // geo.region may be a full state name ("Colorado") or a 2-letter code ("CO")
+      // depending on OS version. Also try administrativeArea as a fallback.
+      const CODE_VALUES = Object.values(STATE_NAME_TO_CODE);
+      const tryResolveCode = (raw: string | null | undefined): string | null => {
+        if (!raw) return null;
+        const trimmed = raw.trim();
+        // Already a valid 2-letter code?
+        if (CODE_VALUES.includes(trimmed.toUpperCase())) return trimmed.toUpperCase();
+        // Full name lookup (case-insensitive)
+        return STATE_NAME_TO_CODE[trimmed.toLowerCase()] ?? null;
+      };
+      const stateCode =
+        tryResolveCode(geo.region) ??
+        tryResolveCode(geo.administrativeArea) ??
+        null;
 
       if (!stateCode) {
         setLocationError('Could not detect your state. Please select it manually.');
@@ -89,7 +100,7 @@ export function useNearMeState() {
       // Capitalize the state name properly
       const stateName = Object.keys(STATE_NAME_TO_CODE).find(
         (k) => STATE_NAME_TO_CODE[k] === stateCode
-      ) ?? rawRegion;
+      ) ?? (geo.region ?? geo.administrativeArea ?? stateCode);
       const formattedName = stateName
         .split(' ')
         .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
