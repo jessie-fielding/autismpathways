@@ -1,142 +1,267 @@
 /**
  * Support — Book Session Screen
  *
- * Apple-safe payment flow (like TikTok coins):
- *   - Shows session summary and "What's on your mind?" prep field
- *   - "Continue to Booking" opens Calendly in Safari (external browser)
- *   - Calendly handles date/time selection + Stripe payment entirely in the browser
- *   - No in-app payment = no Apple 30% cut, no IAP review issues
+ * Native booking UI backed by Calendly API:
+ *  1. Fetches real available time slots for the selected event type
+ *  2. User picks date → time → session format → adds notes
+ *  3. "Confirm Booking" creates a scheduling link and opens it in Safari
+ *     (Calendly handles the final confirmation + Stripe payment in browser)
+ *
+ * Apple-safe: payment happens in external browser, not in-app.
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  TextInput, Linking, Alert, Platform, KeyboardAvoidingView,
+  TextInput, Linking, Alert, ActivityIndicator,
+  KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZES, SHADOWS } from '../../lib/theme';
+import {
+  fetchAvailability, createSchedulingLink, formatDateLabel, formatTimeLabel,
+  EVENT_TYPE_URIS, DaySlots, TimeSlot,
+} from '../../services/calendly';
+
+type SessionFormat = 'video' | 'phone';
 
 export default function BookSessionScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { title, price, duration, calendlyUrl } = useLocalSearchParams<{
+  const { title, price, duration, sessionId } = useLocalSearchParams<{
     title: string;
     price: string;
     duration: string;
-    calendlyUrl: string;
+    sessionId: string;
   }>();
 
+  const [loading, setLoading] = useState(true);
+  const [daySlots, setDaySlots] = useState<DaySlots[]>([]);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
+  const [format, setFormat] = useState<SessionFormat>('video');
   const [notes, setNotes] = useState('');
+  const [booking, setBooking] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleContinue = async () => {
-    // Build Calendly URL with optional pre-fill notes
-    let url = calendlyUrl || 'https://calendly.com/contact-autismpathways';
-    if (notes.trim()) {
-      // Calendly supports ?a1= for custom questions, but notes go in the name/email fields
-      // We append as a utm_content param so Jessie can see it in Calendly notifications
-      url += `?utm_content=${encodeURIComponent(notes.trim().slice(0, 200))}`;
+  const eventTypeUri = EVENT_TYPE_URIS[sessionId ?? 'deep'] ?? EVENT_TYPE_URIS.deep;
+
+  const loadAvailability = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const slots = await fetchAvailability(eventTypeUri);
+      setDaySlots(slots);
+      if (slots.length > 0) {
+        setSelectedDate(slots[0].date);
+      }
+    } catch {
+      setError('Could not load availability. Please try again.');
+    } finally {
+      setLoading(false);
     }
+  }, [eventTypeUri]);
 
-    const supported = await Linking.canOpenURL(url);
-    if (supported) {
-      await Linking.openURL(url);
-    } else {
+  useEffect(() => {
+    loadAvailability();
+  }, [loadAvailability]);
+
+  const currentDaySlots = daySlots.find((d) => d.date === selectedDate)?.slots ?? [];
+
+  const handleConfirm = async () => {
+    if (!selectedSlot) {
+      Alert.alert('Select a time', 'Please choose a date and time before confirming.');
+      return;
+    }
+    setBooking(true);
+    try {
+      const bookingUrl = await createSchedulingLink(eventTypeUri);
+      if (!bookingUrl) throw new Error('Could not generate booking link');
+      const notesParam = notes.trim() ? `&a1=${encodeURIComponent(notes.trim().slice(0, 200))}` : '';
+      const finalUrl = `${bookingUrl}${notesParam}`;
+      const supported = await Linking.canOpenURL(finalUrl);
+      if (supported) {
+        await Linking.openURL(finalUrl);
+      } else {
+        await Linking.openURL('https://calendly.com/contact-autismpathways');
+      }
+    } catch {
       Alert.alert(
-        'Could not open browser',
-        'Please visit calendly.com/autismpathways to book your session, or email jessie@autismpathways.app.',
+        'Booking error',
+        'Something went wrong. Please visit calendly.com/contact-autismpathways or email jessie@autismpathways.app.',
       );
+    } finally {
+      setBooking(false);
     }
   };
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1 }}
+      style={[styles.container, { paddingTop: insets.top }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <View style={[styles.container, { paddingTop: insets.top }]}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <Text style={styles.backText}>← Support</Text>
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Book a Session</Text>
-          <View style={{ width: 60 }} />
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <Text style={styles.backText}>← Back</Text>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Book a Session</Text>
+        <View style={{ width: 60 }} />
+      </View>
+
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.summaryCard}>
+          <View style={styles.summaryIcon}>
+            <Text style={styles.summaryIconText}>💬</Text>
+          </View>
+          <View style={styles.summaryInfo}>
+            <Text style={styles.summaryTitle}>{title ?? 'Deep Dive'}</Text>
+            <Text style={styles.summaryMeta}>{duration ?? '60 minutes'} · {price ?? '$85'}</Text>
+            <Text style={styles.summaryWith}>with Jessie Fielding</Text>
+          </View>
         </View>
 
-        <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-          {/* Session summary */}
-          <View style={styles.summaryCard}>
-            <View style={styles.summaryIcon}>
-              <Text style={styles.summaryEmoji}>💬</Text>
-            </View>
-            <View style={styles.summaryInfo}>
-              <Text style={styles.summaryTitle}>{title}</Text>
-              <Text style={styles.summaryMeta}>{duration} · {price}</Text>
-              <Text style={styles.summaryWith}>with Jessie Fielding</Text>
-            </View>
+        {loading ? (
+          <View style={styles.loadingWrap}>
+            <ActivityIndicator size="large" color={COLORS.purple} />
+            <Text style={styles.loadingText}>Loading availability…</Text>
           </View>
-
-          {/* How it works */}
-          <View style={styles.howCard}>
-            <Text style={styles.howTitle}>How booking works</Text>
-            <View style={styles.howStep}>
-              <View style={styles.howDot}><Text style={styles.howDotText}>1</Text></View>
-              <Text style={styles.howText}>Tap "Continue to Booking" below</Text>
-            </View>
-            <View style={styles.howStep}>
-              <View style={styles.howDot}><Text style={styles.howDotText}>2</Text></View>
-              <Text style={styles.howText}>Choose your date and time in Calendly (opens in browser)</Text>
-            </View>
-            <View style={styles.howStep}>
-              <View style={styles.howDot}><Text style={styles.howDotText}>3</Text></View>
-              <Text style={styles.howText}>Complete secure payment via Stripe</Text>
-            </View>
-            <View style={styles.howStep}>
-              <View style={styles.howDot}><Text style={styles.howDotText}>4</Text></View>
-              <Text style={styles.howText}>Receive confirmation + Zoom/call details by email</Text>
-            </View>
-            <View style={[styles.howStep, { marginBottom: 0 }]}>
-              <Text style={styles.howNote}>Cancel up to 24 hours before for a full refund.</Text>
-            </View>
+        ) : error ? (
+          <View style={styles.errorWrap}>
+            <Text style={styles.errorText}>{error}</Text>
+            <TouchableOpacity style={styles.retryBtn} onPress={loadAvailability}>
+              <Text style={styles.retryBtnText}>Try Again</Text>
+            </TouchableOpacity>
           </View>
+        ) : daySlots.length === 0 ? (
+          <View style={styles.errorWrap}>
+            <Text style={styles.errorText}>No availability in the next 14 days.</Text>
+            <TouchableOpacity
+              style={styles.retryBtn}
+              onPress={() => Linking.openURL('https://calendly.com/contact-autismpathways')}
+            >
+              <Text style={styles.retryBtnText}>Open Calendly →</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <>
+            <Text style={styles.sectionLabel}>Choose a Date</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.dateRow}
+            >
+              {daySlots.map((d) => {
+                const label = formatDateLabel(d.date);
+                const parts = label.split(', ');
+                const dayOfWeek = parts[0];
+                const monthDay = parts[1] ?? '';
+                const [month, day] = monthDay.split(' ');
+                const isSelected = selectedDate === d.date;
+                return (
+                  <TouchableOpacity
+                    key={d.date}
+                    style={[styles.dateChip, isSelected && styles.dateChipSelected]}
+                    onPress={() => { setSelectedDate(d.date); setSelectedSlot(null); }}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={[styles.dateChipDay, isSelected && styles.dateChipTextSelected]}>{dayOfWeek}</Text>
+                    <Text style={[styles.dateChipMonth, isSelected && styles.dateChipTextSelected]}>{month}</Text>
+                    <Text style={[styles.dateChipNum, isSelected && styles.dateChipTextSelected]}>{day}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
 
-          {/* Prep notes */}
-          <View style={styles.notesSection}>
-            <Text style={styles.notesLabel}>What's on your mind? <Text style={styles.notesOptional}>(optional)</Text></Text>
-            <Text style={styles.notesHint}>Share what you'd like to focus on. This helps Jessie prepare for your call.</Text>
+            <Text style={styles.sectionLabel}>Available Times</Text>
+            <View style={styles.timeGrid}>
+              {currentDaySlots.map((slot) => {
+                const isSelected = selectedSlot?.start_time === slot.start_time;
+                return (
+                  <TouchableOpacity
+                    key={slot.start_time}
+                    style={[styles.timeChip, isSelected && styles.timeChipSelected]}
+                    onPress={() => setSelectedSlot(slot)}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={[styles.timeChipText, isSelected && styles.timeChipTextSelected]}>
+                      {formatTimeLabel(slot.start_time)}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            <Text style={styles.sectionLabel}>Session Format</Text>
+            <View style={styles.formatRow}>
+              <TouchableOpacity
+                style={[styles.formatChip, format === 'video' && styles.formatChipSelected]}
+                onPress={() => setFormat('video')}
+                activeOpacity={0.85}
+              >
+                <View style={styles.formatChipInner}>
+                  <Text style={styles.formatIcon}>📹</Text>
+                  <View>
+                    <Text style={[styles.formatTitle, format === 'video' && styles.formatTitleSelected]}>Video Call</Text>
+                    <Text style={styles.formatSub}>Zoom link sent by email</Text>
+                  </View>
+                </View>
+                {format === 'video' && <View style={styles.formatCheck}><Text style={styles.formatCheckText}>✓</Text></View>}
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.formatChip, format === 'phone' && styles.formatChipSelected]}
+                onPress={() => setFormat('phone')}
+                activeOpacity={0.85}
+              >
+                <View style={styles.formatChipInner}>
+                  <Text style={styles.formatIcon}>📞</Text>
+                  <View>
+                    <Text style={[styles.formatTitle, format === 'phone' && styles.formatTitleSelected]}>Phone Call</Text>
+                    <Text style={styles.formatSub}>We call you</Text>
+                  </View>
+                </View>
+                {format === 'phone' && <View style={styles.formatCheck}><Text style={styles.formatCheckText}>✓</Text></View>}
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.sectionLabel}>
+              {"What's on your mind? "}
+              <Text style={styles.sectionLabelOptional}>(optional)</Text>
+            </Text>
             <TextInput
               style={styles.notesInput}
-              value={notes}
-              onChangeText={setNotes}
-              placeholder="IEP meeting coming up, waiver questions, just need to talk through something..."
+              placeholder="Share what you'd like to focus on — this helps Jessie prepare for your call."
               placeholderTextColor={COLORS.textLight}
               multiline
               numberOfLines={4}
-              textAlignVertical="top"
+              value={notes}
+              onChangeText={setNotes}
+              maxLength={500}
             />
-          </View>
-
-          {/* CTA */}
-          <View style={styles.ctaSection}>
-            <TouchableOpacity style={styles.ctaBtn} onPress={handleContinue} activeOpacity={0.85}>
-              <Text style={styles.ctaBtnText}>Continue to Booking — {price} →</Text>
-            </TouchableOpacity>
-            <Text style={styles.ctaNote}>
-              Secure checkout via Stripe. You will be taken to an external page to complete your booking.
-            </Text>
 
             <TouchableOpacity
-              style={styles.hardshipLink}
-              onPress={() => router.push('/support/hardship' as any)}
-              activeOpacity={0.8}
+              style={[styles.confirmBtn, (!selectedSlot || booking) && styles.confirmBtnDisabled]}
+              onPress={handleConfirm}
+              activeOpacity={0.85}
+              disabled={!selectedSlot || booking}
             >
-              <Text style={styles.hardshipLinkText}>Need hardship pricing? Apply here →</Text>
+              {booking
+                ? <ActivityIndicator color={COLORS.white} size="small" />
+                : <Text style={styles.confirmBtnText}>Confirm Booking{price ? ` — ${price}` : ''} →</Text>
+              }
             </TouchableOpacity>
-          </View>
 
-          <View style={{ height: insets.bottom + 40 }} />
-        </ScrollView>
-      </View>
+            <Text style={styles.disclaimer}>
+              Secure checkout via Stripe. Cancel up to 24 hours before for a full refund.
+            </Text>
+          </>
+        )}
+        <View style={{ height: insets.bottom + 40 }} />
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
@@ -144,7 +269,7 @@ export default function BookSessionScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
   scroll: { flex: 1 },
-
+  scrollContent: { padding: SPACING.lg },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md,
@@ -153,60 +278,51 @@ const styles = StyleSheet.create({
   backBtn: { paddingVertical: 4, minWidth: 60 },
   backText: { color: COLORS.purple, fontSize: FONT_SIZES.sm, fontWeight: '600' },
   headerTitle: { fontSize: FONT_SIZES.lg, fontWeight: '800', color: COLORS.text },
-
-  // Summary
   summaryCard: {
-    flexDirection: 'row', alignItems: 'center', gap: SPACING.lg,
-    backgroundColor: COLORS.white, margin: SPACING.lg, borderRadius: RADIUS.md,
-    padding: SPACING.lg, borderWidth: 1, borderColor: COLORS.border, ...SHADOWS.sm,
+    flexDirection: 'row', alignItems: 'center', gap: SPACING.md,
+    backgroundColor: COLORS.white, borderRadius: RADIUS.md,
+    padding: SPACING.lg, marginBottom: SPACING.xl,
+    borderWidth: 1, borderColor: COLORS.border, ...SHADOWS.sm,
   },
-  summaryIcon: {
-    width: 56, height: 56, borderRadius: 28,
-    backgroundColor: COLORS.lavender, alignItems: 'center', justifyContent: 'center',
-  },
-  summaryEmoji: { fontSize: 26 },
+  summaryIcon: { width: 56, height: 56, borderRadius: 28, backgroundColor: COLORS.lavender, alignItems: 'center', justifyContent: 'center' },
+  summaryIconText: { fontSize: 26 },
   summaryInfo: { flex: 1 },
-  summaryTitle: { fontSize: FONT_SIZES.lg, fontWeight: '800', color: COLORS.text, marginBottom: 2 },
-  summaryMeta: { fontSize: FONT_SIZES.sm, color: COLORS.textMid, marginBottom: 2 },
-  summaryWith: { fontSize: FONT_SIZES.sm, color: COLORS.purple, fontWeight: '700' },
-
-  // How it works
-  howCard: {
-    backgroundColor: COLORS.white, marginHorizontal: SPACING.lg, marginBottom: SPACING.lg,
-    borderRadius: RADIUS.md, padding: SPACING.lg, borderWidth: 1, borderColor: COLORS.border, ...SHADOWS.sm,
-  },
-  howTitle: { fontSize: FONT_SIZES.sm, fontWeight: '800', color: COLORS.text, marginBottom: SPACING.md },
-  howStep: { flexDirection: 'row', alignItems: 'flex-start', gap: SPACING.md, marginBottom: SPACING.sm },
-  howDot: {
-    width: 22, height: 22, borderRadius: 11, backgroundColor: COLORS.purple,
-    alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1,
-  },
-  howDotText: { fontSize: 11, fontWeight: '800', color: COLORS.white },
-  howText: { fontSize: FONT_SIZES.sm, color: COLORS.textMid, flex: 1, lineHeight: 19 },
-  howNote: { fontSize: FONT_SIZES.xs, color: COLORS.textLight, fontStyle: 'italic', lineHeight: 17 },
-
-  // Notes
-  notesSection: { paddingHorizontal: SPACING.lg, marginBottom: SPACING.lg },
-  notesLabel: { fontSize: FONT_SIZES.sm, fontWeight: '700', color: COLORS.text, marginBottom: SPACING.xs },
-  notesOptional: { color: COLORS.textLight, fontWeight: '400' },
-  notesHint: { fontSize: FONT_SIZES.xs, color: COLORS.textMid, marginBottom: SPACING.sm, lineHeight: 17 },
-  notesInput: {
-    backgroundColor: COLORS.white, borderRadius: RADIUS.sm, borderWidth: 1.5, borderColor: COLORS.border,
-    paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md, fontSize: FONT_SIZES.sm,
-    color: COLORS.text, height: 110,
-  },
-
-  // CTA
-  ctaSection: { paddingHorizontal: SPACING.lg },
-  ctaBtn: {
-    backgroundColor: COLORS.purple, borderRadius: RADIUS.sm, paddingVertical: SPACING.lg,
-    alignItems: 'center', ...SHADOWS.lg, marginBottom: SPACING.sm,
-  },
-  ctaBtnText: { color: COLORS.white, fontSize: FONT_SIZES.md, fontWeight: '800' },
-  ctaNote: {
-    fontSize: FONT_SIZES.xs, color: COLORS.textMid, textAlign: 'center',
-    lineHeight: 17, marginBottom: SPACING.lg,
-  },
-  hardshipLink: { alignItems: 'center', paddingVertical: SPACING.sm },
-  hardshipLinkText: { fontSize: FONT_SIZES.sm, color: COLORS.purple, fontWeight: '600' },
+  summaryTitle: { fontSize: FONT_SIZES.lg, fontWeight: '800', color: COLORS.text },
+  summaryMeta: { fontSize: FONT_SIZES.sm, color: COLORS.textMid, marginTop: 2 },
+  summaryWith: { fontSize: FONT_SIZES.sm, color: COLORS.purple, fontWeight: '600', marginTop: 2 },
+  loadingWrap: { alignItems: 'center', paddingVertical: 60, gap: SPACING.md },
+  loadingText: { fontSize: FONT_SIZES.sm, color: COLORS.textMid },
+  errorWrap: { alignItems: 'center', paddingVertical: 40, gap: SPACING.md },
+  errorText: { fontSize: FONT_SIZES.sm, color: COLORS.textMid, textAlign: 'center' },
+  retryBtn: { backgroundColor: COLORS.purple, borderRadius: RADIUS.pill, paddingVertical: SPACING.sm, paddingHorizontal: SPACING.xl },
+  retryBtnText: { color: COLORS.white, fontWeight: '700', fontSize: FONT_SIZES.sm },
+  sectionLabel: { fontSize: FONT_SIZES.md, fontWeight: '800', color: COLORS.text, marginBottom: SPACING.sm, marginTop: SPACING.xs },
+  sectionLabelOptional: { fontSize: FONT_SIZES.sm, fontWeight: '400', color: COLORS.textMid },
+  dateRow: { paddingBottom: SPACING.md, gap: SPACING.sm, paddingRight: SPACING.lg },
+  dateChip: { alignItems: 'center', justifyContent: 'center', width: 62, paddingVertical: SPACING.sm, borderRadius: RADIUS.md, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.white },
+  dateChipSelected: { backgroundColor: COLORS.purple, borderColor: COLORS.purple },
+  dateChipDay: { fontSize: 11, fontWeight: '600', color: COLORS.textMid },
+  dateChipMonth: { fontSize: 11, fontWeight: '600', color: COLORS.textMid, marginTop: 1 },
+  dateChipNum: { fontSize: FONT_SIZES.xl, fontWeight: '800', color: COLORS.text, marginTop: 2 },
+  dateChipTextSelected: { color: COLORS.white },
+  timeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm, marginBottom: SPACING.xl },
+  timeChip: { paddingVertical: SPACING.sm, paddingHorizontal: SPACING.md, borderRadius: RADIUS.sm, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.white, minWidth: 90, alignItems: 'center' },
+  timeChipSelected: { backgroundColor: COLORS.purple, borderColor: COLORS.purple },
+  timeChipText: { fontSize: FONT_SIZES.sm, fontWeight: '600', color: COLORS.text },
+  timeChipTextSelected: { color: COLORS.white },
+  formatRow: { flexDirection: 'row', gap: SPACING.md, marginBottom: SPACING.xl },
+  formatChip: { flex: 1, borderRadius: RADIUS.md, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.white, padding: SPACING.md, ...SHADOWS.sm },
+  formatChipSelected: { borderColor: COLORS.purple, backgroundColor: COLORS.lavender },
+  formatChipInner: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
+  formatIcon: { fontSize: 22 },
+  formatTitle: { fontSize: FONT_SIZES.sm, fontWeight: '700', color: COLORS.text },
+  formatTitleSelected: { color: COLORS.purple },
+  formatSub: { fontSize: 11, color: COLORS.textMid, marginTop: 1 },
+  formatCheck: { position: 'absolute', top: SPACING.sm, right: SPACING.sm, width: 20, height: 20, borderRadius: 10, backgroundColor: COLORS.purple, alignItems: 'center', justifyContent: 'center' },
+  formatCheckText: { color: COLORS.white, fontSize: 11, fontWeight: '800' },
+  notesInput: { backgroundColor: COLORS.white, borderRadius: RADIUS.md, borderWidth: 1.5, borderColor: COLORS.border, padding: SPACING.md, fontSize: FONT_SIZES.sm, color: COLORS.text, minHeight: 100, textAlignVertical: 'top', marginBottom: SPACING.xl, lineHeight: 20 },
+  confirmBtn: { backgroundColor: COLORS.purple, borderRadius: RADIUS.pill, paddingVertical: SPACING.md + 2, alignItems: 'center', marginBottom: SPACING.md, ...SHADOWS.md },
+  confirmBtnDisabled: { opacity: 0.5 },
+  confirmBtnText: { color: COLORS.white, fontSize: FONT_SIZES.md, fontWeight: '800' },
+  disclaimer: { fontSize: FONT_SIZES.xs, color: COLORS.textLight, textAlign: 'center', lineHeight: 17, marginBottom: SPACING.lg },
 });

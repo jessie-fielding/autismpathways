@@ -74,7 +74,7 @@ export default function SupportIndexScreen() {
         title: session.title,
         price: session.price,
         duration: session.duration,
-        calendlyUrl: session.calendlyUrl,
+        sessionId: session.id,
       },
     } as any);
   };
@@ -105,7 +105,7 @@ export default function SupportIndexScreen() {
           </View>
           <View style={styles.heroPhotoWrap}>
             <Image
-              source={{ uri: 'https://d2xsxph8kpxj0f.cloudfront.net/310519663518290110/VRxcangGsn9CzPF6Gyu8F3/jessie_photo_b68040f6.png' }}
+              source={require('../../assets/jessie_and_ellie.jpg')}
               style={styles.heroPhoto}
             />
           </View>

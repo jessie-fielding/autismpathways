@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView,
+  ActivityIndicator, KeyboardAvoidingView, Modal, Platform, ScrollView,
   StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 import * as AppleAuthentication from 'expo-apple-authentication';
@@ -19,6 +19,10 @@ export default function CreateAccountScreen() {
   const [password, setPassword] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [relationship, setRelationship] = useState('');
+  const [showRelPicker, setShowRelPicker] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [confirmPassword, setConfirmPassword] = useState('');
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
@@ -61,9 +65,8 @@ export default function CreateAccountScreen() {
     const result = await confirmSignUp(email, code);
     setLoading(false);
     if (result.success) {
-      // Save first name so onboarding can personalise the welcome card
       await AsyncStorage.setItem('ap_parent_first_name', firstName.trim());
-      // New users go through onboarding; existing users go straight to dashboard
+      if (relationship) await AsyncStorage.setItem('ap_parent_relationship', relationship);
       router.replace('/profile-setup');
     } else {
       setError(result.error || 'Verification failed. Please check the code and try again.');
@@ -115,21 +118,20 @@ export default function CreateAccountScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={{ flex: 1, backgroundColor: COLORS.bg }}
+      style={{ flex: 1, backgroundColor: COLORS.purple }}
     >
       <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
-        <View style={styles.inner}>
+        {/* Purple header */}
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Welcome to{"\n"}Autism Pathways</Text>
+          <Text style={styles.headerSub}>The guide your child's diagnosis didn't come with</Text>
+        </View>
 
-          {/* Logo */}
-          <View style={styles.logoArea}>
-            <Text style={styles.logoText}>Autism <Text style={styles.logoPurple}>Pathways</Text></Text>
-            <Text style={styles.logoSub}>Your family's navigation system</Text>
-          </View>
-
-          <View style={styles.card}>
-            <Text style={styles.title}>
-              {step === 'form' ? 'Create your free account' : 'Check your email'}
-            </Text>
+        {/* White card body */}
+        <View style={styles.body}>
+          <Text style={styles.title}>
+            {step === 'form' ? 'Create your free account' : 'Check your email'}
+          </Text>
 
             {/* Error */}
             {!!error && (
@@ -175,29 +177,52 @@ export default function CreateAccountScreen() {
                 </View>
 
                 {/* Form fields */}
+                {/* Name row */}
                 <View style={styles.nameRow}>
-                  <TextInput
-                    style={[styles.input, styles.halfInput]}
-                    placeholder="First name"
-                    placeholderTextColor={COLORS.textLight}
-                    value={firstName}
-                    onChangeText={setFirstName}
-                    editable={!loading}
-                    autoCapitalize="words"
-                  />
-                  <TextInput
-                    style={[styles.input, styles.halfInput]}
-                    placeholder="Last name"
-                    placeholderTextColor={COLORS.textLight}
-                    value={lastName}
-                    onChangeText={setLastName}
-                    editable={!loading}
-                    autoCapitalize="words"
-                  />
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.fieldLabel}>Your First Name</Text>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="e.g., Jessie"
+                      placeholderTextColor={COLORS.textLight}
+                      value={firstName}
+                      onChangeText={setFirstName}
+                      editable={!loading}
+                      autoCapitalize="words"
+                    />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.fieldLabel}>Last Name</Text>
+                    <TextInput
+                      style={styles.input}
+                      placeholder=""
+                      placeholderTextColor={COLORS.textLight}
+                      value={lastName}
+                      onChangeText={setLastName}
+                      editable={!loading}
+                      autoCapitalize="words"
+                    />
+                  </View>
                 </View>
+
+                {/* Relationship picker */}
+                <Text style={styles.fieldLabel}>Your relationship to child</Text>
+                <TouchableOpacity
+                  style={[styles.input, styles.pickerRow]}
+                  onPress={() => setShowRelPicker(true)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={relationship ? { fontSize: FONT_SIZES.sm, color: COLORS.text } : { fontSize: FONT_SIZES.sm, color: COLORS.textLight }}>
+                    {relationship || 'Select an option'}
+                  </Text>
+                  <Text style={{ fontSize: 14, color: COLORS.textLight }}>▾</Text>
+                </TouchableOpacity>
+
+                {/* Email */}
+                <Text style={styles.fieldLabel}>Email Address</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="Email address"
+                  placeholder=""
                   placeholderTextColor={COLORS.textLight}
                   value={email}
                   onChangeText={setEmail}
@@ -206,26 +231,42 @@ export default function CreateAccountScreen() {
                   autoCorrect={false}
                   editable={!loading}
                 />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Password (min. 8 characters)"
-                  placeholderTextColor={COLORS.textLight}
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry
-                  editable={!loading}
-                />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Confirm password"
-                  placeholderTextColor={COLORS.textLight}
-                  value={confirmPassword}
-                  onChangeText={setConfirmPassword}
-                  secureTextEntry
-                  editable={!loading}
-                  returnKeyType="go"
-                  onSubmitEditing={handleSignUp}
-                />
+
+                {/* Password with show/hide */}
+                <Text style={styles.fieldLabel}>Password</Text>
+                <View style={styles.passwordWrap}>
+                  <TextInput
+                    style={[styles.input, { flex: 1, marginBottom: 0, borderWidth: 0 }]}
+                    placeholder="min. 8 characters"
+                    placeholderTextColor={COLORS.textLight}
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry={!showPassword}
+                    editable={!loading}
+                  />
+                  <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={{ padding: SPACING.sm }}>
+                    <Text style={{ fontSize: 16 }}>{showPassword ? '🙈' : '👁️'}</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Confirm password */}
+                <Text style={styles.fieldLabel}>Confirm Password</Text>
+                <View style={[styles.passwordWrap, { marginBottom: SPACING.lg }]}>
+                  <TextInput
+                    style={[styles.input, { flex: 1, marginBottom: 0, borderWidth: 0 }]}
+                    placeholder=""
+                    placeholderTextColor={COLORS.textLight}
+                    value={confirmPassword}
+                    onChangeText={setConfirmPassword}
+                    secureTextEntry={!showConfirm}
+                    editable={!loading}
+                    returnKeyType="go"
+                    onSubmitEditing={handleSignUp}
+                  />
+                  <TouchableOpacity onPress={() => setShowConfirm(!showConfirm)} style={{ padding: SPACING.sm }}>
+                    <Text style={{ fontSize: 16 }}>{showConfirm ? '🙈' : '👁️'}</Text>
+                  </TouchableOpacity>
+                </View>
 
                 <TouchableOpacity
                   onPress={handleSignUp}
@@ -235,7 +276,7 @@ export default function CreateAccountScreen() {
                 >
                   {loading
                     ? <ActivityIndicator color="#fff" />
-                    : <Text style={styles.primaryBtnText}>Create My Account Free</Text>
+                    : <Text style={styles.primaryBtnText}>Create Free Account →</Text>
                   }
                 </TouchableOpacity>
 
@@ -293,35 +334,65 @@ export default function CreateAccountScreen() {
                 </TouchableOpacity>
               </>
             )}
-          </View>
-
-          <Text style={styles.securityNote}>
-            🔒 Your data is encrypted and stored securely with AWS.
-          </Text>
         </View>
+
+        <Text style={styles.securityNote}>
+          🔒 Your data is encrypted and stored securely with AWS.
+        </Text>
       </ScrollView>
+
+      {/* Relationship picker modal */}
+      <Modal visible={showRelPicker} transparent animationType="slide">
+        <TouchableOpacity style={styles.modalOverlay} onPress={() => setShowRelPicker(false)} activeOpacity={1}>
+          <View style={styles.pickerSheet}>
+            <Text style={styles.pickerTitle}>Your relationship to child</Text>
+            {['Parent', 'Guardian', 'Caregiver', 'Therapist', 'Teacher', 'Other'].map((r) => (
+              <TouchableOpacity
+                key={r}
+                style={styles.pickerItem}
+                onPress={() => { setRelationship(r); setShowRelPicker(false); }}
+              >
+                <Text style={[styles.pickerItemText, relationship === r && { color: COLORS.purple, fontWeight: '700' }]}>{r}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  inner: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: 48,
+  header: {
+    backgroundColor: COLORS.purple,
+    paddingTop: 72,
+    paddingBottom: 40,
+    paddingHorizontal: SPACING.xl,
+    alignItems: 'center',
   },
-  logoArea: { alignItems: 'center', marginBottom: SPACING.xl },
-  logoText: { fontSize: 28, fontWeight: '800', color: '#1a1f5e' },
-  logoPurple: { color: COLORS.purple },
-  logoSub: { fontSize: FONT_SIZES.sm, color: COLORS.textLight, marginTop: 4 },
-  card: {
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: COLORS.white,
+    textAlign: 'center',
+    marginBottom: SPACING.sm,
+    lineHeight: 36,
+  },
+  headerSub: {
+    fontSize: FONT_SIZES.sm,
+    color: 'rgba(255,255,255,0.85)',
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  body: {
+    flex: 1,
     backgroundColor: COLORS.white,
-    borderRadius: RADIUS.lg,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    padding: SPACING.xl,
-    ...SHADOWS.md,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    marginTop: -16,
+    paddingHorizontal: SPACING.xl,
+    paddingTop: SPACING.xl,
+    paddingBottom: 40,
   },
   title: {
     fontSize: FONT_SIZES.xl,
@@ -329,6 +400,57 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     marginBottom: SPACING.lg,
     textAlign: 'center',
+  },
+  fieldLabel: {
+    fontSize: FONT_SIZES.sm,
+    fontWeight: '600',
+    color: COLORS.text,
+    marginBottom: 6,
+    marginTop: SPACING.sm,
+  },
+  pickerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  passwordWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+    borderRadius: RADIUS.sm,
+    backgroundColor: COLORS.white,
+    marginBottom: SPACING.sm,
+    paddingRight: SPACING.sm,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'flex-end',
+  },
+  pickerSheet: {
+    backgroundColor: COLORS.white,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingHorizontal: SPACING.xl,
+    paddingTop: SPACING.xl,
+    paddingBottom: 40,
+  },
+  pickerTitle: {
+    fontSize: FONT_SIZES.md,
+    fontWeight: '700',
+    color: COLORS.text,
+    marginBottom: SPACING.lg,
+    textAlign: 'center',
+  },
+  pickerItem: {
+    paddingVertical: SPACING.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  pickerItemText: {
+    fontSize: FONT_SIZES.base,
+    color: COLORS.text,
   },
   errorBox: {
     backgroundColor: '#FFF0EE',
