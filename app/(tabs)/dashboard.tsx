@@ -1,1044 +1,865 @@
+/**
+ * dashboard.tsx — Autism Pathways main dashboard (redesigned)
+ *
+ * Layout:
+ *  1. Header: "Good Morning / Hello, [parent]! / How can we help [child] today?"
+ *  2. Brand rainbow accent bar
+ *  3. Search bar
+ *  4. Priority chips (from onboarding concerns, brand-colored)
+ *  5. Upcoming Reminders (next 7 days from stored appointment dates)
+ *  6. Your Pathways (transition-style blocks, Observations first)
+ *  7. Pinned Tools (3 quick-access tiles)
+ *  8. Upgrade banner (non-premium)
+ *  9. 1:1 Support callout
+ * 10. Bottom nav bar with raised SOS button
+ */
 import React, { useState, useCallback, useEffect } from 'react';
-import { Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+  Platform,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
-import { useAuth } from '../../services/useAuth';
-import { usePmipProviderStore } from '../../lib/pmip/pmipProviderStore';
+import { LinearGradient } from 'expo-linear-gradient';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useIsPremium } from '../../hooks/useIsPremium';
 import { useLanguage } from '../../lib/LanguageContext';
-import { trackPathwayOpened, trackPaywallViewed, logScreenView } from '../../lib/analytics';
+import { trackPathwayOpened, trackPaywallViewed } from '../../lib/analytics';
+import { useActiveChild } from '../../services/childManager';
+import HamburgerMenu from '../../components/HamburgerMenu';
 
-// Exact colors from your web app
-const COLORS = {
-  bg: '#F5F4FB',
-  card: '#ECEAF8',
-  navy: '#1a1f5e',
-  purple: '#7c6fd4',
-  purpleDk: '#4a3f8f',
-  textMid: '#6b6490',
-  textLight: '#a09cbf',
-  border: '#d4d0ef',
-  borderLt: '#ede9fc',
-  white: '#ffffff',
-  teal: '#3BBFA3',
-  tealLt: '#e3f7f1',
-  green: '#2e7d32',
-  red: '#c0392b',
-  redLt: '#fde8e8',
+// ─── Brand palette (aligned with lib/theme.ts) ────────────────────────────────
+const C = {
+  bg:             '#FAFAFC',
+  white:          '#FFFFFF',
+  purple:         '#7C5CBF',
+  purpleDark:     '#5C3EA8',
+  purpleLight:    '#B8A0E8',
+  lavender:       '#E9E3FF',
+  lavenderAccent: '#C5B8F0',
+  teal:           '#3BBFA3',
+  tealLight:      '#E3F7F1',
+  mint:           '#E3F7F1',
+  mintAccent:     '#7DD9C0',
+  blue:           '#DCEEFF',
+  blueAccent:     '#A8CFFF',
+  peach:          '#FFE8DC',
+  peachAccent:    '#FFBB9A',
+  yellow:         '#FFF6D8',
+  yellowAccent:   '#FFD97A',
+  text:           '#2F2F3A',
+  textMid:        '#5A5A72',
+  textLight:      '#9090A8',
+  border:         '#E8E8F0',
+  sos:            '#E05252',
+  sosDark:        '#C43A3A',
+  // Pathway accent colors (from explore.tsx CAT_META)
+  diagnosisAccent: '#5B9BD5',
+  medicaidAccent:  '#7C5CBF',
+  waiverAccent:    '#3BBFA3',
+  iepAccent:       '#D97706',
+  pottyAccent:     '#E07B54',
+  transitionAccent:'#9D84B7',
 };
 
-const SPACING = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 24 };
+// Brand rainbow gradient (from app/index.tsx)
+const RAINBOW: readonly [string, string, ...string[]] = ['#FF6B6B', '#FFA500', '#FFD93D', '#6BCB77', '#4D96FF', '#9D84B7'];
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.bg,
-  },
-  scrollContent: {
-    paddingBottom: SPACING.xxl,
-  },
-  // TOP NAV
-  topNav: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.md,
-    backgroundColor: COLORS.bg,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(212,208,239,0.5)',
-  },
-  navLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-  },
-  navLogo: {
-    width: 30,
-    height: 30,
-    borderRadius: 8,
-    backgroundColor: '#c4b8f0',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  navTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: COLORS.navy,
-  },
-  navTitlePurple: {
-    color: COLORS.purple,
-  },
-  navRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.md,
-  },
-  navGear: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(124,111,212,0.12)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  navGearIcon: {
-    fontSize: 16,
-  },
-  navAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: COLORS.card,
-    borderWidth: 2,
-    borderColor: COLORS.purple,
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: 13,
-    fontWeight: '700',
-    color: COLORS.purpleDk,
-  },
-  // CHILD SELECTOR
-  childSelector: {
-    backgroundColor: COLORS.card,
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.md,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.md,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(212,208,239,0.5)',
-  },
-  childAv: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: COLORS.purple,
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: 13,
-    fontWeight: '700',
-    color: COLORS.white,
-  },
-  childInfo: {
-    flex: 1,
-  },
-  childName: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: COLORS.navy,
-    marginBottom: 2,
-  },
-  childMeta: {
-    fontSize: 11,
-    color: COLORS.textMid,
-  },
-  // HERO
-  hero: {
-    backgroundColor: COLORS.navy,
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.lg,
-  },
-  heroEyebrow: {
-    fontSize: 11,
-    fontWeight: '600',
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
-    color: 'rgba(255,255,255,0.55)',
-    marginBottom: SPACING.xs,
-  },
-  heroName: {
-    fontSize: 22,
-    fontWeight: '800',
-    letterSpacing: -0.02,
-    color: COLORS.white,
-    marginBottom: SPACING.lg,
-  },
-  statRow: {
-    flexDirection: 'row',
-    gap: SPACING.sm,
-  },
-  statPill: {
-    flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    borderRadius: 10,
-    paddingVertical: SPACING.sm,
-    paddingHorizontal: SPACING.sm,
-    alignItems: 'center',
-  },
-  statPillNum: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: COLORS.white,
-    marginBottom: 2,
-  },
-  statPillNumTeal: {
-    color: COLORS.teal,
-  },
-  statPillLabel: {
-    fontSize: 10,
-    color: 'rgba(255,255,255,0.6)',
-  },
-  // CONTENT
-  content: {
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.md,
-  },
-  // SECTION HEADER
-  secHeader: {
-    marginBottom: SPACING.sm,
-    marginTop: SPACING.sm,
-  },
-  secTitle: {
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
-    color: COLORS.textLight,
-  },
-  // TRACKER CARDS
-  trackerCard: {
-    backgroundColor: COLORS.white,
-    borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: COLORS.borderLt,
-    padding: SPACING.lg,
-    marginBottom: SPACING.md,
-  },
-  tcTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: SPACING.md,
-  },
-  tcTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: COLORS.navy,
-  },
-  tcBadge: {
-    fontSize: 10,
-    fontWeight: '700',
-    paddingVertical: 3,
-    paddingHorizontal: 9,
-    borderRadius: 20,
-  },
-  tcBadgePurple: {
-    backgroundColor: COLORS.card,
-    color: COLORS.purpleDk,
-  },
-  tcBadgeTeal: {
-    backgroundColor: COLORS.tealLt,
-    color: '#0F6E56',
-  },
-  tcSteps: {
-    flexDirection: 'row',
-    gap: 3,
-    marginBottom: SPACING.md,
-  },
-  tcStep: {
-    flex: 1,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: COLORS.card,
-  },
-  tcStepDone: {
-    backgroundColor: COLORS.purple,
-  },
-  tcStepDoneTeal: {
-    backgroundColor: COLORS.teal,
-  },
-  tcBottom: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  tcPhase: {
-    fontSize: 11,
-    color: COLORS.textMid,
-  },
-  tcNext: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: COLORS.purple,
-  },
-  // PROFILE CARD
-  profileCard: {
-    backgroundColor: COLORS.white,
-    borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: COLORS.borderLt,
-    paddingVertical: SPACING.lg,
-    paddingHorizontal: SPACING.lg,
-    marginBottom: SPACING.md,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.lg,
-  },
-  pcAv: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: COLORS.purple,
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: 20,
-    fontWeight: '700',
-    color: COLORS.white,
-  },
-  pcBody: {
-    flex: 1,
-  },
-  pcName: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: COLORS.navy,
-    marginBottom: SPACING.xs,
-  },
-  pcMeta: {
-    fontSize: 12,
-    color: COLORS.textMid,
-    marginBottom: SPACING.xs,
-  },
-  pcTags: {
-    flexDirection: 'row',
-    gap: SPACING.xs,
-    flexWrap: 'wrap',
-  },
-  pcTag: {
-    fontSize: 10,
-    fontWeight: '600',
-    paddingVertical: 3,
-    paddingHorizontal: 8,
-    borderRadius: 20,
-  },
-  pcTagPurple: {
-    backgroundColor: COLORS.card,
-    color: COLORS.purpleDk,
-  },
-  pcTagTeal: {
-    backgroundColor: COLORS.tealLt,
-    color: '#0F6E56',
-  },
-  // PATHWAY SCROLL
-  pathwayScroll: {
-    marginBottom: SPACING.md,
-  },
-  pathwayTile: {
-    minWidth: 86,
-    paddingVertical: SPACING.md,
-    paddingHorizontal: SPACING.sm,
-    backgroundColor: COLORS.white,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: COLORS.borderLt,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: SPACING.sm,
-  },
-  ptIcon: {
-    fontSize: 22,
-    marginBottom: SPACING.xs,
-  },
-  ptName: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: COLORS.navy,
-    textAlign: 'center',
-    lineHeight: 15,
-  },
-  doneBadge: {
-    position: 'absolute',
-    top: 5,
-    right: 5,
-    backgroundColor: COLORS.green,
-    color: COLORS.white,
-    fontSize: 8,
-    fontWeight: '700',
-    paddingVertical: 2,
-    paddingHorizontal: 5,
-    borderRadius: 10,
-  },
-  // DUAL GRID
-  dualGrid: {
-    flexDirection: 'row',
-    gap: SPACING.sm,
-    marginBottom: SPACING.md,
-  },
-  miniCard: {
-    flex: 1,
-    backgroundColor: COLORS.white,
-    borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: COLORS.borderLt,
-    padding: SPACING.md,
-  },
-  miniTitle: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: COLORS.navy,
-    marginBottom: SPACING.md,
-  },
-  miniLink: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: COLORS.purple,
-    marginTop: SPACING.xs,
-  },
-  // APPEALS MINI
-  amRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: SPACING.xs,
-    marginBottom: SPACING.xs,
-  },
-  amBar: {
-    width: 3,
-    height: 32,
-    borderRadius: 2,
-  },
-  amBarRed: {
-    backgroundColor: COLORS.red,
-  },
-  amBarTeal: {
-    backgroundColor: COLORS.teal,
-  },
-  amName: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: COLORS.navy,
-    flex: 1,
-  },
-  amSub: {
-    fontSize: 9,
-    color: COLORS.textMid,
-  },
-  // THIS WEEK
-  twItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: SPACING.xs,
-    paddingVertical: SPACING.xs,
-  },
-  twChk: {
-    width: 14,
-    height: 14,
-    borderRadius: 4,
-    borderWidth: 1.5,
-    borderColor: COLORS.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 1,
-  },
-  twChkDone: {
-    backgroundColor: COLORS.teal,
-    borderColor: COLORS.teal,
-  },
-  twChkText: {
-    color: COLORS.white,
-    fontSize: 8,
-    fontWeight: '700',
-  },
-  twText: {
-    fontSize: 10,
-    color: COLORS.navy,
-    flex: 1,
-  },
-  twTextDone: {
-    color: COLORS.textLight,
-    textDecorationLine: 'line-through',
-  },
-  // TOOLS GRID
-  toolsGrid: {
-    flexDirection: 'row',
-    gap: SPACING.sm,
-    marginBottom: SPACING.md,
-    flexWrap: 'wrap',
-  },
-  toolTile: {
-    flex: 1,
-    minWidth: '48%',
-    backgroundColor: COLORS.white,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: COLORS.borderLt,
-    paddingVertical: SPACING.md,
-    paddingHorizontal: SPACING.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  toolIcon: {
-    fontSize: 20,
-    marginBottom: SPACING.xs,
-  },
-  toolName: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: COLORS.navy,
-    textAlign: 'center',
-  },
+const SP = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 24 };
+const R  = { xs: 6, sm: 10, md: 18, lg: 24, pill: 99 };
 
-  sectionLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#a09cbf',
-    letterSpacing: 0.8,
-    marginBottom: 10,
-    marginTop: 4,
-  },
-  tcCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: '#ede9fc',
-    padding: 16,
-    marginBottom: 16,
-  },
-  tcBadgeGreen: {
-    backgroundColor: '#e3f7f1',
-    color: '#0A7A5A',
-  },
-  quizResultsCard: {
-    backgroundColor: '#f0ebff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#c5b8f0',
-  },
-  quizResultsTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#4a3f8f',
-    marginBottom: 8,
-  },
-  quizRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 4,
-    marginBottom: 4,
-  },
-  quizLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#6b6490',
-  },
-  quizValue: {
-    fontSize: 11,
-    color: '#4a3f8f',
-    flex: 1,
-  },
-  quizLink: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#7c6fd4',
-    marginTop: 6,
-  },
-  upgradeBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#4a3f8f',
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 16,
-  },
-  upgradeLeft: { flex: 1 },
-  upgradeTitle: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: '#ffffff',
-    marginBottom: 4,
-  },
-  upgradeSub: {
-    fontSize: 11,
-    color: 'rgba(255,255,255,0.8)',
-    lineHeight: 16,
-    marginBottom: 4,
-  },
-  upgradePrice: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#c5b8f0',
-  },
-  upgradeArrow: {
-    fontSize: 20,
-    color: '#ffffff',
-    marginLeft: 12,
-  },
-  supportCallout: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#E9E3FF',
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#C5B8F0',
-  },
-  supportCalloutTitle: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: '#4a3f8f',
-    marginBottom: 4,
-  },
-  supportCalloutSub: {
-    fontSize: 11,
-    color: '#6b6490',
-    lineHeight: 16,
-  },
-  supportCalloutArrow: {
-    fontSize: 20,
-    color: '#7c6fd4',
-    marginLeft: 12,
-  },
-  ppHeroCard: {
-    backgroundColor: '#4a3f8f',
-    borderRadius: 16,
-    padding: SPACING.lg,
-    marginBottom: SPACING.md,
-  },
-  ppHeroCardBig: {
-    backgroundColor: '#4a3f8f',
-    borderRadius: 16,
-    padding: SPACING.lg,
-    marginBottom: SPACING.md,
-  },
-  ppHeroTitle: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: '#ffffff',
-    marginBottom: 3,
-  },
-  ppHeroBigTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#ffffff',
-    marginBottom: SPACING.xs,
-  },
-  ppHeroBigSub: {
-    fontSize: 13,
-    color: 'rgba(255,255,255,0.8)',
-    lineHeight: 19,
-  },
-  ppHeroSub: {
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.75)',
-    lineHeight: 16,
-  },
-  transitionCompactCard: {
-    backgroundColor: '#1a3a5c',
-    borderRadius: 16,
-    padding: SPACING.lg,
-    marginBottom: SPACING.md,
-  },
-  transitionCompactTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#ffffff',
-    marginBottom: 3,
-  },
-  transitionCompactSub: {
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.7)',
-    lineHeight: 16,
-  },
-  // TRANSITION HERO CARD
-  transitionHeroCard: {
-    backgroundColor: '#1a3a5c',
-    borderRadius: 16,
-    padding: SPACING.lg,
-    marginBottom: SPACING.md,
-  },
-  transitionHeroTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: SPACING.sm,
-  },
-  transitionHeroBadge: {
-    backgroundColor: 'rgba(75,192,200,0.25)',
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-  },
-  transitionHeroBadgeText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#4BC0C8',
-    letterSpacing: 0.8,
-  },
-  transitionHeroArrow: {
-    fontSize: 20,
-    color: 'rgba(255,255,255,0.6)',
-  },
-  transitionHeroEmoji: {
-    fontSize: 32,
-    marginBottom: SPACING.xs,
-  },
-  transitionHeroTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#ffffff',
-    marginBottom: 4,
-  },
-  transitionHeroSub: {
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.7)',
-    lineHeight: 17,
-    marginBottom: SPACING.md,
-  },
-  transitionStageRow: {
-    flexDirection: 'row',
-    gap: SPACING.sm,
-  },
-  transitionStageDot: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+// ─── Pathway totals ────────────────────────────────────────────────────────────
+const DIAGNOSIS_TOTAL = 8;
+const MEDICAID_TOTAL  = 6;
+const WAIVER_TOTAL    = 7;
+const IEP_TOTAL       = 5;
+
+// ─── Concern → chip config (matches start-here.tsx concerns list) ──────────────
+const CONCERN_CHIPS: Record<string, { label: string; icon: string; bg: string; border: string; textColor: string }> = {
+  speech:    { label: 'Speech',     icon: '🗣️', bg: C.blue,    border: C.blueAccent,     textColor: '#2C5F8A' },
+  behavior:  { label: 'Behavior',   icon: '🧠', bg: C.lavender, border: C.lavenderAccent, textColor: C.purpleDark },
+  medicaid:  { label: 'Medicaid',   icon: '💳', bg: C.lavender, border: C.lavenderAccent, textColor: C.purpleDark },
+  school:    { label: 'IEP/School', icon: '🏫', bg: C.yellow,  border: C.yellowAccent,   textColor: '#7A6020' },
+  waivers:   { label: 'Waiver',     icon: '🛡️', bg: C.mint,    border: C.mintAccent,     textColor: '#0A7A5A' },
+  providers: { label: 'Providers',  icon: '🩺', bg: C.blue,    border: C.blueAccent,     textColor: '#2C5F8A' },
+  denied:    { label: 'Appeals',    icon: '📁', bg: C.peach,   border: C.peachAccent,    textColor: '#8A2C4A' },
+  family:    { label: 'Family',     icon: '❤️', bg: C.peach,   border: C.peachAccent,    textColor: '#8A2C4A' },
+  sensory:   { label: 'Sensory',    icon: '🌊', bg: C.tealLight, border: C.mintAccent,   textColor: '#0A7A5A' },
+  sleep:     { label: 'Sleep',      icon: '🌙', bg: C.yellow,  border: C.yellowAccent,   textColor: '#7A6020' },
+};
+const DEFAULT_CHIPS = ['medicaid', 'school', 'waivers', 'behavior', 'speech'];
+
+// ─── Tool tiles config ─────────────────────────────────────────────────────────
+const ALL_TOOLS = [
+  { id: 'sos',        icon: '🆘', name: 'In-the-Moment',      route: '/parenting-pathways', bg: C.peach,   border: C.peachAccent,    textColor: '#8A2C4A' },
+  { id: 'translator', icon: '💬', name: 'Provider Translator', route: '/provider-translator', bg: C.blue,  border: C.blueAccent,     textColor: '#2C5F8A' },
+  { id: 'safespace',  icon: '🧘', name: 'Safe Space',          route: '/safe-space',          bg: C.mint,  border: C.mintAccent,     textColor: '#0A7A5A' },
+  { id: 'prep',       icon: '🩺', name: 'Provider Prep',       route: '/provider-prep',       bg: C.lavender, border: C.lavenderAccent, textColor: C.purpleDark },
+  { id: 'learning',   icon: '📚', name: 'Learning',            route: '/(tabs)/explore',      bg: C.yellow, border: C.yellowAccent,  textColor: '#7A6020' },
+];
+const DEFAULT_PINNED = ['sos', 'translator', 'safespace'];
+
+// ─── Greeting helper ───────────────────────────────────────────────────────────
+function getGreeting(): string {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good Morning,';
+  if (h < 17) return 'Good Afternoon,';
+  return 'Good Evening,';
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
-
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import ChildSwitcher from '../../components/ChildSwitcher';
-import HamburgerMenu from '../../components/HamburgerMenu';
-import { useActiveChild } from '../../services/childManager';
-
 export default function DashboardScreen() {
-  const router = useRouter();
-  const insets = useSafeAreaInsets();
-  const { signOut } = useAuth();
+  const router        = useRouter();
+  const insets        = useSafeAreaInsets();
+  const { t }         = useLanguage();
   const { isPremium } = useIsPremium();
-  const { t } = useLanguage();
-  const { child, childId, key: childKey, switchChild } = useActiveChild();
-
-  // ── State ──────────────────────────────────────────────────────────────────
-  const [profile, setProfile] = useState<{ childName?: string; diagnosis?: string; diagnosisLevel?: string } | null>(null);
+  const { child, childId } = useActiveChild();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [diagnosisStep, setDiagnosisStep] = useState(0);
+
+  // ── Data state ──────────────────────────────────────────────────────────────
+  const [parentName,       setParentName]       = useState('');
+  const [profile,          setProfile]          = useState<any>(null);
+  const [diagnosisStep,    setDiagnosisStep]    = useState(0);
   const [medicaidProgress, setMedicaidProgress] = useState(0);
-  const [waiverProgress, setWaiverProgress] = useState(0);
-  const [iepProgress, setIepProgress] = useState(0);
-  const [pottyProgress, setPottyProgress] = useState(0);
-  const [weeklyChecks, setWeeklyChecks] = useState<boolean[]>([false, false, false, false]);
-  const [icdCodes, setIcdCodes] = useState<string[]>([]);
-  const [devFlags, setDevFlags] = useState<string[]>([]);
+  const [waiverProgress,   setWaiverProgress]   = useState(0);
+  const [iepProgress,      setIepProgress]      = useState(0);
+  const [obsCount,         setObsCount]         = useState(0);
+  const [concerns,         setConcerns]         = useState<string[]>([]);
+  const [diagApptDate,     setDiagApptDate]     = useState<string | null>(null);
+  const [searchQuery,      setSearchQuery]      = useState('');
+  const [pinnedTools,      setPinnedTools]      = useState<string[]>(DEFAULT_PINNED);
 
-  const DIAGNOSIS_TOTAL = 8;
-  const MEDICAID_TOTAL = 6;
-  const WAIVER_TOTAL = 7;
-  const IEP_TOTAL = 5;
-  const POTTY_TOTAL = 5;
-
-  // ── Load data ──────────────────────────────────────────────────────────────
-  // Accepts an optional explicit childId so we can call it immediately after
-  // a switch before useActiveChild's internal state has had time to update.
+  // ── Load all data ────────────────────────────────────────────────────────────
   const loadData = useCallback(async (overrideChildId?: string) => {
     try {
-      // Build a key function using the override ID if provided, else fall back
-      // to the hook's current childId.
       const resolvedId = overrideChildId ?? childId;
       const ck = (base: string) => resolvedId ? `${base}_${resolvedId}` : base;
+      const obsKey = resolvedId ? `ap_observations_${resolvedId}` : 'ap_observations';
 
       const [
         rawProfile,
-        rawDiag,      rawDiagFallback,
-        rawMedicaid,  rawMedicaidFallback,
-        rawWaiver,    rawWaiverFallback,
-        rawIep,       rawIepFallback,
-        rawWeekly,
-        rawPotty,
-        rawIcd,       rawIcdFallback,
-        rawDev,       rawDevFallback,
+        rawParentName,
+        rawDiag,      rawDiagFb,
+        rawMedicaid,  rawMedicaidFb,
+        rawWaiver,    rawWaiverFb,
+        rawIep,       rawIepFb,
+        rawObs,       rawObsFb,
+        rawDiagAppt,
+        rawPinned,
       ] = await Promise.all([
         AsyncStorage.getItem('profile'),
-        AsyncStorage.getItem(ck('ap_diagnosis_step')),   AsyncStorage.getItem('ap_diagnosis_step'),
+        AsyncStorage.getItem('ap_parent_first_name'),
+        AsyncStorage.getItem(ck('ap_diagnosis_step')),    AsyncStorage.getItem('ap_diagnosis_step'),
         AsyncStorage.getItem(ck('ap_medicaid_progress')), AsyncStorage.getItem('ap_medicaid_progress'),
-        AsyncStorage.getItem(ck('ap_waiver_progress')),  AsyncStorage.getItem('ap_waiver_progress'),
-        AsyncStorage.getItem(ck('ap_iep_progress')),     AsyncStorage.getItem('ap_iep_progress'),
-        AsyncStorage.getItem('ap_weekly_checks'),
-        AsyncStorage.getItem('ap_potty_progress'),
-        AsyncStorage.getItem(ck('ap_icd_quiz_codes')),   AsyncStorage.getItem('ap_icd_quiz_codes'),
-        AsyncStorage.getItem(ck('ap_disability_quiz_results')), AsyncStorage.getItem('ap_disability_quiz_results'),
+        AsyncStorage.getItem(ck('ap_waiver_progress')),   AsyncStorage.getItem('ap_waiver_progress'),
+        AsyncStorage.getItem(ck('ap_iep_progress')),      AsyncStorage.getItem('ap_iep_progress'),
+        AsyncStorage.getItem(obsKey),                     AsyncStorage.getItem('ap_observations'),
+        AsyncStorage.getItem('diagnosis_appointment_date'),
+        AsyncStorage.getItem('ap_pinned_tools'),
       ]);
 
-      // Prefer child-scoped value; fall back to legacy global key
-      const diagRaw     = rawDiag     ?? rawDiagFallback;
-      const medicaidRaw = rawMedicaid  ?? rawMedicaidFallback;
-      const waiverRaw   = rawWaiver   ?? rawWaiverFallback;
-      const iepRaw      = rawIep      ?? rawIepFallback;
-      const icdRaw      = rawIcd      ?? rawIcdFallback;
-      const devRaw      = rawDev      ?? rawDevFallback;
+      if (rawParentName) setParentName(rawParentName);
 
-      if (rawProfile) setProfile(JSON.parse(rawProfile));
-      setDiagnosisStep(diagRaw     ? parseInt(diagRaw,     10) : 0);
-      setMedicaidProgress(medicaidRaw ? parseInt(medicaidRaw, 10) : 0);
-      setWaiverProgress(waiverRaw   ? parseInt(waiverRaw,   10) : 0);
-      setIepProgress(iepRaw        ? parseInt(iepRaw,       10) : 0);
-      setPottyProgress(rawPotty    ? parseInt(rawPotty,     10) : 0);
-      if (rawWeekly) setWeeklyChecks(JSON.parse(rawWeekly));
-      if (icdRaw) setIcdCodes(JSON.parse(icdRaw));
-      if (devRaw) {
-        const flags = JSON.parse(devRaw);
-        setDevFlags(Array.isArray(flags) ? flags.slice(0, 3) : []);
+      if (rawProfile) {
+        const p = JSON.parse(rawProfile);
+        setProfile(p);
+        if (p.concerns && Array.isArray(p.concerns)) setConcerns(p.concerns);
+      }
+
+      setDiagnosisStep(    (rawDiag     ?? rawDiagFb)     ? parseInt((rawDiag     ?? rawDiagFb)!,     10) : 0);
+      setMedicaidProgress( (rawMedicaid  ?? rawMedicaidFb) ? parseInt((rawMedicaid  ?? rawMedicaidFb)!, 10) : 0);
+      setWaiverProgress(   (rawWaiver   ?? rawWaiverFb)   ? parseInt((rawWaiver   ?? rawWaiverFb)!,   10) : 0);
+      setIepProgress(      (rawIep      ?? rawIepFb)      ? parseInt((rawIep      ?? rawIepFb)!,      10) : 0);
+
+      // Observations: count this week's entries
+      const obsRaw = rawObs ?? rawObsFb;
+      if (obsRaw) {
+        try {
+          const entries: any[] = JSON.parse(obsRaw);
+          const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+          const thisWeek = entries.filter((e) => new Date(e.savedAt || e.date || 0) >= weekAgo);
+          setObsCount(thisWeek.length);
+        } catch { setObsCount(0); }
+      } else {
+        setObsCount(0);
+      }
+
+      if (rawDiagAppt) setDiagApptDate(rawDiagAppt);
+      if (rawPinned) {
+        try { setPinnedTools(JSON.parse(rawPinned)); } catch { /* keep default */ }
       }
     } catch (_) {}
   }, [childId]);
 
   useFocusEffect(useCallback(() => { loadData(); }, [loadData]));
+  useEffect(() => { if (childId) loadData(childId); }, [childId]);
 
-  // Re-load data whenever the active child changes (e.g. after a switch)
-  useEffect(() => {
-    if (childId) loadData(childId);
-  }, [childId]);
+  // ── Derived display values ───────────────────────────────────────────────────
+  const displayName    = child?.name || profile?.childName || t('your child', 'tu hijo/a');
+  const parentFirst    = parentName || '';
+  const greeting       = getGreeting();
+  const activeConcerns = concerns.length > 0 ? concerns : DEFAULT_CHIPS;
 
-  const toggleWeekly = async (i: number) => {
-    const updated = weeklyChecks.map((v, idx) => idx === i ? !v : v);
-    setWeeklyChecks(updated);
-    await AsyncStorage.setItem('ap_weekly_checks', JSON.stringify(updated));
+  // ── Upcoming reminders ────────────────────────────────────────────────────────
+  const upcomingReminders: { title: string; date: string; icon: string; color: string }[] = [];
+  if (diagApptDate && diagApptDate !== 'pending') {
+    upcomingReminders.push({
+      title: t('Diagnosis Appointment', 'Cita de Diagnóstico'),
+      date: diagApptDate,
+      icon: '🔍',
+      color: C.diagnosisAccent,
+    });
+  }
+
+  // ── Pathway cards ─────────────────────────────────────────────────────────────
+  const PATHWAY_CARDS = [
+    {
+      id: 'observations',
+      icon: '📓',
+      name: t('Observations', 'Observaciones'),
+      route: '/observations',
+      progress: Math.min(obsCount, 7),
+      total: 7,
+      sub: obsCount > 0
+        ? t(`${obsCount} logged this week`, `${obsCount} registradas esta semana`)
+        : t('Tap + to log today', 'Toca + para registrar hoy'),
+      accent: 'rainbow' as const,
+      iconBg: C.lavender,
+      quickAdd: '/observations/new-entry',
+    },
+    ...(diagnosisStep > 0 ? [{
+      id: 'diagnosis',
+      icon: '🔍',
+      name: t('Diagnosis Journey', 'Camino al Diagnóstico'),
+      route: '/diagnosis',
+      progress: diagnosisStep,
+      total: DIAGNOSIS_TOTAL,
+      sub: t(`Step ${Math.min(diagnosisStep + 1, DIAGNOSIS_TOTAL)} of ${DIAGNOSIS_TOTAL}`, `Paso ${Math.min(diagnosisStep + 1, DIAGNOSIS_TOTAL)} de ${DIAGNOSIS_TOTAL}`),
+      accent: C.diagnosisAccent,
+      iconBg: C.blue,
+      quickAdd: null as null,
+    }] : []),
+    ...(medicaidProgress > 0 ? [{
+      id: 'medicaid',
+      icon: '💳',
+      name: t('Medicaid', 'Medicaid'),
+      route: '/medicaid',
+      progress: medicaidProgress,
+      total: MEDICAID_TOTAL,
+      sub: t(`Step ${Math.min(medicaidProgress + 1, MEDICAID_TOTAL)} of ${MEDICAID_TOTAL}`, `Paso ${Math.min(medicaidProgress + 1, MEDICAID_TOTAL)} de ${MEDICAID_TOTAL}`),
+      accent: C.medicaidAccent,
+      iconBg: C.lavender,
+      quickAdd: null as null,
+    }] : []),
+    ...(iepProgress > 0 ? [{
+      id: 'iep',
+      icon: '🏫',
+      name: t('IEP Journey', 'Camino IEP'),
+      route: '/iep',
+      progress: iepProgress,
+      total: IEP_TOTAL,
+      sub: t(`Step ${Math.min(iepProgress + 1, IEP_TOTAL)} of ${IEP_TOTAL}`, `Paso ${Math.min(iepProgress + 1, IEP_TOTAL)} de ${IEP_TOTAL}`),
+      accent: C.iepAccent,
+      iconBg: C.yellow,
+      quickAdd: null as null,
+    }] : []),
+    ...(waiverProgress > 0 ? [{
+      id: 'waiver',
+      icon: '🛡️',
+      name: t('Waiver Programs', 'Programas de Waiver'),
+      route: '/waiver',
+      progress: waiverProgress,
+      total: WAIVER_TOTAL,
+      sub: t(`Step ${Math.min(waiverProgress + 1, WAIVER_TOTAL)} of ${WAIVER_TOTAL}`, `Paso ${Math.min(waiverProgress + 1, WAIVER_TOTAL)} de ${WAIVER_TOTAL}`),
+      accent: C.waiverAccent,
+      iconBg: C.mint,
+      quickAdd: null as null,
+    }] : []),
+  ];
+
+  // ── Pinned tool tiles ─────────────────────────────────────────────────────────
+  const pinnedTileData = pinnedTools
+    .map((id) => ALL_TOOLS.find((tool) => tool.id === id))
+    .filter(Boolean)
+    .slice(0, 3) as typeof ALL_TOOLS;
+
+  // ── Search handler ────────────────────────────────────────────────────────────
+  const handleSearch = (q: string) => {
+    if (!q.trim()) return;
+    const lower = q.toLowerCase();
+    if (lower.includes('medicaid') || lower.includes('insurance'))
+      router.push('/medicaid' as any);
+    else if (lower.includes('diagnosis') || lower.includes('eval'))
+      router.push('/diagnosis' as any);
+    else if (lower.includes('iep') || lower.includes('school'))
+      router.push('/iep' as any);
+    else if (lower.includes('waiver') || lower.includes('hcbs'))
+      router.push('/waiver' as any);
+    else if (lower.includes('transition') || lower.includes('adult'))
+      router.push('/transition' as any);
+    else if (lower.includes('observation') || lower.includes('log') || lower.includes('track'))
+      router.push('/observations' as any);
+    else if (lower.includes('sos') || lower.includes('moment') || lower.includes('meltdown'))
+      router.push('/parenting-pathways' as any);
+    else if (lower.includes('provider') || lower.includes('translator') || lower.includes('script'))
+      router.push('/provider-translator' as any);
+    else if (lower.includes('safe') || lower.includes('calm'))
+      router.push('/safe-space' as any);
+    else if (lower.includes('potty') || lower.includes('toilet'))
+      router.push('/potty' as any);
+    else
+      router.push('/tools' as any);
   };
 
-  const displayName = child?.name || profile?.childName || 'your child';
-  const diagnosis = child?.diagnosis || profile?.diagnosis || '';
-  const diagLevel = child?.diagnosisLevel || profile?.diagnosisLevel || '';
-
-  const WEEKLY_TASKS = [
-    t('Log an observation', 'Registra una observación'),
-    t('Check upcoming appointments', 'Revisa las próximas citas'),
-    t('Review IEP goals', 'Revisa las metas del IEP'),
-    t('Update service tracker', 'Actualiza el seguimiento de servicios'),
-  ];
-
-  const PATHWAYS = [
-    { icon: '🔍', name: t('Diagnosis', 'Diagnóstico'), route: '/diagnosis', progress: diagnosisStep, total: DIAGNOSIS_TOTAL },
-    { icon: '🏥', name: t('Medicaid', 'Medicaid'), route: '/medicaid', progress: medicaidProgress, total: MEDICAID_TOTAL },
-    { icon: '📋', name: t('Waiver', 'Programas'), route: '/waiver', progress: waiverProgress, total: WAIVER_TOTAL },
-    { icon: '🏫', name: t('IEP', 'IEP'), route: '/iep', progress: iepProgress, total: IEP_TOTAL },
-    { icon: '🚽', name: t('Potty', 'Baño'), route: '/potty', progress: pottyProgress, total: POTTY_TOTAL },
-    { icon: '🗺️', name: t('Transition', 'Transición'), route: '/transition', progress: 0, total: 0 },
-  ];
-
-  const TOOL_TILES = [
-    { icon: '💬', name: t('Provider Translator', 'Traductor'), route: '/provider-translator' },
-    { icon: '🆘', name: t('In-the-Moment', 'En el Momento'), route: '/parenting-pathways' },
-    { icon: '📓', name: t('Observations', 'Observaciones'), route: '/observations' },
-    { icon: '🩺', name: t('Provider Prep', 'Prep. Proveedor'), route: '/provider-prep' },
-    { icon: '🧘', name: t('Safe Space', 'Espacio Seguro'), route: '/safe-space' },
-    { icon: '📚', name: t('Learning', 'Aprendizaje'), route: '/(tabs)/explore' },
-  ];
-
+  // ─── Render ──────────────────────────────────────────────────────────────────
   return (
     <View style={styles.container}>
-      {/* TOP NAV */}
-      <View style={[styles.topNav, { paddingTop: insets.top + 4 }]}>
-        <View style={styles.navLeft}>
-          <View style={styles.navLogo}>
-            <Text style={{ fontSize: 14 }}>🌈</Text>
-          </View>
-          <Text style={styles.navTitle}>
-            Autism <Text style={styles.navTitlePurple}>Pathways</Text>
+
+      {/* ── HEADER ─────────────────────────────────────────────────────────── */}
+      <View style={[styles.header, { paddingTop: insets.top + SP.md }]}>
+        <View style={styles.headerLeft}>
+          <Text style={styles.greetingSmall}>{greeting}</Text>
+          <Text style={styles.greetingName}>
+            {t(`Hello, ${parentFirst || 'there'}!`, `¡Hola, ${parentFirst || 'amigo/a'}!`)}
+          </Text>
+          <Text style={styles.greetingSub}>
+            {t(`How can we help ${displayName} today?`, `¿Cómo podemos ayudar a ${displayName} hoy?`)}
           </Text>
         </View>
-        <View style={styles.navRight}>
-          <ChildSwitcher onSwitch={(newId: string) => loadData(newId)} />
-          <TouchableOpacity style={styles.navGear} onPress={() => setMenuOpen(true)}>
-            <Text style={styles.navGearIcon}>☰</Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity style={styles.avatarCircle} onPress={() => setMenuOpen(true)}>
+          <Text style={styles.avatarText}>
+            {(parentFirst || 'A').charAt(0).toUpperCase()}
+          </Text>
+        </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <View style={{ paddingHorizontal: SPACING.lg, paddingTop: SPACING.lg }}>
+      {/* ── RAINBOW BAR ────────────────────────────────────────────────────── */}
+      <LinearGradient
+        colors={RAINBOW}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.rainbowBar}
+      />
 
-          {/* PROFILE CARD */}
-          <TouchableOpacity style={styles.profileCard} onPress={() => router.push('/settings')} activeOpacity={0.85}>
-            <View style={[styles.pcAv, { backgroundColor: child?.color || '#c4b8f0' }]}>
-              <Text style={{ fontSize: 20 }}>{child?.avatar ? child.avatar : '👧'}</Text>
-            </View>
-            <View style={styles.pcBody}>
-              <Text style={styles.pcName}>{displayName}</Text>
-              {diagnosis ? (
-                <Text style={styles.pcMeta}>{diagnosis}{diagLevel ? ` · Level ${diagLevel}` : ''}</Text>
-              ) : (
-                <Text style={styles.pcMeta}>{t('Tap to complete profile', 'Toca para completar el perfil')}</Text>
-              )}
-              <View style={styles.pcTags}>
-                {isPremium ? (
-                  <Text style={[styles.pcTag, styles.pcTagTeal]}>⭐ Premium</Text>
-                ) : (
-                  <Text style={[styles.pcTag, styles.pcTagPurple]}>{t('Free Plan', 'Plan Gratuito')}</Text>
-                )}
-                {diagLevel ? <Text style={[styles.pcTag, styles.pcTagPurple]}>Level {diagLevel}</Text> : null}
-              </View>
-            </View>
-          </TouchableOpacity>
+      {/* ── SCROLLABLE CONTENT ─────────────────────────────────────────────── */}
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 90 }]}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Search */}
+        <View style={styles.searchWrap}>
+          <Ionicons name="search-outline" size={18} color={C.textLight} style={styles.searchIcon} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder={t('Search pathways, tools, resources...', 'Buscar caminos, herramientas...')}
+            placeholderTextColor={C.textLight}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            onSubmitEditing={() => handleSearch(searchQuery)}
+            returnKeyType="search"
+          />
+        </View>
 
-          {/* QUIZ RESULTS CALLOUT */}
-          {(icdCodes.length > 0 || devFlags.length > 0) && (
-            <View style={styles.quizResultsCard}>
-              <Text style={styles.quizResultsTitle}>📋 {t('From Your Quizzes', 'De Tus Cuestionarios')}</Text>
-              {icdCodes.length > 0 && (
-                <View style={styles.quizRow}>
-                  <Text style={styles.quizLabel}>{t('ICD Codes', 'Códigos ICD')}: </Text>
-                  <Text style={styles.quizValue}>{icdCodes.slice(0, 4).join(', ')}</Text>
-                </View>
-              )}
-              {devFlags.length > 0 && (
-                <View style={styles.quizRow}>
-                  <Text style={styles.quizLabel}>{t('Flagged', 'Marcado')}: </Text>
-                  <Text style={styles.quizValue}>{devFlags.join(', ')}</Text>
-                </View>
-              )}
-              <TouchableOpacity onPress={() => router.push('/talking-points')}>
-                <Text style={styles.quizLink}>{t('Use in Talking Points', 'Usar en Puntos de Conversación')} →</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-
-          {/* SECTION: YOUR JOURNEY */}
-          <Text style={styles.sectionLabel}>{t('YOUR JOURNEY', 'TU CAMINO')}</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pathwayScroll} contentContainerStyle={{ paddingRight: SPACING.lg }}>
-            {PATHWAYS.map((p) => {
-              const pct = p.total > 0 ? Math.round((p.progress / p.total) * 100) : 0;
-              const done = pct >= 100;
-              return (
-                <TouchableOpacity key={p.name} style={styles.pathwayTile} onPress={() => { trackPathwayOpened(p.name.toLowerCase()); router.push(p.route as any); }} activeOpacity={0.8}>
-                  {done && <Text style={styles.doneBadge}>✓</Text>}
-                  <Text style={styles.ptIcon}>{p.icon}</Text>
-                  <Text style={styles.ptName}>{p.name}</Text>
-                  {p.total > 0 && (
-                    <Text style={{ fontSize: 9, color: COLORS.textLight, marginTop: 2 }}>{pct}%</Text>
-                  )}
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-
-          {/* TRACKER CARDS */}
-          <View style={styles.dualGrid}>
-            {/* Diagnosis tracker */}
-            <TouchableOpacity style={styles.miniCard} onPress={() => router.push('/diagnosis')} activeOpacity={0.85}>
-              <Text style={styles.miniTitle}>🔍 {t('Diagnosis', 'Diagnóstico')}</Text>
-              <View style={{ flexDirection: 'row', gap: 3, marginBottom: 6 }}>
-                {Array.from({ length: DIAGNOSIS_TOTAL }).map((_, i) => (
-                  <View key={i} style={[{ flex: 1, height: 5, borderRadius: 3, backgroundColor: COLORS.card }, i < diagnosisStep && { backgroundColor: COLORS.purple }]} />
-                ))}
-              </View>
-              <Text style={styles.miniLink}>Step {Math.min(diagnosisStep + 1, DIAGNOSIS_TOTAL)} of {DIAGNOSIS_TOTAL} →</Text>
-            </TouchableOpacity>
-
-            {/* Medicaid tracker */}
-            <TouchableOpacity style={styles.miniCard} onPress={() => router.push('/medicaid')} activeOpacity={0.85}>
-              <Text style={styles.miniTitle}>🏥 Medicaid</Text>
-              <View style={{ flexDirection: 'row', gap: 3, marginBottom: 6 }}>
-                {Array.from({ length: MEDICAID_TOTAL }).map((_, i) => (
-                  <View key={i} style={[{ flex: 1, height: 5, borderRadius: 3, backgroundColor: COLORS.card }, i < medicaidProgress && { backgroundColor: COLORS.teal }]} />
-                ))}
-              </View>
-              <Text style={styles.miniLink}>Step {Math.min(medicaidProgress + 1, MEDICAID_TOTAL)} of {MEDICAID_TOTAL} →</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* THIS WEEK */}
-          <View style={styles.tcCard}>
-            <View style={styles.tcTop}>
-              <Text style={styles.tcTitle}>📅 {t('This Week', 'Esta Semana')}</Text>
-              <Text style={[styles.tcBadge, styles.tcBadgePurple]}>{weeklyChecks.filter(Boolean).length}/{WEEKLY_TASKS.length} done</Text>
-            </View>
-            {WEEKLY_TASKS.map((task, i) => (
-              <TouchableOpacity key={i} style={styles.twItem} onPress={() => toggleWeekly(i)} activeOpacity={0.7}>
-                <View style={[styles.twChk, weeklyChecks[i] && styles.twChkDone]}>
-                  {weeklyChecks[i] && <Text style={styles.twChkText}>✓</Text>}
-                </View>
-                <Text style={[styles.twText, weeklyChecks[i] && styles.twTextDone]}>{task}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          {/* I NEED HELP RIGHT NOW — BIG HERO CARD */}
-          <TouchableOpacity
-            style={styles.ppHeroCardBig}
-            onPress={() => router.push('/parenting-pathways')}
-            activeOpacity={0.85}
-          >
-            <View style={styles.transitionHeroTop}>
-              <View style={[styles.transitionHeroBadge, { backgroundColor: 'rgba(255,255,255,0.15)' }]}>
-                <Text style={[styles.transitionHeroBadgeText, { color: '#fff' }]}>{t('SOS TOOL', 'HERRAMIENTA SOS')}</Text>
-              </View>
-              <Text style={styles.transitionHeroArrow}>›</Text>
-            </View>
-            <Text style={styles.transitionHeroEmoji}>🆘</Text>
-            <Text style={styles.ppHeroBigTitle}>{t('I Need Help Right Now', 'Necesito Ayuda Ahora')}</Text>
-            <Text style={styles.ppHeroBigSub}>{t('Get an in-the-moment strategy in 30 seconds. Calm the moment, find the pattern.', 'Obtén una estrategia en 30 segundos.')}</Text>
-          </TouchableOpacity>
-
-          {/* TRANSITION PATHWAY — COMPACT CARD */}
-          <TouchableOpacity
-            style={styles.transitionCompactCard}
-            onPress={() => { trackPathwayOpened('transition'); router.push('/transition'); }}
-            activeOpacity={0.85}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: SPACING.md }}>
-              <Text style={{ fontSize: 28 }}>🗺️</Text>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.transitionCompactTitle}>{t('Transition to Adult Life', 'Transición a la Vida Adulta')}</Text>
-                <Text style={styles.transitionCompactSub}>{t('6 stages: waitlists, IEP rights, SSI, housing & more', '6 etapas: listas de espera, derechos IEP, SSI')}</Text>
-              </View>
-              <Text style={{ fontSize: 20, color: 'rgba(255,255,255,0.6)' }}>›</Text>
-            </View>
-          </TouchableOpacity>
-          {/* TOOLS SCROLLER */}
-          <Text style={styles.sectionLabel}>{t('QUICK ACCESS', 'ACCESO RÁPIDO')}</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pathwayScroll} contentContainerStyle={{ paddingRight: SPACING.lg }}>
-            {TOOL_TILES.map((t) => (
+        {/* Priority chips */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.chipsScroll}
+          contentContainerStyle={styles.chipsContent}
+        >
+          {activeConcerns.map((id) => {
+            const chip = CONCERN_CHIPS[id];
+            if (!chip) return null;
+            return (
               <TouchableOpacity
-                key={t.name}
-                style={styles.pathwayTile}
-                onPress={() => router.push(t.route as any)}
-                activeOpacity={0.8}
+                key={id}
+                style={[styles.chip, { backgroundColor: chip.bg, borderColor: chip.border }]}
+                onPress={() => handleSearch(chip.label)}
+                activeOpacity={0.75}
               >
-                <Text style={styles.ptIcon}>{t.icon}</Text>
-                <Text style={styles.ptName}>{t.name}</Text>
+                <Text style={styles.chipIcon}>{chip.icon}</Text>
+                <Text style={[styles.chipLabel, { color: chip.textColor }]}>{chip.label}</Text>
               </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+
+        {/* ── UPCOMING REMINDERS ─────────────────────────────────────────── */}
+        {upcomingReminders.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionLabel}>{t('UPCOMING REMINDERS', 'PRÓXIMOS RECORDATORIOS')}</Text>
+              <TouchableOpacity onPress={() => router.push('/diagnosis' as any)}>
+                <Text style={styles.seeAll}>{t('See All', 'Ver Todo')}</Text>
+              </TouchableOpacity>
+            </View>
+            {upcomingReminders.map((r, i) => (
+              <View key={i} style={styles.reminderCard}>
+                <View style={[styles.reminderAccent, { backgroundColor: r.color }]} />
+                <View style={[styles.reminderIconWrap, { backgroundColor: r.color + '22' }]}>
+                  <Text style={styles.reminderIcon}>{r.icon}</Text>
+                </View>
+                <View style={styles.reminderBody}>
+                  <Text style={styles.reminderTitle}>{r.title}</Text>
+                  <Text style={styles.reminderDate}>📅 {r.date}</Text>
+                </View>
+              </View>
             ))}
+          </View>
+        )}
+
+        {/* ── YOUR PATHWAYS ──────────────────────────────────────────────── */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionLabel}>{t('YOUR PATHWAYS', 'TUS CAMINOS')}</Text>
+            <TouchableOpacity onPress={() => router.push('/tools' as any)}>
+              <Text style={styles.seeAll}>{t('See All', 'Ver Todo')}</Text>
+            </TouchableOpacity>
+          </View>
+
+          {PATHWAY_CARDS.map((p) => {
+            const pct = p.total > 0 ? Math.round((p.progress / p.total) * 100) : 0;
+            return (
+              <TouchableOpacity
+                key={p.id}
+                style={styles.pathwayCard}
+                onPress={() => { trackPathwayOpened(p.id); router.push(p.route as any); }}
+                activeOpacity={0.85}
+              >
+                {/* Left accent stripe */}
+                {p.accent === 'rainbow' ? (
+                  <LinearGradient
+                    colors={RAINBOW}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 0, y: 1 }}
+                    style={styles.pathwayAccent}
+                  />
+                ) : (
+                  <View style={[styles.pathwayAccent, { backgroundColor: p.accent as string }]} />
+                )}
+
+                {/* Icon */}
+                <View style={[styles.pathwayIconWrap, { backgroundColor: p.iconBg }]}>
+                  <Text style={styles.pathwayIcon}>{p.icon}</Text>
+                </View>
+
+                {/* Body */}
+                <View style={styles.pathwayBody}>
+                  <Text style={styles.pathwayName}>{p.name}</Text>
+                  <Text style={styles.pathwaySub}>{p.sub}</Text>
+                  <View style={styles.progressTrack}>
+                    {p.accent === 'rainbow' ? (
+                      <LinearGradient
+                        colors={RAINBOW}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={[styles.progressFill, { width: `${Math.max(pct, 4)}%` as any }]}
+                      />
+                    ) : (
+                      <View style={[styles.progressFill, { width: `${Math.max(pct, 4)}%` as any, backgroundColor: p.accent as string }]} />
+                    )}
+                  </View>
+                </View>
+
+                {/* Right: quick-add or resume */}
+                {p.quickAdd ? (
+                  <TouchableOpacity
+                    style={styles.quickAddBtn}
+                    onPress={(e) => { e.stopPropagation(); router.push(p.quickAdd as any); }}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <Text style={styles.quickAddText}>+</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <Text style={[styles.resumeLink, { color: p.accent as string }]}>
+                    {t('Resume', 'Continuar')} →
+                  </Text>
+                )}
+              </TouchableOpacity>
+            );
+          })}
+
+          {/* Prompt to start a pathway if only Observations is showing */}
+          {PATHWAY_CARDS.length === 1 && (
             <TouchableOpacity
-              style={[styles.pathwayTile, { backgroundColor: '#f0ebff', borderColor: '#c5b8f0', minWidth: 80 }]}
-              onPress={() => router.push('/tools')}
+              style={styles.startPathwayPrompt}
+              onPress={() => router.push('/tools' as any)}
               activeOpacity={0.8}
             >
-              <Text style={styles.ptIcon}>➕</Text>
-              <Text style={[styles.ptName, { color: COLORS.purple }]}>{t('More Tools', 'Más Herramientas')}</Text>
-            </TouchableOpacity>
-          </ScrollView>
-
-          {/* UPGRADE BANNER (non-premium only) */}
-          {!isPremium && (
-            <TouchableOpacity style={styles.upgradeBanner} onPress={() => { trackPaywallViewed('dashboard'); router.push('/paywall/premium-features' as any); }} activeOpacity={0.9}>
-              <View style={styles.upgradeLeft}>
-                <Text style={styles.upgradeTitle}>⭐ Unlock Premium Access</Text>
-                <Text style={styles.upgradeSub}>891+ providers, AI Transition Guide, IEP Meeting Recorder, Services Tracker alerts, and so much more.</Text>
-                <Text style={styles.upgradePrice}>Everything you need — for less than your weekly coffee run ☕</Text>
-              </View>
-              <Text style={styles.upgradeArrow}>→</Text>
+              <Text style={styles.startPathwayText}>
+                🗺️ {t('Start a pathway — tap to explore', 'Comienza un camino — toca para explorar')}
+              </Text>
             </TouchableOpacity>
           )}
-
-          {/* 1:1 SUPPORT CALLOUT — always visible */}
-          <TouchableOpacity style={styles.supportCallout} onPress={() => router.push('/support' as any)} activeOpacity={0.9}>
-            <View style={styles.upgradeLeft}>
-              <Text style={styles.supportCalloutTitle}>💜 Talk to Me Directly</Text>
-              <Text style={styles.supportCalloutSub}>Need an ear, a second opinion, or guidance from a parent who has lived this? Book a 1:1 call.</Text>
-            </View>
-            <Text style={styles.supportCalloutArrow}>→</Text>
-          </TouchableOpacity>
-
         </View>
+
+        {/* ── PINNED TOOLS ───────────────────────────────────────────────── */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionLabel}>{t('PINNED TOOLS', 'HERRAMIENTAS FIJADAS')}</Text>
+          </View>
+          <View style={styles.pinnedRow}>
+            {pinnedTileData.map((tool) => (
+              <TouchableOpacity
+                key={tool.id}
+                style={[styles.pinnedTile, { backgroundColor: tool.bg, borderColor: tool.border }]}
+                onPress={() => router.push(tool.route as any)}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.pinnedIcon}>{tool.icon}</Text>
+                <Text style={[styles.pinnedLabel, { color: tool.textColor }]}>{tool.name}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* ── UPGRADE BANNER (non-premium) ───────────────────────────────── */}
+        {!isPremium && (
+          <TouchableOpacity
+            style={styles.upgradeBannerWrap}
+            onPress={() => { trackPaywallViewed('dashboard'); router.push('/paywall/premium-features' as any); }}
+            activeOpacity={0.9}
+          >
+            <LinearGradient
+              colors={[C.purpleDark, C.purple]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.upgradeBannerInner}
+            >
+              <View style={styles.upgradeLeft}>
+                <Text style={styles.upgradeTitle}>⭐ {t('Unlock Premium Access', 'Desbloquea el Acceso Premium')}</Text>
+                <Text style={styles.upgradeSub}>
+                  {t('891+ providers, AI Transition Guide, IEP Recorder, and more.', '891+ proveedores, Guía de Transición IA, y más.')}
+                </Text>
+              </View>
+              <Text style={styles.upgradeArrow}>→</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        )}
+
+        {/* ── 1:1 SUPPORT CALLOUT ────────────────────────────────────────── */}
+        <TouchableOpacity
+          style={styles.supportCallout}
+          onPress={() => router.push('/support' as any)}
+          activeOpacity={0.9}
+        >
+          <View style={styles.supportLeft}>
+            <Text style={styles.supportTitle}>💜 {t('Talk to Me Directly', 'Habla Conmigo Directamente')}</Text>
+            <Text style={styles.supportSub}>
+              {t('Need guidance from a parent who has lived this? Book a 1:1 call.', '¿Necesitas orientación de un padre que lo ha vivido? Reserva una llamada.')}
+            </Text>
+          </View>
+          <Text style={styles.supportArrow}>→</Text>
+        </TouchableOpacity>
       </ScrollView>
+
+      {/* ── BOTTOM NAV BAR ─────────────────────────────────────────────────── */}
+      <View style={[styles.bottomNav, { paddingBottom: insets.bottom + SP.xs }]}>
+        <TouchableOpacity style={styles.navItem} onPress={() => {}} activeOpacity={0.7}>
+          <Ionicons name="home" size={22} color={C.purple} />
+          <Text style={[styles.navLabel, { color: C.purple }]}>{t('Home', 'Inicio')}</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.navItem} onPress={() => router.push('/tools' as any)} activeOpacity={0.7}>
+          <Ionicons name="map-outline" size={22} color={C.textLight} />
+          <Text style={styles.navLabel}>{t('Pathways', 'Caminos')}</Text>
+        </TouchableOpacity>
+
+        {/* SOS — raised center button */}
+        <View style={styles.navSosWrap}>
+          <TouchableOpacity
+            style={styles.sosBtn}
+            onPress={() => router.push('/parenting-pathways' as any)}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.sosBtnText}>SOS</Text>
+          </TouchableOpacity>
+        </View>
+
+        <TouchableOpacity style={styles.navItem} onPress={() => router.push('/tools' as any)} activeOpacity={0.7}>
+          <Ionicons name="construct-outline" size={22} color={C.textLight} />
+          <Text style={styles.navLabel}>{t('Tools', 'Herramientas')}</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.navItem} onPress={() => router.push('/settings' as any)} activeOpacity={0.7}>
+          <Ionicons name="person-outline" size={22} color={C.textLight} />
+          <Text style={styles.navLabel}>{t('Profile', 'Perfil')}</Text>
+        </TouchableOpacity>
+      </View>
+
       <HamburgerMenu visible={menuOpen} onClose={() => setMenuOpen(false)} />
     </View>
   );
 }
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: C.bg },
+
+  // Header
+  header: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    paddingHorizontal: SP.lg,
+    paddingBottom: SP.md,
+    backgroundColor: C.white,
+  },
+  headerLeft: { flex: 1 },
+  greetingSmall: { fontSize: 12, color: C.textMid, fontWeight: '500', marginBottom: 2 },
+  greetingName:  { fontSize: 24, fontWeight: '700', color: C.text, marginBottom: 2 },
+  greetingSub:   { fontSize: 14, color: C.purple, fontWeight: '500' },
+  avatarCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: C.lavender,
+    borderWidth: 2,
+    borderColor: C.lavenderAccent,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: SP.md,
+    marginTop: SP.xs,
+  },
+  avatarText: { fontSize: 18, fontWeight: '700', color: C.purpleDark },
+
+  // Rainbow bar
+  rainbowBar: { height: 3, width: '100%' },
+
+  // Scroll
+  scroll: { flex: 1 },
+  scrollContent: { paddingTop: SP.lg },
+
+  // Search
+  searchWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: C.white,
+    borderRadius: R.pill,
+    borderWidth: 1,
+    borderColor: C.border,
+    marginHorizontal: SP.lg,
+    marginBottom: SP.md,
+    paddingHorizontal: SP.md,
+    paddingVertical: Platform.OS === 'ios' ? SP.md : SP.sm,
+    shadowColor: C.purple,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  searchIcon: { marginRight: SP.sm },
+  searchInput: { flex: 1, fontSize: 14, color: C.text },
+
+  // Priority chips
+  chipsScroll: { marginBottom: SP.lg },
+  chipsContent: { paddingHorizontal: SP.lg, gap: SP.sm },
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: R.pill,
+    borderWidth: 1,
+    paddingHorizontal: SP.md,
+    paddingVertical: SP.sm - 1,
+    gap: SP.xs,
+  },
+  chipIcon: { fontSize: 13 },
+  chipLabel: { fontSize: 13, fontWeight: '600' },
+
+  // Section
+  section: { marginBottom: SP.lg, paddingHorizontal: SP.lg },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: SP.md },
+  sectionLabel: { fontSize: 11, fontWeight: '700', color: C.textLight, letterSpacing: 0.8 },
+  seeAll: { fontSize: 12, color: C.purple, fontWeight: '600' },
+
+  // Reminder card
+  reminderCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: C.white,
+    borderRadius: R.md,
+    borderWidth: 1,
+    borderColor: C.border,
+    overflow: 'hidden',
+    marginBottom: SP.sm,
+    shadowColor: C.purple,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  reminderAccent: { width: 4, alignSelf: 'stretch' },
+  reminderIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: SP.md,
+  },
+  reminderIcon: { fontSize: 20 },
+  reminderBody: { flex: 1, paddingVertical: SP.md, paddingRight: SP.md },
+  reminderTitle: { fontSize: 15, fontWeight: '700', color: C.text, marginBottom: 2 },
+  reminderDate: { fontSize: 13, color: C.textMid },
+
+  // Pathway card (transition-screen block style)
+  pathwayCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: C.white,
+    borderRadius: R.md,
+    borderWidth: 1,
+    borderColor: C.border,
+    overflow: 'hidden',
+    marginBottom: SP.sm,
+    shadowColor: C.purple,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  pathwayAccent: { width: 5, alignSelf: 'stretch' },
+  pathwayIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: SP.md,
+  },
+  pathwayIcon: { fontSize: 20 },
+  pathwayBody: { flex: 1, paddingVertical: SP.md },
+  pathwayName: { fontSize: 15, fontWeight: '700', color: C.text, marginBottom: 2 },
+  pathwaySub:  { fontSize: 12, color: C.textMid, marginBottom: SP.sm },
+  progressTrack: {
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: C.border,
+    overflow: 'hidden',
+    marginRight: SP.md,
+  },
+  progressFill: { height: 5, borderRadius: 3 },
+  quickAddBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: C.purple,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: SP.md,
+  },
+  quickAddText: { fontSize: 20, color: C.white, lineHeight: 24, marginTop: -1 },
+  resumeLink: { fontSize: 13, fontWeight: '600', marginRight: SP.md },
+
+  // Start pathway prompt
+  startPathwayPrompt: {
+    backgroundColor: C.lavender,
+    borderRadius: R.md,
+    padding: SP.md,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: C.lavenderAccent,
+  },
+  startPathwayText: { fontSize: 14, color: C.purpleDark, fontWeight: '600' },
+
+  // Pinned tools
+  pinnedRow: { flexDirection: 'row', gap: SP.sm },
+  pinnedTile: {
+    flex: 1,
+    borderRadius: R.sm,
+    borderWidth: 1,
+    padding: SP.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 80,
+    shadowColor: C.purple,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  pinnedIcon:  { fontSize: 26, marginBottom: SP.xs },
+  pinnedLabel: { fontSize: 11, fontWeight: '700', textAlign: 'center' },
+
+  // Upgrade banner
+  upgradeBannerWrap: { marginHorizontal: SP.lg, marginBottom: SP.md, borderRadius: R.md, overflow: 'hidden' },
+  upgradeBannerInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: SP.lg,
+  },
+  upgradeLeft: { flex: 1 },
+  upgradeTitle: { fontSize: 15, fontWeight: '700', color: C.white, marginBottom: 4 },
+  upgradeSub:   { fontSize: 13, color: 'rgba(255,255,255,0.8)', lineHeight: 18 },
+  upgradeArrow: { fontSize: 20, color: C.white, marginLeft: SP.md },
+
+  // Support callout
+  supportCallout: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: SP.lg,
+    marginBottom: SP.md,
+    backgroundColor: C.lavender,
+    borderRadius: R.md,
+    borderWidth: 1,
+    borderColor: C.lavenderAccent,
+    padding: SP.lg,
+  },
+  supportLeft: { flex: 1 },
+  supportTitle: { fontSize: 15, fontWeight: '700', color: C.purpleDark, marginBottom: 4 },
+  supportSub:   { fontSize: 13, color: C.textMid, lineHeight: 18 },
+  supportArrow: { fontSize: 20, color: C.purple, marginLeft: SP.md },
+
+  // Bottom nav
+  bottomNav: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    backgroundColor: C.white,
+    borderTopWidth: 1,
+    borderTopColor: C.border,
+    paddingTop: SP.sm,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 8,
+  },
+  navItem: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    paddingBottom: SP.xs,
+  },
+  navLabel: { fontSize: 10, color: C.textLight, marginTop: 2, fontWeight: '500' },
+  navSosWrap: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    marginBottom: -SP.sm,
+  },
+  sosBtn: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: C.sos,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: C.sosDark,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.35,
+    shadowRadius: 6,
+    elevation: 8,
+    borderWidth: 3,
+    borderColor: C.white,
+  },
+  sosBtnText: { fontSize: 13, fontWeight: '800', color: C.white, letterSpacing: 0.5 },
+});
