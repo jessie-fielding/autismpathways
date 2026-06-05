@@ -22,13 +22,14 @@ import { useRouter } from 'expo-router';
 import {
   initConnection,
   endConnection,
-  getSubscriptions,
+  fetchProducts,
   requestPurchase,
   getAvailablePurchases,
   finishTransaction,
   purchaseErrorListener,
   purchaseUpdatedListener,
-  presentCodeRedemptionSheet,
+  presentCodeRedemptionSheetIOS,
+  ErrorCode,
   type Purchase,
   type PurchaseError,
 } from 'react-native-iap';
@@ -158,7 +159,7 @@ const PRODUCT_IDS = [PRODUCT_ID_ANNUAL, PRODUCT_ID_MONTHLY];
 const FEATURES = [
   { icon: '🎙️', title: 'IEP Meeting Recorder',           sub: 'Record, transcribe & AI-summarize IEP meetings' },
   { icon: '📋', title: 'Full IEP Goal Tracker',           sub: 'Unlimited goals, meeting notes, and progress logs' },
-  { icon: '✨', title: 'AI Transition Guide',             sub: 'Personalized action plan based on your child's profile' },
+  { icon: '✨', title: 'AI Transition Guide',             sub: "Personalized action plan based on your child's profile" },
   { icon: '🏥', title: '891+ Provider Directory',         sub: 'All 50 states · 5 specialties · Caregiver Verified' },
   { icon: '🏠', title: 'Group Home & Housing Finder',     sub: 'Waitlist status, contacts, and application tips' },
   { icon: '🎓', title: 'College & Vocational Lookup',     sub: 'Think College programs + VR services by state' },
@@ -215,14 +216,14 @@ export default function PaywallScreen() {
 
         purchaseErrorSub = purchaseErrorListener((error: PurchaseError) => {
           setPurchasing(false);
-          if (error.code !== 'E_USER_CANCELLED') {
+          if (error.code !== ErrorCode.UserCancelled) {
             Alert.alert('Purchase Failed', error.message || 'Something went wrong. Please try again.');
           }
         });
 
-        const subs = await getSubscriptions({ skus: PRODUCT_IDS });
-        subs.forEach((sub) => {
-          const price = (sub as any).localizedPrice ?? null;
+        const subs = await fetchProducts({ skus: PRODUCT_IDS, type: 'subs' });
+        (subs ?? []).forEach((sub: any) => {
+          const price = sub.localizedPrice ?? sub.displayPrice ?? null;
           if (sub.productId === PRODUCT_ID_ANNUAL)  setAnnualPrice(price  ?? '$119.99');
           if (sub.productId === PRODUCT_ID_MONTHLY) setMonthlyPrice(price ?? '$14.99');
         });
@@ -268,7 +269,7 @@ export default function PaywallScreen() {
       });
     } catch (e: any) {
       setPurchasing(false);
-      if (e?.code !== 'E_USER_CANCELLED') {
+      if (e?.code !== ErrorCode.UserCancelled && e?.code !== 'E_USER_CANCELLED') {
         Alert.alert('Error', e?.message || 'Could not start purchase. Please try again.');
       }
     }
@@ -418,7 +419,7 @@ export default function PaywallScreen() {
               style={styles.promoBtn}
               onPress={async () => {
                 try {
-                  await presentCodeRedemptionSheet();
+                  await presentCodeRedemptionSheetIOS();
                 } catch {
                   // Fallback: open App Store offer code redemption URL
                   const url = 'https://apps.apple.com/redeem?ctx=offercodes&id=6744286148&code=';

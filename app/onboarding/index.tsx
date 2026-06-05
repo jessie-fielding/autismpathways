@@ -392,7 +392,7 @@ const styles = StyleSheet.create({
   lottiePlaceholder: {
     width: '100%', height: '100%',
     backgroundColor: 'rgba(255,255,255,0.65)',
-    borderRadius: RADIUS.xl,
+    borderRadius: RADIUS.lg,
     alignItems: 'center', justifyContent: 'center',
     borderWidth: 2, borderColor: 'rgba(124,111,212,0.15)',
     borderStyle: 'dashed',
