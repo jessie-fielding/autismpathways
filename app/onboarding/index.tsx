@@ -37,6 +37,7 @@ const VIDEO_SOURCES: Record<string, any> = {
   card4: require('../../assets/animations/onboarding/card4.mp4'),
   card5: require('../../assets/animations/onboarding/card5.mp4'),
   card6: require('../../assets/animations/onboarding/card6.mp4'),
+  card8: require('../../assets/animations/onboarding/card8.mp4'),
 };
 
 // ── Card definitions ──────────────────────────────────────────────────────────
@@ -117,6 +118,7 @@ const CARD_DEFS = [
     ],
     body: '',
     bg: ['#F5F3FF', '#FDFCFF'] as [string, string],
+    video: 'card8',
     // lottie: require('../../assets/animations/onboarding/card8.json'),
     lottie: null,
     isLast: true,
