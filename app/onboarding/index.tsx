@@ -37,6 +37,7 @@ const VIDEO_SOURCES: Record<string, any> = {
   card4: require('../../assets/animations/onboarding/card4.mp4'),
   card5: require('../../assets/animations/onboarding/card5.mp4'),
   card6: require('../../assets/animations/onboarding/card6.mp4'),
+  card7: require('../../assets/animations/onboarding/card7.mp4'),
   card8: require('../../assets/animations/onboarding/card8.mp4'),
 };
 
@@ -103,6 +104,7 @@ const CARD_DEFS = [
     headline: 'Just Know You Are Safe Here',
     body: 'Share, learn, and grow together in the Safe Space... or just vent privately and keep your thoughts completely to yourself. Either way, you belong here.',
     bg: ['#EDE9FC', '#F5F4FB'] as [string, string],
+    video: 'card7',
     // lottie: require('../../assets/animations/onboarding/card7.json'),
     lottie: null,
   },
