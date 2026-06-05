@@ -351,7 +351,7 @@ export default function DashboardScreen() {
       {/* ── SCROLLABLE CONTENT ─────────────────────────────────────────────── */}
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 90 }]}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + (isPremium ? 20 : 90) }]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >

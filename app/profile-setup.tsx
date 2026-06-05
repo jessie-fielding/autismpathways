@@ -26,6 +26,20 @@ const AVATAR_EMOJIS = [
   '🐬', '🌸', '🎯', '⚡',
 ];
 
+// Journey / concern options — drive dashboard personalisation
+const JOURNEY_OPTIONS = [
+  { id: 'diagnosis',   icon: '🔍', label: 'Getting a Diagnosis',      sub: 'Evaluations, waitlists & next steps' },
+  { id: 'medicaid',   icon: '💳', label: 'Medicaid / Insurance',       sub: 'Applying, appealing, or understanding coverage' },
+  { id: 'waivers',    icon: '🛡️', label: 'Waiver Programs',            sub: 'HCBS, DD waivers, and state programs' },
+  { id: 'school',     icon: '🏫', label: 'IEP / School Support',       sub: 'IEP meetings, 504 plans, and school rights' },
+  { id: 'behavior',   icon: '🧠', label: 'Behavior & Daily Life',      sub: 'Meltdowns, routines, sensory needs' },
+  { id: 'speech',     icon: '🗣️', label: 'Speech & Communication',     sub: 'AAC, speech therapy, and language goals' },
+  { id: 'sensory',    icon: '🌊', label: 'Sensory Processing',         sub: 'OT, sensory diets, and environment' },
+  { id: 'sleep',      icon: '🌙', label: 'Sleep Challenges',           sub: 'Sleep studies, melatonin, bedtime routines' },
+  { id: 'transition', icon: '🎓', label: 'Transition to Adulthood',    sub: 'Adult services, employment, housing' },
+  { id: 'family',     icon: '❤️', label: 'Family & Self-Care',         sub: 'Sibling support, caregiver burnout, community' },
+];
+
 const RELATIONSHIPS = [
   'Parent', 'Guardian', 'Caregiver', 'Grandparent',
   'Foster Parent', 'Therapist', 'Teacher', 'Other',
@@ -62,6 +76,14 @@ export default function ProfileSetupScreen() {
   const [relationship, setRelationship]   = useState('');
   const [state, setState]                 = useState('');
   const [county, setCounty]               = useState('');
+
+  // Journey / priorities — drives dashboard chips and pathway cards
+  const [selectedJourneys, setSelectedJourneys] = useState<string[]>([]);
+  const toggleJourney = (id: string) => {
+    setSelectedJourneys((prev) =>
+      prev.includes(id) ? prev.filter((j) => j !== id) : [...prev, id]
+    );
+  };
 
   // Dynamic children
   const [childCount, setChildCount]       = useState(1);
@@ -146,6 +168,7 @@ export default function ProfileSetupScreen() {
         county: county.trim() || null,
         childName: firstChild.name.trim() || null,
         childAge: firstChild.age ? parseInt(firstChild.age) : null,
+        concerns: selectedJourneys.length > 0 ? selectedJourneys : null,
         createdAt: new Date().toISOString(),
       });
 
@@ -282,6 +305,34 @@ export default function ProfileSetupScreen() {
           </View>
         ))}
 
+        {/* What journey are you on? */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>What journey are you on? 🗺️</Text>
+          <Text style={styles.sectionSub}>Pick all that apply — this personalises your dashboard and pathways</Text>
+          {JOURNEY_OPTIONS.map((opt) => {
+            const selected = selectedJourneys.includes(opt.id);
+            return (
+              <TouchableOpacity
+                key={opt.id}
+                style={[styles.journeyRow, selected && styles.journeyRowSelected]}
+                onPress={() => toggleJourney(opt.id)}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.journeyIconWrap, selected && styles.journeyIconWrapSelected]}>
+                  <Text style={styles.journeyIcon}>{opt.icon}</Text>
+                </View>
+                <View style={styles.journeyBody}>
+                  <Text style={[styles.journeyLabel, selected && styles.journeyLabelSelected]}>{opt.label}</Text>
+                  <Text style={styles.journeySub}>{opt.sub}</Text>
+                </View>
+                <View style={[styles.journeyCheck, selected && styles.journeyCheckSelected]}>
+                  {selected && <Text style={styles.journeyCheckText}>✓</Text>}
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
         <TouchableOpacity style={[styles.saveBtn, loading && styles.saveBtnDisabled]} onPress={handleSave} disabled={loading} activeOpacity={0.85}>
           <Text style={styles.saveBtnText}>{loading ? 'Saving…' : "Let's Get Started →"}</Text>
         </TouchableOpacity>
@@ -364,6 +415,19 @@ const styles = StyleSheet.create({
   saveBtnText: { fontSize: FONT_SIZES.md, fontWeight: '700', color: '#fff' },
   skipBtn: { alignItems: 'center', paddingVertical: SPACING.sm },
   skipBtnText: { fontSize: FONT_SIZES.sm, color: COLORS.textLight, textDecorationLine: 'underline' },
+  // Journey selector
+  journeyRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, paddingVertical: SPACING.sm, borderRadius: RADIUS.md, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.bg, paddingHorizontal: SPACING.sm, marginBottom: 6 },
+  journeyRowSelected: { borderColor: COLORS.purple, backgroundColor: '#F0EDFF' },
+  journeyIconWrap: { width: 40, height: 40, borderRadius: 20, backgroundColor: COLORS.white, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: COLORS.border },
+  journeyIconWrapSelected: { backgroundColor: COLORS.purple, borderColor: COLORS.purple },
+  journeyIcon: { fontSize: 20 },
+  journeyBody: { flex: 1 },
+  journeyLabel: { fontSize: FONT_SIZES.sm, fontWeight: '700', color: COLORS.text },
+  journeyLabelSelected: { color: COLORS.purple },
+  journeySub: { fontSize: FONT_SIZES.xs, color: COLORS.textLight, marginTop: 1 },
+  journeyCheck: { width: 24, height: 24, borderRadius: 12, borderWidth: 2, borderColor: COLORS.border, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.white },
+  journeyCheckSelected: { backgroundColor: COLORS.purple, borderColor: COLORS.purple },
+  journeyCheckText: { color: '#fff', fontSize: 13, fontWeight: '800' },
   // Modals
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
   modalSheet: { backgroundColor: COLORS.white, borderTopLeftRadius: RADIUS.lg, borderTopRightRadius: RADIUS.lg, paddingTop: SPACING.lg, paddingBottom: SPACING.xxxl, paddingHorizontal: SPACING.lg, maxHeight: '50%' },
