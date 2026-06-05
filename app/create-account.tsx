@@ -12,9 +12,9 @@ import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '../lib/theme';
 
 export default function CreateAccountScreen() {
   const router = useRouter();
-  const { signUp, confirmSignUp, resendConfirmationCode, signInWithGoogle, signInWithApple } = useAuth();
+  const { signUp, confirmSignUp, resendConfirmationCode, signInWithGoogle, signInWithApple, sendPhoneOtp, verifyPhoneOtp } = useAuth();
 
-  const [step, setStep] = useState<'form' | 'verify'>('form');
+  const [step, setStep] = useState<'form' | 'verify' | 'phone' | 'phone-verify'>('form');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [firstName, setFirstName] = useState('');
@@ -30,6 +30,9 @@ export default function CreateAccountScreen() {
   const [appleLoading, setAppleLoading] = useState(false);
   const [error, setError] = useState('');
   const [resendMsg, setResendMsg] = useState('');
+  const [phone, setPhone] = useState('');
+  const [phoneCode, setPhoneCode] = useState('');
+  const [phoneLoading, setPhoneLoading] = useState(false);
 
   const handleSignUp = async () => {
     if (!email || !password || !firstName || !lastName) {
@@ -115,6 +118,45 @@ export default function CreateAccountScreen() {
     setAppleLoading(false);
   };
 
+  const handleSendPhoneOtp = async () => {
+    const cleaned = phone.replace(/[^\d]/g, '');
+    const e164 = cleaned.startsWith('1') ? `+${cleaned}` : `+1${cleaned}`;
+    if (cleaned.length < 10) {
+      setError('Please enter a valid US phone number');
+      return;
+    }
+    setPhoneLoading(true);
+    setError('');
+    const result = await sendPhoneOtp(e164);
+    setPhoneLoading(false);
+    if (result.success) {
+      setPhone(e164);
+      setStep('phone-verify');
+    } else {
+      setError(result.error || 'Could not send code. Please try again.');
+    }
+  };
+
+  const handleVerifyPhoneOtp = async () => {
+    if (!phoneCode || phoneCode.length < 6) {
+      setError('Please enter the 6-digit code');
+      return;
+    }
+    setPhoneLoading(true);
+    setError('');
+    const result = await verifyPhoneOtp(phone, phoneCode, firstName || undefined, lastName || undefined);
+    setPhoneLoading(false);
+    if (result.success) {
+      if (result.isNewUser) {
+        router.replace('/profile-setup');
+      } else {
+        router.replace('/(tabs)/dashboard');
+      }
+    } else {
+      setError(result.error || 'Verification failed. Please try again.');
+    }
+  };
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -130,7 +172,10 @@ export default function CreateAccountScreen() {
         {/* White card body */}
         <View style={styles.body}>
           <Text style={styles.title}>
-            {step === 'form' ? 'Create your free account' : 'Check your email'}
+            {step === 'form' ? 'Create your free account'
+              : step === 'verify' ? 'Check your email'
+              : step === 'phone' ? 'Sign up with phone'
+              : 'Enter your code'}
           </Text>
 
             {/* Error */}
@@ -140,7 +185,111 @@ export default function CreateAccountScreen() {
               </View>
             )}
 
-            {step === 'form' ? (
+            {step === 'phone' ? (
+              <>
+                <Text style={styles.phoneHint}>
+                  We'll text you a 6-digit code — no password needed.
+                </Text>
+
+                {/* Optional name fields for new users */}
+                <View style={styles.nameRow}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.fieldLabel}>First Name</Text>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="e.g., Jessie"
+                      placeholderTextColor={COLORS.textLight}
+                      value={firstName}
+                      onChangeText={setFirstName}
+                      autoCapitalize="words"
+                      editable={!phoneLoading}
+                    />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.fieldLabel}>Last Name</Text>
+                    <TextInput
+                      style={styles.input}
+                      placeholder=""
+                      placeholderTextColor={COLORS.textLight}
+                      value={lastName}
+                      onChangeText={setLastName}
+                      autoCapitalize="words"
+                      editable={!phoneLoading}
+                    />
+                  </View>
+                </View>
+
+                <Text style={styles.fieldLabel}>Phone Number</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="(555) 000-0000"
+                  placeholderTextColor={COLORS.textLight}
+                  value={phone}
+                  onChangeText={setPhone}
+                  keyboardType="phone-pad"
+                  autoComplete="tel"
+                  editable={!phoneLoading}
+                  returnKeyType="go"
+                  onSubmitEditing={handleSendPhoneOtp}
+                />
+
+                <TouchableOpacity
+                  onPress={handleSendPhoneOtp}
+                  disabled={phoneLoading}
+                  style={[styles.primaryBtn, phoneLoading && styles.disabled]}
+                  activeOpacity={0.85}
+                >
+                  {phoneLoading
+                    ? <ActivityIndicator color="#fff" />
+                    : <Text style={styles.primaryBtnText}>Send Code →</Text>
+                  }
+                </TouchableOpacity>
+
+                <TouchableOpacity onPress={() => { setStep('form'); setError(''); }} style={styles.switchBtn}>
+                  <Text style={styles.switchText}>
+                    Use email instead? <Text style={styles.switchLink}>Go back</Text>
+                  </Text>
+                </TouchableOpacity>
+              </>
+            ) : step === 'phone-verify' ? (
+              <>
+                <Text style={styles.verifyBody}>
+                  We texted a 6-digit code to{"\n"}
+                  <Text style={styles.verifyEmail}>{phone}</Text>
+                </Text>
+
+                <TextInput
+                  style={[styles.input, styles.codeInput]}
+                  placeholder="000000"
+                  placeholderTextColor={COLORS.textLight}
+                  value={phoneCode}
+                  onChangeText={setPhoneCode}
+                  keyboardType="number-pad"
+                  maxLength={6}
+                  editable={!phoneLoading}
+                  returnKeyType="go"
+                  onSubmitEditing={handleVerifyPhoneOtp}
+                />
+
+                <TouchableOpacity
+                  onPress={handleVerifyPhoneOtp}
+                  disabled={phoneLoading}
+                  style={[styles.primaryBtn, phoneLoading && styles.disabled]}
+                  activeOpacity={0.85}
+                >
+                  {phoneLoading
+                    ? <ActivityIndicator color="#fff" />
+                    : <Text style={styles.primaryBtnText}>Verify & Continue</Text>
+                  }
+                </TouchableOpacity>
+
+                <TouchableOpacity onPress={() => { setStep('phone'); setPhoneCode(''); setError(''); }} style={styles.switchBtn}>
+                  <Text style={styles.switchText}>
+                    Wrong number? <Text style={styles.switchLink}>Go back</Text>
+                  </Text>
+                </TouchableOpacity>
+              </>
+            ) : step === 'form' ? (
               <>
                 {/* Google Sign-Up */}
                 <TouchableOpacity
@@ -168,6 +317,17 @@ export default function CreateAccountScreen() {
                     onPress={handleAppleSignIn}
                   />
                 )}
+
+                {/* Phone auth button */}
+                <TouchableOpacity
+                  onPress={() => { setStep('phone'); setError(''); }}
+                  disabled={loading || googleLoading || appleLoading}
+                  style={[styles.phoneBtn, (loading || googleLoading || appleLoading) && styles.disabled]}
+                  activeOpacity={0.85}
+                >
+                  <Text style={styles.phoneBtnIcon}>📱</Text>
+                  <Text style={styles.phoneBtnText}>Continue with Phone</Text>
+                </TouchableOpacity>
 
                 {/* Divider */}
                 <View style={styles.dividerRow}>
@@ -519,6 +679,28 @@ const styles = StyleSheet.create({
   },
   primaryBtnText: { color: COLORS.white, fontSize: FONT_SIZES.md, fontWeight: '700' },
   disabled: { opacity: 0.6 },
+  phoneBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING.sm,
+    backgroundColor: '#E8F4FD',
+    borderRadius: RADIUS.sm,
+    borderWidth: 1.5,
+    borderColor: '#B3D9F5',
+    paddingVertical: SPACING.lg,
+    marginBottom: SPACING.md,
+    minHeight: 48,
+  },
+  phoneBtnIcon: { fontSize: 16 },
+  phoneBtnText: { fontSize: FONT_SIZES.sm, fontWeight: '700', color: '#1A7FC1' },
+  phoneHint: {
+    fontSize: FONT_SIZES.sm,
+    color: COLORS.textMid,
+    textAlign: 'center',
+    marginBottom: SPACING.lg,
+    lineHeight: 22,
+  },
   switchBtn: { paddingVertical: SPACING.sm, alignItems: 'center' },
   switchText: { fontSize: FONT_SIZES.sm, color: COLORS.textLight },
   switchLink: { color: COLORS.purple, fontWeight: '600' },

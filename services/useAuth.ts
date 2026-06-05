@@ -515,6 +515,52 @@ export function AuthProvider({ children }: any) {
     });
   };
 
+  // ── Phone OTP sign-up / sign-in ─────────────────────────────────────────
+  const LAMBDA_BASE = 'https://inu3nb5lrfvftfyiwprftqshpy0zcegu.lambda-url.us-east-2.on.aws';
+
+  const sendPhoneOtp = async (phone: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const res = await fetch(`${LAMBDA_BASE}/api/auth/phone-otp/send`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone }),
+      });
+      const data = await res.json();
+      if (!res.ok) return { success: false, error: data.error || 'Failed to send code.' };
+      return { success: true };
+    } catch (e: any) {
+      return { success: false, error: e.message || 'Network error.' };
+    }
+  };
+
+  const verifyPhoneOtp = async (
+    phone: string,
+    otp: string,
+    firstName?: string,
+    lastName?: string
+  ): Promise<{ success: boolean; isNewUser?: boolean; error?: string }> => {
+    try {
+      const res = await fetch(`${LAMBDA_BASE}/api/auth/phone-otp/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone, otp, firstName, lastName }),
+      });
+      const data = await res.json();
+      if (!res.ok) return { success: false, error: data.error || 'Verification failed.' };
+      // Persist tokens the same way email sign-in does (idToken is the bearer)
+      const username = `phone_${phone.replace(/\+/g, '')}`;
+      await AsyncStorage.setItem(TOKEN_KEY, data.idToken);
+      await AsyncStorage.setItem(USER_EMAIL_KEY, username);
+      setUserEmail(username);
+      setIsSignedIn(true);
+      identifyUser(username, phone);
+      trackSignIn('phone');
+      return { success: true, isNewUser: data.isNewUser };
+    } catch (e: any) {
+      return { success: false, error: e.message || 'Network error.' };
+    }
+  };
+
   // ───────────────────────────────────────────────────────────────────────────
   const value = {
     isSignedIn,
@@ -532,6 +578,8 @@ export function AuthProvider({ children }: any) {
     signOut,
     signOutAndForget,
     deleteAccount,
+    sendPhoneOtp,
+    verifyPhoneOtp,
   };
 
   return React.createElement(AuthContext.Provider, { value }, children);

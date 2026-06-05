@@ -169,11 +169,11 @@ export const trackChildProfileAdded = () =>
   logEvent('child_profile_added');
 
 /** User signs in */
-export const trackSignIn = (method: 'apple' | 'email' | 'google') =>
+export const trackSignIn = (method: 'apple' | 'email' | 'google' | 'phone') =>
   logEvent('sign_in', { method });
 
 /** User signs up (first account creation) */
-export const trackSignUp = (method: 'apple' | 'email' | 'google') =>
+export const trackSignUp = (method: 'apple' | 'email' | 'google' | 'phone') =>
   logEvent('sign_up_completed', { sign_up_method: method, platform: 'mobile' });
 
 /** User opens Provider Translator */
