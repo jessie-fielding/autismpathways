@@ -450,4 +450,5 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.sm, paddingHorizontal: SPACING.md, alignItems: 'center',
   },
   toastText: { color: COLORS.white, fontSize: FONT_SIZES.sm, fontWeight: '600' },
+  dashText: { fontSize: FONT_SIZES.sm, color: COLORS.purple, fontWeight: '600' },
 });

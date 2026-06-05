@@ -64,7 +64,7 @@ export default function CreateAccountScreen() {
       // Save first name so onboarding can personalise the welcome card
       await AsyncStorage.setItem('ap_parent_first_name', firstName.trim());
       // New users go through onboarding; existing users go straight to dashboard
-      router.replace('/onboarding');
+      router.replace('/profile-setup');
     } else {
       setError(result.error || 'Verification failed. Please check the code and try again.');
     }
@@ -84,7 +84,7 @@ export default function CreateAccountScreen() {
       const profile = await storage.getProfile();
       // New social sign-up: no profile yet → show onboarding first
       if (!profile) {
-        router.replace('/onboarding');
+        router.replace('/profile-setup');
       } else {
         router.replace('/(tabs)/dashboard');
       }
@@ -102,7 +102,7 @@ export default function CreateAccountScreen() {
       const profile = await storage.getProfile();
       // New social sign-up: no profile yet → show onboarding first
       if (!profile) {
-        router.replace('/onboarding');
+        router.replace('/profile-setup');
       } else {
         router.replace('/(tabs)/dashboard');
       }

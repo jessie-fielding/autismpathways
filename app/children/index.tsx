@@ -27,12 +27,20 @@ const LEVEL_OPTIONS = [
 ];
 
 // ── Blank form state ──────────────────────────────────────────────────────────
-const BLANK: Omit<ChildProfile, 'id' | 'createdAt' | 'color' | 'avatar'> = {
+interface ChildForm { name: string; dob: string; diagnosis: string; diagnosisLevel: string; avatar: string; }
+const BLANK: ChildForm = {
   name: '',
   dob: '',
   diagnosis: '',
   diagnosisLevel: '',
+  avatar: '',
 };
+
+const AVATAR_EMOJIS = [
+  '🦁', '🐼', '🐨', '🦊', '🐸', '🦋', '🌟', '🌈', '🦄', '🐶',
+  '🐱', '🐭', '🐹', '🐰', '🐻', '🐯', '🐮', '🐷', '🐙', '🦖',
+  '🚀', '⚡', '🌺', '🍀', '🎈', '🎨', '🏆', '💎', '🌙', '☀️',
+];
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -47,7 +55,7 @@ export default function ManageChildrenScreen() {
   // Modal state
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null); // null = adding new
-  const [form, setForm] = useState({ ...BLANK });
+  const [form, setForm] = useState<ChildForm>({ ...BLANK });
   const [saving, setSaving] = useState(false);
 
   // ── Load ────────────────────────────────────────────────────────────────────
@@ -83,6 +91,7 @@ export default function ManageChildrenScreen() {
       dob: child.dob || '',
       diagnosis: child.diagnosis || '',
       diagnosisLevel: child.diagnosisLevel || '',
+      avatar: child.avatar || '',
     });
     setShowModal(true);
   };
@@ -101,6 +110,7 @@ export default function ManageChildrenScreen() {
           dob: form.dob.trim(),
           diagnosis: form.diagnosis.trim(),
           diagnosisLevel: form.diagnosisLevel as ChildProfile['diagnosisLevel'],
+          avatar: form.avatar || undefined,
         });
       } else {
         const newChild = await addChild({
@@ -108,6 +118,7 @@ export default function ManageChildrenScreen() {
           dob: form.dob.trim(),
           diagnosis: form.diagnosis.trim(),
           diagnosisLevel: form.diagnosisLevel as ChildProfile['diagnosisLevel'],
+          avatar: form.avatar || undefined,
         });
         // Auto-switch to the new child if this is the first one
         const current = await getActiveChildId();
@@ -247,6 +258,19 @@ export default function ManageChildrenScreen() {
               {editingId ? 'Edit Child' : 'Add a Child'}
             </Text>
 
+            {/* Avatar Emoji Picker */}
+            <Text style={styles.fieldLabel}>Pick an Avatar</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.emojiScroll} contentContainerStyle={styles.emojiScrollContent}>
+              {AVATAR_EMOJIS.map((emoji) => (
+                <TouchableOpacity
+                  key={emoji}
+                  style={[styles.emojiOption, form.avatar === emoji && styles.emojiOptionSelected]}
+                  onPress={() => setForm((f) => ({ ...f, avatar: f.avatar === emoji ? '' : emoji }))}
+                >
+                  <Text style={styles.emojiOptionText}>{emoji}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
             {/* Name */}
             <Text style={styles.fieldLabel}>Child's Name *</Text>
             <TextInput
@@ -374,6 +398,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center',
     padding: SPACING.lg,
   },
+  emojiScroll: { marginBottom: SPACING.md },
+  emojiScrollContent: { gap: 8, paddingHorizontal: 2 },
+  emojiOption: {
+    width: 44, height: 44, borderRadius: 22,
+    alignItems: 'center', justifyContent: 'center',
+    backgroundColor: COLORS.bg,
+    borderWidth: 2, borderColor: COLORS.border,
+  },
+  emojiOptionSelected: {
+    borderColor: COLORS.purple,
+    backgroundColor: COLORS.lavender ?? '#EDE9FC',
+  },
+  emojiOptionText: { fontSize: 24 },
   avatar: {
     width: 48, height: 48, borderRadius: 24,
     alignItems: 'center', justifyContent: 'center', marginRight: SPACING.md,

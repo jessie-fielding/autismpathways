@@ -144,12 +144,21 @@ function VideoCard({ source }: { source: any }) {
     p.play();
   });
   return (
-    <VideoView
-      player={player}
-      contentFit="contain"
-      style={styles.lottie}
-      nativeControls={false}
-    />
+    <View style={{ width: '100%', height: '100%' }}>
+      <VideoView
+        player={player}
+        contentFit="cover"
+        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: RADIUS.lg }}
+        nativeControls={false}
+      />
+      <LinearGradient
+        colors={['transparent', 'rgba(0,0,0,0.32)']}
+        style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '55%', borderBottomLeftRadius: RADIUS.lg, borderBottomRightRadius: RADIUS.lg }}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        pointerEvents="none"
+      />
+    </View>
   );
 }
 
@@ -180,7 +189,7 @@ export default function OnboardingScreen() {
 
   const completeOnboarding = async () => {
     await AsyncStorage.setItem('ap_onboarding_complete', 'true');
-    router.replace('/profile-setup');
+    router.replace('/(tabs)/dashboard');
   };
 
   const goNext = () => {
@@ -387,8 +396,10 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.xl,
     alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: RADIUS.lg,
+    overflow: 'hidden',
   },
-  lottie: { width: '100%', height: '100%' },
+  lottie: { width: '100%', height: '100%', borderRadius: RADIUS.lg },
   lottiePlaceholder: {
     width: '100%', height: '100%',
     backgroundColor: 'rgba(255,255,255,0.65)',

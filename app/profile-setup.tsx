@@ -29,7 +29,7 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.xl,
   },
   title: {
-    fontSize: FONT_SIZES.xxxl,
+    fontSize: FONT_SIZES.xxl,
     fontWeight: '800',
     color: COLORS.text,
     marginBottom: SPACING.md,
@@ -123,7 +123,7 @@ export default function ProfileSetupScreen() {
         { id: 3, title: 'Complete the ICD support quiz', completed: false },
       ]);
 
-      router.replace('/(tabs)/dashboard');
+      router.replace('/onboarding');
     } catch (error) {
       console.error('Failed to save profile:', error);
       alert('Something went wrong. Please try again.');
@@ -149,7 +149,7 @@ export default function ProfileSetupScreen() {
           <Text style={styles.label}>Child's Name</Text>
           <TextInput
             style={styles.input}
-            placeholder="e.g., Ellie"
+            placeholder="Ellie"
             value={childName}
             onChangeText={setChildName}
             editable={!loading}
@@ -160,7 +160,7 @@ export default function ProfileSetupScreen() {
           <Text style={styles.label}>Age</Text>
           <TextInput
             style={styles.input}
-            placeholder="e.g., 6"
+            placeholder="6"
             value={childAge}
             onChangeText={setChildAge}
             keyboardType="number-pad"
@@ -172,7 +172,7 @@ export default function ProfileSetupScreen() {
           <Text style={styles.label}>State</Text>
           <TextInput
             style={styles.input}
-            placeholder="e.g., Colorado"
+            placeholder="Colorado"
             value={state}
             onChangeText={setState}
             editable={!loading}

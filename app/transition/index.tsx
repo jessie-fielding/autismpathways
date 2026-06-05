@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useLanguage } from '../../lib/LanguageContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, SPACING, FONT_SIZES, RADIUS } from '../../lib/theme';
+import { useIsPremium } from '../../hooks/useIsPremium';
 
 const STAGES = [
   {
@@ -136,10 +137,124 @@ const PREMIUM_TOOLS = [
   },
 ];
 
+
+const TOOL_GROUPS = [
+  {
+    id: 'financial',
+    emoji: '💰',
+    title: 'Financial & Benefits',
+    accent: '#059669',
+    tools: ['able'],
+  },
+  {
+    id: 'employment',
+    emoji: '💼',
+    title: 'Employment & Education',
+    accent: '#5B9BD5',
+    tools: ['preets', 'jobs', 'college'],
+  },
+  {
+    id: 'housing',
+    emoji: '🏡',
+    title: 'Housing & Day Programs',
+    accent: '#4A1942',
+    tools: ['dayprograms', 'grouphomes', 'apartments'],
+  },
+];
+
+function AccordionGroup({
+  group,
+  isPremium,
+  openGroupId,
+  setOpenGroupId,
+  onToolPress,
+  onPaywall,
+}: {
+  group: typeof TOOL_GROUPS[0];
+  isPremium: boolean;
+  openGroupId: string | null;
+  setOpenGroupId: (id: string | null) => void;
+  onToolPress: (route: string) => void;
+  onPaywall: () => void;
+}) {
+  const isOpen = openGroupId === group.id;
+  const tools = PREMIUM_TOOLS.filter((t) => group.tools.includes(t.id));
+  return (
+    <View style={accordionStyles.wrap}>
+      <TouchableOpacity
+        style={[accordionStyles.header, { borderLeftColor: group.accent }]}
+        onPress={() => setOpenGroupId(isOpen ? null : group.id)}
+        activeOpacity={0.8}
+      >
+        <Text style={accordionStyles.headerEmoji}>{group.emoji}</Text>
+        <Text style={accordionStyles.headerTitle}>{group.title}</Text>
+        <Text style={accordionStyles.chevron}>{isOpen ? '▲' : '▼'}</Text>
+      </TouchableOpacity>
+      {isOpen && tools.map((tool) => (
+        <TouchableOpacity
+          key={tool.id}
+          style={accordionStyles.toolRow}
+          onPress={() => isPremium ? onToolPress(tool.route) : onPaywall()}
+          activeOpacity={0.8}
+        >
+          <View style={[accordionStyles.toolAccent, { backgroundColor: tool.accent }]} />
+          <Text style={accordionStyles.toolEmoji}>{tool.emoji}</Text>
+          <View style={accordionStyles.toolText}>
+            <Text style={accordionStyles.toolTitle}>{tool.title}</Text>
+            <Text style={accordionStyles.toolDesc}>{tool.desc}</Text>
+          </View>
+          {!isPremium && <Text style={accordionStyles.lockIcon}>🔒</Text>}
+          <Text style={accordionStyles.toolChevron}>›</Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+}
+
+const accordionStyles = StyleSheet.create({
+  wrap: {
+    marginBottom: 8,
+    borderRadius: 12,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    backgroundColor: '#fff',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 14,
+    gap: 10,
+    borderLeftWidth: 4,
+    backgroundColor: '#FAFAFA',
+  },
+  headerEmoji: { fontSize: 20 },
+  headerTitle: { flex: 1, fontSize: 15, fontWeight: '700', color: '#1A1A2E' },
+  chevron: { fontSize: 11, color: '#9CA3AF', fontWeight: '700' },
+  toolRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+    gap: 10,
+  },
+  toolAccent: { width: 3, height: 36, borderRadius: 2 },
+  toolEmoji: { fontSize: 22, width: 28, textAlign: 'center' },
+  toolText: { flex: 1 },
+  toolTitle: { fontSize: 13, fontWeight: '700', color: '#1A1A2E' },
+  toolDesc: { fontSize: 11, color: '#6B7280', marginTop: 2, lineHeight: 15 },
+  lockIcon: { fontSize: 14 },
+  toolChevron: { fontSize: 20, color: '#D1D5DB' },
+});
+
 export default function TransitionHub() {
   const router = useRouter();
   const { t } = useLanguage();
   const insets = useSafeAreaInsets();
+  const { isPremium } = useIsPremium();
+  const [openGroupId, setOpenGroupId] = useState<string | null>(null);
 
   return (
     <View style={styles.container}>
@@ -241,7 +356,13 @@ export default function TransitionHub() {
             <TouchableOpacity
               key={tool.id}
               style={styles.toolCard}
-              onPress={() => router.push(tool.route as any)}
+              onPress={() => {
+                if (!isPremium) {
+                  router.push('/paywall' as any);
+                  return;
+                }
+                router.push(tool.route as any);
+              }}
               activeOpacity={0.8}
             >
               <View style={[styles.toolAccent, { backgroundColor: tool.accent }]} />

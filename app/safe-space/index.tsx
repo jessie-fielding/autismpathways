@@ -99,6 +99,7 @@ export default function SafeSpaceScreen() {
   const [shareEntry, setShareEntry]  = useState<JournalEntry | null>(null);
   const [shareAnon, setShareAnon]    = useState(false);
   const [sharing, setSharing]        = useState(false);
+  const [sharePublic, setSharePublic] = useState<'none' | 'named' | 'anon'>('none');
   const toastTimer = useRef<any>(null);
 
   useFocusEffect(useCallback(() => {
@@ -141,6 +142,7 @@ export default function SafeSpaceScreen() {
     setTitle('');
     setBody('');
     setMood(null);
+    setSharePublic('none');
     setView('editor');
   };
 
@@ -149,6 +151,7 @@ export default function SafeSpaceScreen() {
     setTitle(entry.title);
     setBody(entry.body);
     setMood(entry.mood);
+    setSharePublic('none');
     setView('editor');
   };
 
@@ -200,7 +203,16 @@ export default function SafeSpaceScreen() {
     }
 
     await persistEntries(updated);
-    showToast('Entry saved 🔒');
+    // If user chose to share, post to community right away
+    const savedEntry = currentId
+      ? updated.find(e => e.id === currentId)
+      : updated[0];
+    if (sharePublic !== 'none' && savedEntry) {
+      await shareToForum(savedEntry, sharePublic === 'anon');
+    } else {
+      showToast('Entry saved 🔒');
+    }
+    setSharePublic('none');
     goList();
   };
 
@@ -404,6 +416,35 @@ export default function SafeSpaceScreen() {
                   <Text style={[styles.moodChipLabel, mood === m.key && { color: m.color, fontWeight: '600' }]}>{m.label}</Text>
                 </TouchableOpacity>
               ))}
+            </View>
+          </View>
+
+          {/* Share to community */}
+          <View style={styles.editorShareSection}>
+            <Text style={styles.editorShareLabel}>Share with community?</Text>
+            <Text style={styles.editorShareSub}>Optional — your entry will be posted to the Safe Space forum when you save.</Text>
+            <View style={styles.editorShareRow}>
+              <TouchableOpacity
+                style={[styles.editorShareBtn, sharePublic === 'none' && styles.editorShareBtnActive]}
+                onPress={() => setSharePublic('none')}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.editorShareBtnText, sharePublic === 'none' && styles.editorShareBtnTextActive]}>🔒 Private</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.editorShareBtn, sharePublic === 'named' && styles.editorShareBtnActive]}
+                onPress={() => setSharePublic('named')}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.editorShareBtnText, sharePublic === 'named' && styles.editorShareBtnTextActive]}>👤 As me</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.editorShareBtn, sharePublic === 'anon' && styles.editorShareBtnActive]}
+                onPress={() => setSharePublic('anon')}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.editorShareBtnText, sharePublic === 'anon' && styles.editorShareBtnTextActive]}>🙈 Anonymous</Text>
+              </TouchableOpacity>
             </View>
           </View>
 
@@ -736,6 +777,26 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
   },
   promptChipText: { fontSize: 12, fontWeight: '500', color: COLORS.textMid },
+  // Editor share section
+  editorShareSection: {
+    backgroundColor: '#f5f0ff',
+    borderRadius: RADIUS.md,
+    padding: SPACING.lg,
+    borderWidth: 1.5,
+    borderColor: COLORS.lavenderAccent,
+    marginBottom: SPACING.lg,
+  },
+  editorShareLabel: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.8, color: COLORS.purple, marginBottom: 4 },
+  editorShareSub: { fontSize: FONT_SIZES.xs, color: COLORS.textMid, lineHeight: 17, marginBottom: SPACING.md },
+  editorShareRow: { flexDirection: 'row', gap: SPACING.sm },
+  editorShareBtn: {
+    flex: 1, paddingVertical: 8, borderRadius: RADIUS.pill,
+    borderWidth: 1.5, borderColor: COLORS.border,
+    backgroundColor: COLORS.white, alignItems: 'center',
+  },
+  editorShareBtnActive: { backgroundColor: COLORS.purple, borderColor: COLORS.purple },
+  editorShareBtnText: { fontSize: 11, fontWeight: '600', color: COLORS.textMid },
+  editorShareBtnTextActive: { color: COLORS.white },
   // Read view
   readScroll: { paddingHorizontal: SPACING.lg, paddingTop: SPACING.lg },
   readingHeader: { marginBottom: SPACING.lg },

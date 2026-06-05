@@ -38,8 +38,6 @@ import { BETA_MODE, IAP_PURCHASED_KEY } from '../../hooks/useIsPremium';
 
 // ── Launch pricing deadline ──────────────────────────────────────────────────
 const PRICE_DEADLINE = new Date('2026-06-20T23:59:59-05:00'); // June 20 midnight CT
-const LAUNCH_PRICE   = '$9.99';
-const FUTURE_PRICE   = '$19.99';
 
 function useCountdown(target: Date) {
   const calc = () => {
@@ -68,10 +66,10 @@ function CountdownBanner() {
       <Text style={countdownStyles.lockIcon}>🔒</Text>
       <View style={countdownStyles.textBlock}>
         <Text style={countdownStyles.headline}>
-          Lock in {LAUNCH_PRICE}/mo forever
+          🎉 Launch pricing ends June 20th
         </Text>
         <Text style={countdownStyles.sub}>
-          Price goes to {FUTURE_PRICE} on June 20th. Try free for 7 days.
+          Lock in today's rate forever · Try free for 7 days
         </Text>
       </View>
       <View style={countdownStyles.timerBlock}>
@@ -239,8 +237,8 @@ export default function PaywallScreen() {
     setup();
 
     const fallbackTimer = setTimeout(() => {
-      setAnnualPrice(prev => prev ?? '$79.99');
-      setMonthlyPrice(prev => prev ?? '$9.99');
+      setAnnualPrice(prev => prev ?? '$119.99');
+      setMonthlyPrice(prev => prev ?? '$14.99');
       setIapReady(true);
     }, 4000);
 
@@ -324,6 +322,17 @@ export default function PaywallScreen() {
           <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>
       </View>
+      {/* Hardship / affordability link — above the fold */}
+      <TouchableOpacity
+        style={styles.hardshipBanner}
+        onPress={() => router.push('/paywall/hardship-application' as any)}
+        activeOpacity={0.8}
+      >
+        <Text style={styles.hardshipText}>
+          I believe everyone deserves affordable access to information — if you're experiencing difficulty paying,{' '}
+          <Text style={styles.hardshipLink}>there are options for you.</Text>
+        </Text>
+      </TouchableOpacity>
 
       <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         <CountdownBanner />
@@ -465,6 +474,24 @@ const styles = StyleSheet.create({
   header: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.sm, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.border },
   backBtn: { paddingVertical: 6 },
   backText: { color: COLORS.purple, fontSize: FONT_SIZES.sm, fontWeight: '600' },
+  hardshipBanner: {
+    backgroundColor: '#F0F4FF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#D8E0FF',
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.sm,
+  },
+  hardshipText: {
+    fontSize: 12,
+    color: COLORS.textMid,
+    textAlign: 'center',
+    lineHeight: 17,
+  },
+  hardshipLink: {
+    color: COLORS.purple,
+    fontWeight: '700',
+    textDecorationLine: 'underline',
+  },
   hero: { backgroundColor: COLORS.purpleDark, paddingHorizontal: SPACING.xl, paddingTop: SPACING.xxxl, paddingBottom: SPACING.xl, alignItems: 'center' },
   heroIcon: { fontSize: 48, marginBottom: SPACING.md },
   heroTitle: { fontSize: FONT_SIZES.xxl, fontWeight: '800', color: COLORS.white, textAlign: 'center', marginBottom: SPACING.sm },

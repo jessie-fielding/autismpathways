@@ -1,11 +1,19 @@
 import React, { useState } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet, StatusBar, Linking,
+  View, Text, ScrollView, TouchableOpacity, StyleSheet, Linking,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZES, SHADOWS } from '../../lib/theme';
 import { useIsPremium } from '../../hooks/useIsPremium';
+
+const VALUE_HINTS = [
+  "Less than your last Amazon impulse buy 📦",
+  "Less than your weekly Starbucks run ☕",
+  "Less than one therapy copay 💜",
+  "Less than a tank of gas ⛽",
+  "Less than your kid's last birthday party favor bag 🎉",
+];
 
 const FEATURE_SECTIONS = [
   {
@@ -14,12 +22,19 @@ const FEATURE_SECTIONS = [
     color: COLORS.lavender,
     accent: COLORS.lavenderAccent,
     textColor: '#5C3EA8',
-    features: [
-      'IEP Meeting Recorder with AI transcription',
-      'IEP Goal Tracker (unlimited goals)',
-      'District & Evaluator Lookup (all 50 states)',
-      'Telehealth Provider Lookup',
-      'Document Vault (unlimited storage)',
+    withPremium: [
+      'Record IEP meetings with AI transcription',
+      'Track unlimited IEP goals with progress charts',
+      'Look up districts & evaluators in all 50 states',
+      'Find telehealth providers who accept your insurance',
+      'Store unlimited documents in your secure vault',
+    ],
+    withoutPremium: [
+      'Manual notes only — no recording',
+      'Limited to 3 IEP goals',
+      'No district or evaluator lookup',
+      'No provider search',
+      'No document storage',
     ],
   },
   {
@@ -28,15 +43,25 @@ const FEATURE_SECTIONS = [
     color: COLORS.mint,
     accent: COLORS.mintAccent,
     textColor: '#0A7A5A',
-    features: [
-      'AI-Powered Personalized Transition Guide',
-      'ABLE Account Finder (all 50 states)',
-      'Group Home & Housing Finder',
-      'Day Program Finder',
-      'Pre-ETS Tool (Pre-Employment Transition)',
-      'College & Vocational Program Lookup',
-      'Special Needs Jobs Finder',
-      'Supported Apartment Lookup',
+    withPremium: [
+      'AI-powered personalized transition guide',
+      'ABLE account finder for all 50 states',
+      'Group home & housing finder with waitlist status',
+      'Day program finder with vocational options',
+      'Pre-ETS tool (available from age 14)',
+      'College & vocational program lookup',
+      'Special needs jobs & supported employment',
+      'Supported apartment lookup',
+    ],
+    withoutPremium: [
+      'General transition tips only',
+      'No state-specific ABLE lookup',
+      'No housing or group home finder',
+      'No day program directory',
+      'No Pre-ETS tool',
+      'No college program lookup',
+      'No jobs finder',
+      'No apartment lookup',
     ],
   },
   {
@@ -45,71 +70,91 @@ const FEATURE_SECTIONS = [
     color: COLORS.peach,
     accent: COLORS.peachAccent,
     textColor: '#8A4020',
-    features: [
+    withPremium: [
       '891+ curated ASD-specialized providers',
-      'All 50 states · 5 specialties',
-      '🏅 Caregiver Verified reviews',
+      'Search all 50 states across 5 specialties',
+      '🏅 Caregiver-verified reviews',
       'Submit & review community providers',
-      'Accepting Now & Medicaid filters',
+      '"Accepting Now" and Medicaid filters',
       '"Near Me" location auto-fill',
+    ],
+    withoutPremium: [
+      'No provider directory access',
+      'No specialty or state filters',
+      'No community reviews',
+      'Cannot submit providers',
+      'No availability filters',
+      'No location search',
     ],
   },
   {
     emoji: '🔔',
     title: 'Smart Reminders & Tools',
-    color: COLORS.yellow,
-    accent: COLORS.yellowAccent,
-    textColor: '#7A6020',
-    features: [
-      'Services Tracker with leave-time alerts',
-      'Provider Translator (unlimited translations)',
-      'Provider Dictionary (saved translations)',
-      'Waiver Finder & State Waivers',
+    color: '#FFF8E7',
+    accent: '#F5D87A',
+    textColor: '#92400E',
+    withPremium: [
+      'Waiver deadline alerts & renewal reminders',
+      'IEP meeting countdown notifications',
+      'Services tracker with expiry alerts',
+      'AI-powered behavior pattern insights',
       'Annual check-in reminders',
-      'Transition stage deadline alerts',
+    ],
+    withoutPremium: [
+      'No waiver or deadline alerts',
+      'No IEP meeting reminders',
+      'No services tracker',
+      'No AI insights',
+      'No check-in reminders',
+    ],
+  },
+  {
+    emoji: '💬',
+    title: 'Community & Support',
+    color: '#F0FDF4',
+    accent: '#86EFAC',
+    textColor: '#166534',
+    withPremium: [
+      'Unlimited Safe Space journal entries',
+      'Post & read community Safe Space stories',
+      'Full resource library access',
+      'Priority support & early feature access',
+    ],
+    withoutPremium: [
+      'Limited to 5 journal entries',
+      'Read-only community access',
+      'Limited resource library',
+      'Standard support only',
     ],
   },
 ];
 
-const FAQS = [
-  {
-    q: 'Can I try before I subscribe?',
-    a: 'Yes! Start with a 7-day free trial. Cancel anytime before the trial ends and you won\'t be charged.',
-  },
-  {
-    q: 'What if I can\'t afford the full price?',
-    a: 'We believe every family deserves access. Apply for our hardship rate — we review every application personally.',
-  },
-  {
-    q: 'Can I use the app for free?',
-    a: 'Yes! Core pathways, daily observations, SOS tool, Safe Space, and basic checklists are always free.',
-  },
-  {
-    q: 'Does premium auto-renew?',
-    a: 'Yes, subscriptions auto-renew. You can cancel anytime in your App Store or Google Play settings.',
-  },
+const FAQ = [
+  { q: "Can I try before I subscribe?", a: "Yes! Every plan starts with a 7-day free trial. Cancel anytime before it ends and you won't be charged a thing." },
+  { q: "What if I can't afford it?", a: "We offer a hardship waiver for families who qualify. Tap \"Apply for Hardship Waiver\" below — no judgment, ever." },
+  { q: "Can I use the app for free?", a: "Yes! Core pathways, daily observations, SOS tool, Safe Space (limited), and basic checklists are always free." },
+  { q: "Does premium auto-renew?", a: "Yes, subscriptions auto-renew. You can cancel anytime in your App Store or Google Play settings." },
 ];
 
 export default function PremiumFeaturesScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { isPremium } = useIsPremium();
-  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('yearly');
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
+  const hintIndex = Math.floor(Date.now() / 86_400_000) % VALUE_HINTS.length;
+
+  const goToPurchase = () => router.push('/paywall');
 
   if (isPremium) {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
-        <StatusBar barStyle="dark-content" />
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <Text style={styles.backText}>← Back</Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtnStandalone}>
+          <Text style={styles.backText}>← Back</Text>
+        </TouchableOpacity>
         <View style={styles.alreadyPremium}>
           <Text style={styles.alreadyIcon}>⭐</Text>
-          <Text style={styles.alreadyTitle}>You're a Premium Member!</Text>
-          <Text style={styles.alreadySub}>Thank you for supporting Autism Pathways. You have access to every tool and feature.</Text>
+          <Text style={styles.alreadyTitle}>You're already Premium!</Text>
+          <Text style={styles.alreadySub}>You have full access to every feature. Thank you for supporting Autism Pathways — it means the world to families like ours.</Text>
           <TouchableOpacity style={styles.backToDashBtn} onPress={() => router.back()}>
             <Text style={styles.backToDashText}>Back to Dashboard</Text>
           </TouchableOpacity>
@@ -120,94 +165,81 @@ export default function PremiumFeaturesScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <StatusBar barStyle="light-content" />
-      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+          <Text style={styles.backText}>← Back</Text>
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+
         {/* Hero */}
         <View style={styles.hero}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.heroBack}>
-            <Text style={styles.heroBackText}>← Back</Text>
-          </TouchableOpacity>
-          <Text style={styles.heroIcon}>⭐</Text>
-          <Text style={styles.heroTitle}>Autism Pathways Premium</Text>
-          <Text style={styles.heroSub}>
-            Everything you need, organized in one place —{'\n'}for less than your weekly coffee run
-          </Text>
+          <Text style={styles.heroEmoji}>⭐</Text>
+          <Text style={styles.heroTitle}>Unlock Premium Access</Text>
+          <Text style={styles.heroSub}>Everything your family needs — in one place.</Text>
+          <View style={styles.valueHint}>
+            <Text style={styles.valueHintText}>{VALUE_HINTS[hintIndex]}</Text>
+          </View>
+          <View style={styles.trialPill}>
+            <Text style={styles.trialPillText}>🎁 7-day free trial · Cancel anytime · No commitment</Text>
+          </View>
         </View>
 
-        {/* Pricing Toggle */}
-        <View style={styles.pricingCard}>
-          <View style={styles.planToggle}>
-            <TouchableOpacity
-              style={[styles.planOption, selectedPlan === 'monthly' && styles.planOptionActive]}
-              onPress={() => setSelectedPlan('monthly')}
-              activeOpacity={0.8}
-            >
-              <Text style={[styles.planLabel, selectedPlan === 'monthly' && styles.planLabelActive]}>Monthly</Text>
-              <Text style={[styles.planPrice, selectedPlan === 'monthly' && styles.planPriceActive]}>$14.99</Text>
-              <Text style={[styles.planPer, selectedPlan === 'monthly' && styles.planPerActive]}>per month</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.planOption, selectedPlan === 'yearly' && styles.planOptionActive]}
-              onPress={() => setSelectedPlan('yearly')}
-              activeOpacity={0.8}
-            >
-              <View style={styles.saveBadgeRow}>
-                <View style={styles.saveBadge}><Text style={styles.saveBadgeText}>SAVE 33%</Text></View>
+        {/* Feature sections with comparison */}
+        {FEATURE_SECTIONS.map((section, idx) => (
+          <View key={idx} style={styles.sectionWrap}>
+            <View style={[styles.sectionHeader, { backgroundColor: section.color, borderLeftColor: section.accent }]}>
+              <Text style={styles.sectionEmoji}>{section.emoji}</Text>
+              <Text style={[styles.sectionTitle, { color: section.textColor }]}>{section.title}</Text>
+            </View>
+
+            <View style={styles.comparisonRow}>
+              <View style={[styles.comparisonCol, styles.comparisonColPremium]}>
+                <Text style={styles.comparisonColHeaderText}>✅ With Premium</Text>
+                {section.withPremium.map((item, i) => (
+                  <View key={i} style={styles.comparisonItem}>
+                    <Text style={styles.comparisonCheck}>✓</Text>
+                    <Text style={styles.comparisonItemText}>{item}</Text>
+                  </View>
+                ))}
               </View>
-              <Text style={[styles.planLabel, selectedPlan === 'yearly' && styles.planLabelActive]}>Yearly</Text>
-              <Text style={[styles.planPrice, selectedPlan === 'yearly' && styles.planPriceActive]}>$119.99</Text>
-              <Text style={[styles.planPer, selectedPlan === 'yearly' && styles.planPerActive]}>per year · ~$10/mo</Text>
+              <View style={[styles.comparisonCol, styles.comparisonColFree]}>
+                <Text style={styles.comparisonColHeaderTextFree}>🔒 Without</Text>
+                {section.withoutPremium.map((item, i) => (
+                  <View key={i} style={styles.comparisonItem}>
+                    <Text style={styles.comparisonX}>✗</Text>
+                    <Text style={styles.comparisonItemTextFree}>{item}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+
+            <TouchableOpacity style={styles.sectionCta} onPress={goToPurchase} activeOpacity={0.85}>
+              <Text style={styles.sectionCtaText}>Start Free Trial →</Text>
+              <Text style={styles.sectionCtaHint}>Try free for 7 days · No commitment</Text>
             </TouchableOpacity>
           </View>
+        ))}
 
-          <TouchableOpacity
-            style={styles.trialBtn}
-            onPress={() => router.push('/paywall')}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.trialBtnText}>⭐ Start 7-Day Free Trial</Text>
-          </TouchableOpacity>
-          <Text style={styles.trialNote}>Cancel anytime · No commitment · Restore purchase</Text>
-        </View>
-
-        {/* Feature Sections */}
-        <View style={styles.sectionsWrap}>
-          {FEATURE_SECTIONS.map((section) => (
-            <View key={section.title} style={[styles.featureSection, { backgroundColor: section.color, borderLeftColor: section.accent }]}>
-              <View style={styles.featureSectionHeader}>
-                <Text style={styles.featureSectionEmoji}>{section.emoji}</Text>
-                <Text style={[styles.featureSectionTitle, { color: section.textColor }]}>{section.title}</Text>
-              </View>
-              {section.features.map((f) => (
-                <View key={f} style={styles.featureItem}>
-                  <Text style={[styles.featureCheck, { color: section.textColor }]}>✓</Text>
-                  <Text style={[styles.featureItemText, { color: section.textColor }]}>{f}</Text>
-                </View>
-              ))}
-            </View>
-          ))}
-        </View>
-
-        {/* Hardship Application */}
+        {/* Hardship waiver */}
         <View style={styles.hardshipCard}>
           <Text style={styles.hardshipEmoji}>💜</Text>
-          <Text style={styles.hardshipTitle}>Can't afford the full price?</Text>
-          <Text style={styles.hardshipSub}>
-            We believe every family deserves access to these tools. Apply for our hardship rate — we review every application personally.
-          </Text>
+          <Text style={styles.hardshipTitle}>Can't afford it right now?</Text>
+          <Text style={styles.hardshipSub}>We offer a hardship waiver for families who need it. No judgment — just support.</Text>
           <TouchableOpacity
             style={styles.hardshipBtn}
             onPress={() => router.push('/paywall/hardship-application' as any)}
-            activeOpacity={0.8}
+            activeOpacity={0.85}
           >
-            <Text style={styles.hardshipBtnText}>Apply for Hardship Rate →</Text>
+            <Text style={styles.hardshipBtnText}>Apply for Hardship Waiver</Text>
           </TouchableOpacity>
         </View>
 
         {/* FAQ */}
         <View style={styles.faqSection}>
           <Text style={styles.faqTitle}>Common Questions</Text>
-          {FAQS.map((faq, i) => (
+          {FAQ.map((item, i) => (
             <TouchableOpacity
               key={i}
               style={styles.faqCard}
@@ -215,24 +247,19 @@ export default function PremiumFeaturesScreen() {
               activeOpacity={0.8}
             >
               <View style={styles.faqRow}>
-                <Text style={styles.faqQ}>{faq.q}</Text>
+                <Text style={styles.faqQ}>{item.q}</Text>
                 <Text style={styles.faqChevron}>{expandedFaq === i ? '▲' : '▼'}</Text>
               </View>
-              {expandedFaq === i && (
-                <Text style={styles.faqA}>{faq.a}</Text>
-              )}
+              {expandedFaq === i && <Text style={styles.faqA}>{item.a}</Text>}
             </TouchableOpacity>
           ))}
         </View>
 
         {/* Bottom CTA */}
         <View style={styles.bottomCta}>
-          <TouchableOpacity
-            style={styles.trialBtnBottom}
-            onPress={() => router.push('/paywall')}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.trialBtnText}>Start Free Trial →</Text>
+          <TouchableOpacity style={styles.trialBtnBottom} onPress={goToPurchase} activeOpacity={0.85}>
+            <Text style={styles.trialBtnText}>⭐ Start Free Trial</Text>
+            <Text style={styles.trialBtnSub}>7 days free · then less than your weekly coffee ☕</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={() => router.back()} style={styles.skipBtn}>
             <Text style={styles.skipText}>Maybe later</Text>
@@ -248,7 +275,7 @@ export default function PremiumFeaturesScreen() {
           </View>
         </View>
 
-        <View style={{ height: insets.bottom + 24 }} />
+        <View style={{ height: insets.bottom + SPACING.xl }} />
       </ScrollView>
     </View>
   );
@@ -256,78 +283,125 @@ export default function PremiumFeaturesScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
-  scroll: { flex: 1 },
-  header: { paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.border },
-  backBtn: { paddingVertical: 4 },
-  backText: { color: COLORS.purple, fontSize: FONT_SIZES.sm, fontWeight: '600' },
+  header: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.sm },
+  backBtn: { paddingVertical: SPACING.sm },
+  backBtnStandalone: { paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md },
+  backText: { fontSize: FONT_SIZES.sm, color: COLORS.purple, fontWeight: '600' },
+  scroll: { paddingBottom: SPACING.xl },
 
-  // Hero
-  hero: { backgroundColor: COLORS.purpleDark, paddingHorizontal: SPACING.xl, paddingTop: SPACING.xl, paddingBottom: SPACING.xxxl, alignItems: 'center' },
-  heroBack: { alignSelf: 'flex-start', paddingVertical: 4, marginBottom: SPACING.lg },
-  heroBackText: { color: 'rgba(255,255,255,0.75)', fontSize: FONT_SIZES.sm, fontWeight: '600' },
-  heroIcon: { fontSize: 48, marginBottom: SPACING.md },
-  heroTitle: { fontSize: FONT_SIZES.xxl, fontWeight: '800', color: COLORS.white, textAlign: 'center', marginBottom: SPACING.sm },
-  heroSub: { fontSize: FONT_SIZES.sm, color: 'rgba(255,255,255,0.80)', textAlign: 'center', lineHeight: 20 },
+  hero: {
+    alignItems: 'center',
+    paddingHorizontal: SPACING.xl,
+    paddingTop: SPACING.lg,
+    paddingBottom: SPACING.xl,
+  },
+  heroEmoji: { fontSize: 48, marginBottom: SPACING.sm },
+  heroTitle: { fontSize: FONT_SIZES.xxl, fontWeight: '800', color: COLORS.text, textAlign: 'center', marginBottom: SPACING.xs },
+  heroSub: { fontSize: FONT_SIZES.md, color: COLORS.textMid, textAlign: 'center', lineHeight: 22, marginBottom: SPACING.md },
+  valueHint: {
+    backgroundColor: '#FFF8E7',
+    borderRadius: RADIUS.pill,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.sm,
+    borderWidth: 1,
+    borderColor: '#F5D87A',
+    marginBottom: SPACING.sm,
+  },
+  valueHintText: { fontSize: FONT_SIZES.sm, color: '#92400E', fontWeight: '600', textAlign: 'center' },
+  trialPill: {
+    backgroundColor: COLORS.lavender,
+    borderRadius: RADIUS.pill,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.sm,
+  },
+  trialPillText: { fontSize: FONT_SIZES.sm, color: COLORS.purpleDark, fontWeight: '700', textAlign: 'center' },
 
-  // Pricing card
-  pricingCard: { backgroundColor: COLORS.white, marginHorizontal: SPACING.lg, marginTop: -SPACING.xl, borderRadius: RADIUS.lg, padding: SPACING.lg, ...SHADOWS.md },
-  planToggle: { flexDirection: 'row', gap: SPACING.sm, marginBottom: SPACING.lg },
-  planOption: { flex: 1, backgroundColor: COLORS.bg, borderRadius: RADIUS.sm, paddingVertical: SPACING.md, paddingHorizontal: SPACING.sm, alignItems: 'center', borderWidth: 2, borderColor: COLORS.border },
-  planOptionActive: { backgroundColor: COLORS.lavender, borderColor: COLORS.purple },
-  saveBadgeRow: { marginBottom: 2 },
-  saveBadge: { backgroundColor: '#22c55e', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 },
-  saveBadgeText: { fontSize: 9, fontWeight: '800', color: COLORS.white },
-  planLabel: { fontSize: FONT_SIZES.sm, fontWeight: '700', color: COLORS.textMid, marginBottom: 2 },
-  planLabelActive: { color: COLORS.purpleDark },
-  planPrice: { fontSize: FONT_SIZES.xl, fontWeight: '800', color: COLORS.text },
-  planPriceActive: { color: COLORS.purpleDark },
-  planPer: { fontSize: FONT_SIZES.xs, color: COLORS.textLight, marginTop: 2 },
-  planPerActive: { color: COLORS.purple },
-  trialBtn: { backgroundColor: COLORS.purple, borderRadius: RADIUS.sm, paddingVertical: SPACING.lg, alignItems: 'center', ...SHADOWS.lg },
-  trialBtnText: { color: COLORS.white, fontSize: FONT_SIZES.md, fontWeight: '800' },
-  trialNote: { fontSize: FONT_SIZES.xs, color: COLORS.textLight, textAlign: 'center', marginTop: SPACING.sm },
+  sectionWrap: {
+    marginHorizontal: SPACING.lg,
+    marginBottom: SPACING.xl,
+    borderRadius: RADIUS.lg,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.white,
+    ...SHADOWS.sm,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    padding: SPACING.md,
+    borderLeftWidth: 4,
+  },
+  sectionEmoji: { fontSize: 22 },
+  sectionTitle: { fontSize: FONT_SIZES.lg, fontWeight: '800' },
 
-  // Feature sections
-  sectionsWrap: { paddingHorizontal: SPACING.lg, paddingTop: SPACING.xl, gap: SPACING.md },
-  featureSection: { borderRadius: RADIUS.sm, padding: SPACING.lg, borderLeftWidth: 4 },
-  featureSectionHeader: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, marginBottom: SPACING.md },
-  featureSectionEmoji: { fontSize: 22 },
-  featureSectionTitle: { fontSize: FONT_SIZES.lg, fontWeight: '800' },
-  featureItem: { flexDirection: 'row', alignItems: 'flex-start', gap: SPACING.sm, marginBottom: SPACING.xs },
-  featureCheck: { fontSize: FONT_SIZES.sm, fontWeight: '700', marginTop: 1 },
-  featureItemText: { flex: 1, fontSize: FONT_SIZES.sm, lineHeight: 19 },
+  comparisonRow: { flexDirection: 'row' },
+  comparisonCol: { flex: 1, padding: SPACING.md },
+  comparisonColPremium: { borderRightWidth: 1, borderRightColor: COLORS.border, backgroundColor: '#FAFFFE' },
+  comparisonColFree: { backgroundColor: '#FAFAFA' },
+  comparisonColHeaderText: { fontSize: 11, fontWeight: '800', color: '#0A7A5A', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: SPACING.sm },
+  comparisonColHeaderTextFree: { fontSize: 11, fontWeight: '800', color: COLORS.textLight, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: SPACING.sm },
+  comparisonItem: { flexDirection: 'row', alignItems: 'flex-start', gap: 4, marginBottom: 6 },
+  comparisonCheck: { fontSize: 11, color: '#0A7A5A', fontWeight: '700', marginTop: 2 },
+  comparisonX: { fontSize: 11, color: '#DC2626', fontWeight: '700', marginTop: 2 },
+  comparisonItemText: { flex: 1, fontSize: 11, color: COLORS.text, lineHeight: 16 },
+  comparisonItemTextFree: { flex: 1, fontSize: 11, color: COLORS.textLight, lineHeight: 16 },
 
-  // Hardship
-  hardshipCard: { backgroundColor: COLORS.white, marginHorizontal: SPACING.lg, marginTop: SPACING.xl, borderRadius: RADIUS.sm, padding: SPACING.lg, alignItems: 'center', borderWidth: 1, borderColor: COLORS.lavenderAccent, ...SHADOWS.sm },
+  sectionCta: {
+    backgroundColor: COLORS.purple,
+    margin: SPACING.md,
+    marginTop: 0,
+    borderRadius: RADIUS.md,
+    paddingVertical: SPACING.md,
+    alignItems: 'center',
+    ...SHADOWS.sm,
+  },
+  sectionCtaText: { color: COLORS.white, fontSize: FONT_SIZES.sm, fontWeight: '800' },
+  sectionCtaHint: { color: 'rgba(255,255,255,0.75)', fontSize: 11, marginTop: 2 },
+
+  hardshipCard: {
+    backgroundColor: COLORS.white,
+    marginHorizontal: SPACING.lg,
+    marginBottom: SPACING.xl,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.lg,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.lavenderAccent,
+    ...SHADOWS.sm,
+  },
   hardshipEmoji: { fontSize: 32, marginBottom: SPACING.sm },
   hardshipTitle: { fontSize: FONT_SIZES.lg, fontWeight: '800', color: COLORS.text, textAlign: 'center', marginBottom: SPACING.xs },
   hardshipSub: { fontSize: FONT_SIZES.sm, color: COLORS.textMid, textAlign: 'center', lineHeight: 19, marginBottom: SPACING.lg },
-  hardshipBtn: { backgroundColor: COLORS.lavender, borderRadius: RADIUS.sm, paddingVertical: SPACING.md, paddingHorizontal: SPACING.xl },
+  hardshipBtn: { backgroundColor: COLORS.lavender, borderRadius: RADIUS.md, paddingVertical: SPACING.md, paddingHorizontal: SPACING.xl },
   hardshipBtnText: { color: COLORS.purpleDark, fontSize: FONT_SIZES.sm, fontWeight: '700' },
 
-  // FAQ
-  faqSection: { paddingHorizontal: SPACING.lg, paddingTop: SPACING.xl },
+  faqSection: { paddingHorizontal: SPACING.lg, marginBottom: SPACING.xl },
   faqTitle: { fontSize: FONT_SIZES.lg, fontWeight: '700', color: COLORS.text, marginBottom: SPACING.md },
-  faqCard: { backgroundColor: COLORS.white, borderRadius: RADIUS.sm, borderWidth: 1, borderColor: COLORS.border, padding: SPACING.lg, marginBottom: SPACING.sm },
+  faqCard: { backgroundColor: COLORS.white, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.border, padding: SPACING.lg, marginBottom: SPACING.sm },
   faqRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
   faqQ: { flex: 1, fontSize: FONT_SIZES.sm, fontWeight: '700', color: COLORS.text, marginRight: SPACING.sm },
   faqChevron: { fontSize: 10, color: COLORS.textLight, marginTop: 3 },
   faqA: { fontSize: FONT_SIZES.sm, color: COLORS.textMid, lineHeight: 19, marginTop: SPACING.sm },
 
-  // Bottom CTA
-  bottomCta: { paddingHorizontal: SPACING.lg, paddingTop: SPACING.xl, alignItems: 'center' },
-  trialBtnBottom: { width: '100%', backgroundColor: COLORS.purple, borderRadius: RADIUS.sm, paddingVertical: SPACING.lg, alignItems: 'center', ...SHADOWS.lg, marginBottom: SPACING.md },
+  bottomCta: { paddingHorizontal: SPACING.lg, alignItems: 'center' },
+  trialBtnBottom: {
+    width: '100%', backgroundColor: COLORS.purple, borderRadius: RADIUS.lg,
+    paddingVertical: SPACING.lg, alignItems: 'center', ...SHADOWS.lg, marginBottom: SPACING.md,
+  },
+  trialBtnText: { color: COLORS.white, fontSize: FONT_SIZES.md, fontWeight: '800' },
+  trialBtnSub: { color: 'rgba(255,255,255,0.8)', fontSize: 11, marginTop: 3 },
   skipBtn: { paddingVertical: SPACING.md },
   skipText: { color: COLORS.textMid, fontSize: FONT_SIZES.sm },
   legalLinks: { flexDirection: 'row', gap: SPACING.sm, alignItems: 'center', marginTop: SPACING.md },
   legalLink: { fontSize: 11, color: COLORS.purple, fontWeight: '600' },
   legalSep: { fontSize: 11, color: COLORS.textLight },
 
-  // Already premium
   alreadyPremium: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: SPACING.xl },
   alreadyIcon: { fontSize: 56, marginBottom: SPACING.lg },
   alreadyTitle: { fontSize: FONT_SIZES.xxl, fontWeight: '800', color: COLORS.text, textAlign: 'center', marginBottom: SPACING.md },
   alreadySub: { fontSize: FONT_SIZES.md, color: COLORS.textMid, textAlign: 'center', lineHeight: 22, marginBottom: SPACING.xl },
-  backToDashBtn: { backgroundColor: COLORS.purple, borderRadius: RADIUS.sm, paddingHorizontal: SPACING.xxxl, paddingVertical: SPACING.lg, ...SHADOWS.md },
+  backToDashBtn: { backgroundColor: COLORS.purple, borderRadius: RADIUS.md, paddingHorizontal: SPACING.xxxl, paddingVertical: SPACING.lg, ...SHADOWS.md },
   backToDashText: { color: COLORS.white, fontSize: FONT_SIZES.md, fontWeight: '700' },
 });

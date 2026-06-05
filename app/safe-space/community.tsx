@@ -306,4 +306,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   toastText: { color: COLORS.white, fontSize: FONT_SIZES.sm, fontWeight: '600' },
+  dashText: { fontSize: FONT_SIZES.sm, color: COLORS.purple, fontWeight: '600' },
 });
