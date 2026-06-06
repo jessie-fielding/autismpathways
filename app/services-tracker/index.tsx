@@ -10,6 +10,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useChildChanged } from '../../hooks/useChildChanged';
 import { COLORS, SPACING, RADIUS, FONT_SIZES, SHADOWS } from '../../lib/theme';
+import CityCountyAutocomplete from '../../components/CityCountyAutocomplete';
 import { useIsPremium } from '../../hooks/useIsPremium';
 import {
   scheduleServiceReminders,
@@ -592,8 +593,14 @@ export default function ServicesTrackerScreen() {
               <Text style={s.fieldLabel}>Provider Name *</Text>
               <TextInput style={s.input} value={form.providerName} onChangeText={(v) => setForm({ ...form, providerName: v })} placeholder="e.g., Bright Futures ABA" placeholderTextColor={COLORS.textLight} />
 
-              <Text style={s.fieldLabel}>Address</Text>
-              <TextInput style={s.input} value={form.address} onChangeText={(v) => setForm({ ...form, address: v })} placeholder="e.g., 123 Main St, Denver CO 80203" placeholderTextColor={COLORS.textLight} />
+              <Text style={s.fieldLabel}>Address / City</Text>
+              <CityCountyAutocomplete
+                value={form.address ?? ''}
+                onChangeText={(v) => setForm({ ...form, address: v })}
+                onSelect={(r) => setForm({ ...form, address: `${r.city}, ${r.state}` })}
+                placeholder="e.g. Columbus, OH or 123 Main St"
+                style={s.input}
+              />
 
               <View style={s.twoCol}>
                 <View style={{ flex: 1 }}>

@@ -6,7 +6,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '../../lib/theme';
-import { PROVIDERS, Provider } from '../../lib/providerData';
+import { PROVIDERS, MEDICAL_PROVIDERS, Provider } from '../../lib/providerData';
 import { useIsPremium } from '../../hooks/useIsPremium';
 import NearMeButton from '../../components/NearMeButton';
 
@@ -31,7 +31,7 @@ const US_STATES = [
   { code: 'WI', name: 'Wisconsin' }, { code: 'WY', name: 'Wyoming' }, { code: 'DC', name: 'Washington D.C.' },
 ];
 
-const SPECIALTY_TABS = ['All', 'ABA Therapy', 'Speech & OT', 'Psychiatry', 'Advocacy', 'National Directory'] as const;
+const SPECIALTY_TABS = ['All', 'ABA Therapy', 'Speech & OT', 'Psychiatry', 'Advocacy', 'National Directory', 'Medical'] as const;
 type SpecialtyTab = typeof SPECIALTY_TABS[number];
 
 const SPECIALTY_COLORS: Record<string, string> = {
@@ -40,6 +40,7 @@ const SPECIALTY_COLORS: Record<string, string> = {
   'Psychiatry':         '#E07B6A',
   'Advocacy':           '#F59E0B',
   'National Directory': '#6366F1',
+  'Medical':            '#10B981',
 };
 
 const SPECIALTY_EMOJIS: Record<string, string> = {
@@ -48,10 +49,15 @@ const SPECIALTY_EMOJIS: Record<string, string> = {
   'Psychiatry':         '🧠',
   'Advocacy':           '🤝',
   'National Directory': '🌐',
+  'Medical':            '🏥',
 };
 
+const MEDICAL_TYPE_LABELS = ['All', 'Pediatrician', 'Dentist', 'Orthodontist'] as const;
+type MedicalType = typeof MEDICAL_TYPE_LABELS[number];
+
+const ALL_PROVIDERS = [...PROVIDERS, ...MEDICAL_PROVIDERS];
 // Free users see only these 2 featured national providers per specialty
-const FREE_FEATURED_IDS = PROVIDERS
+const FREE_FEATURED_IDS = ALL_PROVIDERS
   .filter(p => p.featured || p.states.includes('ALL'))
   .slice(0, 6)
   .map(p => p.id);
@@ -163,7 +169,9 @@ export default function ProviderDirectoryScreen() {
   const { isPremium } = useIsPremium();
 
   const [selectedState, setSelectedState] = useState('ALL');
+  const [selectedCity, setSelectedCity] = useState<string | null>(null);
   const [selectedTab, setSelectedTab] = useState<SpecialtyTab>('All');
+  const [selectedMedicalType, setSelectedMedicalType] = useState<MedicalType>('All');
   const [searchText, setSearchText] = useState('');
   const [medicaidOnly, setMedicaidOnly] = useState(false);
   const [acceptingOnly, setAcceptingOnly] = useState(false);
@@ -172,16 +180,28 @@ export default function ProviderDirectoryScreen() {
   const stateName = US_STATES.find(s => s.code === selectedState)?.name || 'All States';
 
   const filtered = useMemo(() => {
-    let list = PROVIDERS;
+    let list = ALL_PROVIDERS;
 
     // State filter
     if (selectedState !== 'ALL') {
       list = list.filter(p => p.states.includes(selectedState) || p.states.includes('ALL'));
     }
 
+    // City filter (Near Me)
+    if (selectedCity) {
+      list = list.filter(p =>
+        !p.city || p.city.toLowerCase().includes(selectedCity.toLowerCase()) || p.states.includes('ALL')
+      );
+    }
+
     // Specialty tab
     if (selectedTab !== 'All') {
       list = list.filter(p => p.specialty === selectedTab);
+    }
+
+    // Medical sub-type filter
+    if (selectedTab === 'Medical' && selectedMedicalType !== 'All') {
+      list = list.filter(p => p.medicalType === selectedMedicalType);
     }
 
     // Search
@@ -199,14 +219,14 @@ export default function ProviderDirectoryScreen() {
     if (acceptingOnly) list = list.filter(p => p.acceptingPatients);
 
     return list;
-  }, [selectedState, selectedTab, searchText, medicaidOnly, acceptingOnly]);
+  }, [selectedState, selectedCity, selectedTab, selectedMedicalType, searchText, medicaidOnly, acceptingOnly]);
 
   // Featured = top providers for the selected state
   const featured = useMemo(() => {
     if (selectedState === 'ALL') {
-      return PROVIDERS.filter(p => p.featured).slice(0, 3);
+      return ALL_PROVIDERS.filter(p => p.featured).slice(0, 3);
     }
-    return PROVIDERS
+    return ALL_PROVIDERS
       .filter(p => (p.states.includes(selectedState) || p.states.includes('ALL')) && p.featured)
       .slice(0, 3);
   }, [selectedState]);
@@ -249,7 +269,7 @@ export default function ProviderDirectoryScreen() {
               returnKeyType="search"
             />
             <NearMeButton
-              onStateDetected={(code) => setSelectedState(code)}
+              onStateDetected={(code, _name, city) => { setSelectedState(code); if (city) setSelectedCity(city); }}
               label="📍 Near Me"
               variant="pill"
             />
@@ -294,10 +314,18 @@ export default function ProviderDirectoryScreen() {
             >
               <Text style={[styles.filterPillText, acceptingOnly && styles.filterPillTextActive]}>Accepting Now</Text>
             </TouchableOpacity>
-            {(medicaidOnly || acceptingOnly || selectedState !== 'ALL' || searchText) && (
+            {selectedCity && (
+              <View style={styles.cityBadge}>
+                <Text style={styles.cityBadgeText}>📍 {selectedCity}</Text>
+                <TouchableOpacity onPress={() => setSelectedCity(null)}>
+                  <Text style={styles.cityBadgeClear}>✕</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+            {(medicaidOnly || acceptingOnly || selectedState !== 'ALL' || searchText || selectedCity) && (
               <TouchableOpacity
                 style={styles.clearBtn}
-                onPress={() => { setMedicaidOnly(false); setAcceptingOnly(false); setSelectedState('ALL'); setSearchText(''); }}
+                onPress={() => { setMedicaidOnly(false); setAcceptingOnly(false); setSelectedState('ALL'); setSearchText(''); setSelectedCity(null); }}
               >
                 <Text style={styles.clearBtnText}>✕ Clear</Text>
               </TouchableOpacity>
@@ -318,7 +346,7 @@ export default function ProviderDirectoryScreen() {
               <TouchableOpacity
                 key={tab}
                 style={[styles.tab, isActive && { borderBottomColor: color, borderBottomWidth: 2 }]}
-                onPress={() => setSelectedTab(tab)}
+                onPress={() => { setSelectedTab(tab); setSelectedMedicalType('All'); }}
               >
                 {tab !== 'All' && <Text style={styles.tabEmoji}>{SPECIALTY_EMOJIS[tab]}</Text>}
                 <Text style={[styles.tabText, isActive && { color, fontWeight: '700' }]}>{tab}</Text>
@@ -326,6 +354,26 @@ export default function ProviderDirectoryScreen() {
             );
           })}
         </ScrollView>
+
+        {/* Medical sub-type filter */}
+        {selectedTab === 'Medical' && (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.medTypeRow}>
+            {MEDICAL_TYPE_LABELS.map(mt => {
+              const isActive = selectedMedicalType === mt;
+              return (
+                <TouchableOpacity
+                  key={mt}
+                  style={[styles.medTypeChip, isActive && styles.medTypeChipActive]}
+                  onPress={() => setSelectedMedicalType(mt)}
+                >
+                  <Text style={[styles.medTypeText, isActive && styles.medTypeTextActive]}>
+                    {mt === 'Pediatrician' ? '👶 Pediatrician' : mt === 'Dentist' ? '🦷 Dentist' : mt === 'Orthodontist' ? '😁 Orthodontist' : 'All Medical'}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        )}
 
         {/* Featured section */}
         {featured.length > 0 && selectedTab === 'All' && !searchText && (
@@ -595,4 +643,20 @@ const styles = StyleSheet.create({
   submitCtaTitle: { fontSize: FONT_SIZES.sm, fontWeight: '700', color: '#92400E' },
   submitCtaText: { fontSize: FONT_SIZES.xs, color: COLORS.warningText },
   submitCtaArrow: { fontSize: FONT_SIZES.lg, color: '#92400E', fontWeight: '700' },
+  cityBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    backgroundColor: '#E0F2FE', borderRadius: RADIUS.pill,
+    paddingHorizontal: SPACING.md, paddingVertical: SPACING.xs,
+    borderWidth: 1, borderColor: '#7DD3FC',
+  },
+  cityBadgeText: { fontSize: FONT_SIZES.xs, fontWeight: '600', color: '#0369A1' },
+  cityBadgeClear: { fontSize: 12, color: '#0369A1', fontWeight: '700', paddingLeft: 2 },
+  medTypeRow: { paddingHorizontal: SPACING.lg, paddingVertical: SPACING.sm, gap: SPACING.sm },
+  medTypeChip: {
+    borderRadius: RADIUS.pill, paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm,
+    borderWidth: 1.5, borderColor: '#10B981', backgroundColor: COLORS.white,
+  },
+  medTypeChipActive: { backgroundColor: '#10B981' },
+  medTypeText: { fontSize: FONT_SIZES.xs, fontWeight: '700', color: '#10B981' },
+  medTypeTextActive: { color: COLORS.white },
 });

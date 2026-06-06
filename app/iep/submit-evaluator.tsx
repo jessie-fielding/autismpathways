@@ -7,6 +7,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '../../lib/theme';
+import CityCountyAutocomplete from '../../components/CityCountyAutocomplete';
 
 const US_STATES = [
   'AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA',
@@ -160,13 +161,13 @@ export default function SubmitEvaluatorScreen() {
           )}
 
           {/* City */}
-          <Text style={s.label}>City / Region</Text>
-          <TextInput
-            style={s.input}
-            placeholder="e.g. Denver, CO or Northern Colorado"
-            placeholderTextColor={COLORS.textLight}
+          <CityCountyAutocomplete
+            label="City / Region"
             value={city}
             onChangeText={setCity}
+            onSelect={(r) => { setCity(`${r.city}, ${r.state}`); if (!state) setState(r.state); }}
+            placeholder="e.g. Denver, CO or Northern Colorado"
+            style={s.input}
           />
 
           {/* Description */}

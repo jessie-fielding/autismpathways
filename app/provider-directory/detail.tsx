@@ -7,8 +7,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '../../lib/theme';
-import { PROVIDERS, Provider } from '../../lib/providerData';
+import { PROVIDERS, MEDICAL_PROVIDERS, Provider } from '../../lib/providerData';
 import { useIsPremium } from '../../hooks/useIsPremium';
+const ALL_PROVIDERS_DETAIL = [...PROVIDERS, ...MEDICAL_PROVIDERS];
 
 const API_BASE = 'https://inu3nb5lrfvftfyiwprftqshpy0zcegu.lambda-url.us-east-2.on.aws';
 
@@ -53,7 +54,7 @@ export default function ProviderDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { isPremium } = useIsPremium();
 
-  const provider: Provider | undefined = PROVIDERS.find(p => p.id === id);
+  const provider: Provider | undefined = ALL_PROVIDERS_DETAIL.find(p => p.id === id);
 
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loadingReviews, setLoadingReviews] = useState(false);
@@ -193,7 +194,8 @@ export default function ProviderDetailScreen() {
               {provider.specialty === 'ABA Therapy' ? '🧩' :
                provider.specialty === 'Speech & OT' ? '🗣️' :
                provider.specialty === 'Psychiatry' ? '🧠' :
-               provider.specialty === 'Advocacy' ? '🤝' : '🌐'}
+               provider.specialty === 'Advocacy' ? '🤝' :
+               provider.specialty === 'Medical' ? '🏥' : '🌐'}
             </Text>
           </View>
           <Text style={styles.heroName}>{provider.name}</Text>

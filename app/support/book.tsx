@@ -18,6 +18,7 @@ import {
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZES, SHADOWS } from '../../lib/theme';
+import CityCountyAutocomplete from '../../components/CityCountyAutocomplete';
 import {
   fetchAvailability, createSchedulingLink, formatDateLabel, formatTimeLabel,
   EVENT_TYPE_URIS, DaySlots, TimeSlot,
@@ -50,6 +51,7 @@ function BookSessionContent() {
   const [userName, setUserName] = useState('');
   const [userState, setUserState] = useState('');
   const [userCounty, setUserCounty] = useState('');
+  const [discuss, setDiscuss] = useState('');
 
   useEffect(() => {
     (async () => {
@@ -101,13 +103,17 @@ function BookSessionContent() {
       const bookingUrl = await createSchedulingLink(eventTypeUri);
       if (!bookingUrl) throw new Error('Could not generate booking link');
 
-      // Build prefill params: name, email, state+county in notes
+      // Build prefill params: name, email, state+county in notes, discuss topic
       const params = new URLSearchParams();
       if (userName) params.set('name', userName);
       if (userEmail) params.set('email', userEmail);
-      // Combine user notes + location context for Jessie
+      // Combine discuss topic + notes + location context for Jessie
       const locationNote = [userState, userCounty].filter(Boolean).join(', ');
-      const fullNotes = [notes.trim(), locationNote ? `Location: ${locationNote}` : ''].filter(Boolean).join(' | ');
+      const fullNotes = [
+        discuss.trim() ? `Topic: ${discuss.trim()}` : '',
+        notes.trim(),
+        locationNote ? `Location: ${locationNote}` : '',
+      ].filter(Boolean).join(' | ');
       if (fullNotes) params.set('a1', fullNotes.slice(0, 300));
 
       const queryStr = params.toString();
@@ -267,16 +273,51 @@ function BookSessionContent() {
               </TouchableOpacity>
             </View>
 
+            {/* ── LOCATION FIELDS ──────────────────────────────────────────── */}
+            <Text style={styles.sectionLabel}>Your State</Text>
+            <TextInput
+              style={styles.fieldInput}
+              placeholder="e.g. Ohio"
+              placeholderTextColor={COLORS.textLight}
+              value={userState}
+              onChangeText={setUserState}
+              autoCapitalize="words"
+              returnKeyType="next"
+            />
+
+            <CityCountyAutocomplete
+              label="Your City / County"
+              value={userCounty}
+              onChangeText={setUserCounty}
+              onSelect={(r) => { setUserCounty(r.county); if (!userState) setUserState(r.state); }}
+              placeholder="e.g. Franklin County or Columbus, OH"
+              style={styles.fieldInput}
+            />
+
             <Text style={styles.sectionLabel}>
-              {"What's on your mind? "}
+              What would you like to discuss?{' '}
+              <Text style={styles.sectionLabelOptional}>(optional)</Text>
+            </Text>
+            <TextInput
+              style={styles.fieldInput}
+              placeholder="e.g. IEP help, diagnosis next steps, meltdowns…"
+              placeholderTextColor={COLORS.textLight}
+              value={discuss}
+              onChangeText={setDiscuss}
+              returnKeyType="next"
+              maxLength={200}
+            />
+
+            <Text style={styles.sectionLabel}>
+              Additional notes{' '}
               <Text style={styles.sectionLabelOptional}>(optional)</Text>
             </Text>
             <TextInput
               style={styles.notesInput}
-              placeholder="Share what you'd like to focus on — this helps Jessie prepare for your call."
+              placeholder="Anything else Jessie should know before your call."
               placeholderTextColor={COLORS.textLight}
               multiline
-              numberOfLines={4}
+              numberOfLines={3}
               value={notes}
               onChangeText={setNotes}
               maxLength={500}
@@ -363,7 +404,8 @@ const styles = StyleSheet.create({
   formatSub: { fontSize: 11, color: COLORS.textMid, marginTop: 1 },
   formatCheck: { position: 'absolute', top: SPACING.sm, right: SPACING.sm, width: 20, height: 20, borderRadius: 10, backgroundColor: COLORS.purple, alignItems: 'center', justifyContent: 'center' },
   formatCheckText: { color: COLORS.white, fontSize: 11, fontWeight: '800' },
-  notesInput: { backgroundColor: COLORS.white, borderRadius: RADIUS.md, borderWidth: 1.5, borderColor: COLORS.border, padding: SPACING.md, fontSize: FONT_SIZES.sm, color: COLORS.text, minHeight: 100, textAlignVertical: 'top', marginBottom: SPACING.xl, lineHeight: 20 },
+  fieldInput: { backgroundColor: COLORS.white, borderRadius: RADIUS.md, borderWidth: 1.5, borderColor: COLORS.border, padding: SPACING.md, fontSize: FONT_SIZES.sm, color: COLORS.text, marginBottom: SPACING.md, height: 48 },
+  notesInput: { backgroundColor: COLORS.white, borderRadius: RADIUS.md, borderWidth: 1.5, borderColor: COLORS.border, padding: SPACING.md, fontSize: FONT_SIZES.sm, color: COLORS.text, minHeight: 90, textAlignVertical: 'top', marginBottom: SPACING.xl, lineHeight: 20 },
   confirmBtn: { backgroundColor: COLORS.purple, borderRadius: RADIUS.pill, paddingVertical: SPACING.md + 2, alignItems: 'center', marginBottom: SPACING.md, ...SHADOWS.md },
   confirmBtnDisabled: { opacity: 0.5 },
   confirmBtnText: { color: COLORS.white, fontSize: FONT_SIZES.md, fontWeight: '800' },

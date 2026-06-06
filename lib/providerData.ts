@@ -5,7 +5,9 @@ export interface Provider {
   id: string;
   name: string;
   type: string;
-  specialty: 'ABA Therapy' | 'Speech & OT' | 'Psychiatry' | 'Advocacy' | 'National Directory';
+  specialty: 'ABA Therapy' | 'Speech & OT' | 'Psychiatry' | 'Advocacy' | 'National Directory' | 'Medical';
+  medicalType?: 'Pediatrician' | 'Dentist' | 'Orthodontist';
+  city?: string;
   states: string[];
   phone: string | null | undefined;
   website: string;
@@ -24097,5 +24099,172 @@ export const PROVIDERS: Provider[] = [
   }
 ];
 
-export const SPECIALTIES = ['All', 'ABA Therapy', 'Speech & OT', 'Psychiatry', 'Advocacy', 'National Directory'] as const;
+export const SPECIALTIES = ['All', 'ABA Therapy', 'Speech & OT', 'Psychiatry', 'Advocacy', 'National Directory', 'Medical'] as const;
+
+// ── Autism-Friendly Medical Providers ──────────────────────────────────────────
+export const MEDICAL_PROVIDERS: Provider[] = [
+  // ── PEDIATRICIANS ──────────────────────────────────────────────────────────
+  {
+    id: 'med_001', name: 'Marcus Autism Center', type: 'Specialty Hospital',
+    specialty: 'Medical', medicalType: 'Pediatrician', states: ['GA'], city: 'Atlanta',
+    phone: '(404) 785-9400', website: 'https://www.marcus.org',
+    medicaidAccepted: true, acceptingPatients: true, waitlistNote: null,
+    description: 'One of the largest autism treatment centers in the US. Offers comprehensive diagnostic and medical services for children with autism spectrum disorder.',
+    tags: ['Autism-Friendly', 'Pediatric', 'Comprehensive Care', 'Medicaid'],
+    tipsForGettingIn: ['Call early — intake slots fill fast', 'Ask about telehealth options'],
+    featured: true, caregiverVerified: true,
+  },
+  {
+    id: 'med_002', name: "Children's Hospital of Philadelphia — Autism Program", type: 'Specialty Hospital',
+    specialty: 'Medical', medicalType: 'Pediatrician', states: ['PA'], city: 'Philadelphia',
+    phone: '(215) 590-1000', website: 'https://www.chop.edu/centers-programs/autism-spectrum-disorder-program',
+    medicaidAccepted: true, acceptingPatients: true, waitlistNote: 'Waitlist for new evaluations',
+    description: "CHOP's autism program offers medical management, behavioral health, and family support services. Nationally recognized for autism care.",
+    tags: ['Autism-Friendly', 'Pediatric', 'Nationally Recognized', 'Medicaid'],
+    tipsForGettingIn: ['Request a referral from your primary pediatrician', 'Ask about the SEED study for faster entry'],
+    featured: true, caregiverVerified: true,
+  },
+  {
+    id: 'med_003', name: "Boston Children's Hospital — Developmental Medicine", type: 'Specialty Hospital',
+    specialty: 'Medical', medicalType: 'Pediatrician', states: ['MA'], city: 'Boston',
+    phone: '(617) 355-6000', website: 'https://www.childrenshospital.org/programs/autism-spectrum-center',
+    medicaidAccepted: true, acceptingPatients: true, waitlistNote: '3–6 month wait',
+    description: 'Comprehensive autism and developmental medicine services including medical evaluation, co-occurring condition management, and family resources.',
+    tags: ['Autism-Friendly', 'Pediatric', 'Co-occurring Conditions', 'Medicaid'],
+    tipsForGettingIn: ['Have your pediatrician send a referral', 'Ask about the Autism Spectrum Center specifically'],
+    featured: true, caregiverVerified: false,
+  },
+  {
+    id: 'med_004', name: 'Kennedy Krieger Institute', type: 'Specialty Hospital',
+    specialty: 'Medical', medicalType: 'Pediatrician', states: ['MD'], city: 'Baltimore',
+    phone: '(443) 923-9200', website: 'https://www.kennedykrieger.org/autism',
+    medicaidAccepted: true, acceptingPatients: true, waitlistNote: null,
+    description: 'World-renowned pediatric medical center specializing in autism, developmental disabilities, and neurological disorders. Offers full medical and behavioral services.',
+    tags: ['Autism-Friendly', 'Pediatric', 'World-Renowned', 'Medicaid', 'Behavioral Health'],
+    tipsForGettingIn: ['Call the intake line directly', 'Ask about the Neurobehavioral Unit if behaviors are severe'],
+    featured: true, caregiverVerified: true,
+  },
+  {
+    id: 'med_005', name: "Nationwide Children's Hospital — Autism Center", type: 'Specialty Hospital',
+    specialty: 'Medical', medicalType: 'Pediatrician', states: ['OH'], city: 'Columbus',
+    phone: '(614) 722-2700', website: 'https://www.nationwidechildrens.org/specialties/autism-center',
+    medicaidAccepted: true, acceptingPatients: true, waitlistNote: null,
+    description: 'Comprehensive autism center offering diagnostic evaluations, medical management, ABA therapy, and family support. Accepts most insurance including Medicaid.',
+    tags: ['Autism-Friendly', 'Pediatric', 'Medicaid', 'ABA', 'Diagnostic'],
+    tipsForGettingIn: ['Call the autism center directly for faster scheduling', 'Ask about the ECHO program for rural families'],
+    featured: true, caregiverVerified: true,
+  },
+  {
+    id: 'med_006', name: "Texas Children's Hospital — Autism Center", type: 'Specialty Hospital',
+    specialty: 'Medical', medicalType: 'Pediatrician', states: ['TX'], city: 'Houston',
+    phone: '(832) 822-3680', website: 'https://www.texaschildrens.org/departments/autism-center',
+    medicaidAccepted: true, acceptingPatients: true, waitlistNote: '2–4 month wait',
+    description: 'One of the largest pediatric hospitals in the US. The autism center provides evaluations, medical care, and connects families to community resources.',
+    tags: ['Autism-Friendly', 'Pediatric', 'Medicaid', 'Diagnostic', 'Community Resources'],
+    tipsForGettingIn: ['Request a MyChart referral from your pediatrician', 'Ask about the Autism Speaks ATN network'],
+    featured: false, caregiverVerified: true,
+  },
+  {
+    id: 'med_007', name: "Lurie Children's Hospital — Autism Assessment & Treatment Program", type: 'Specialty Hospital',
+    specialty: 'Medical', medicalType: 'Pediatrician', states: ['IL'], city: 'Chicago',
+    phone: '(312) 227-4000', website: 'https://www.luriechildrens.org/en/specialties-conditions/autism-spectrum-disorder/',
+    medicaidAccepted: true, acceptingPatients: true, waitlistNote: null,
+    description: "Comprehensive autism services at a nationally ranked children's hospital. Includes medical evaluation, behavioral health, and school consultation.",
+    tags: ['Autism-Friendly', 'Pediatric', 'Medicaid', 'School Consultation'],
+    tipsForGettingIn: ['Use the online referral portal', 'Ask about telehealth follow-up appointments'],
+    featured: false, caregiverVerified: false,
+  },
+  {
+    id: 'med_008', name: "Children's Hospital Los Angeles — Autism Spectrum Disorder Program", type: 'Specialty Hospital',
+    specialty: 'Medical', medicalType: 'Pediatrician', states: ['CA'], city: 'Los Angeles',
+    phone: '(323) 361-2111', website: 'https://www.chla.org/autism-spectrum-disorder-program',
+    medicaidAccepted: true, acceptingPatients: true, waitlistNote: '3–5 month wait',
+    description: 'CHLA offers a multidisciplinary autism program with medical, behavioral, and educational support. Bilingual services available.',
+    tags: ['Autism-Friendly', 'Pediatric', 'Medicaid', 'Bilingual', 'Multidisciplinary'],
+    tipsForGettingIn: ['Have your pediatrician submit a referral', 'Ask about Spanish-language services'],
+    featured: false, caregiverVerified: false,
+  },
+  // ── DENTISTS ────────────────────────────────────────────────────────────────
+  {
+    id: 'med_101', name: 'Special Care Dentistry Association — Find a Provider', type: 'National Directory',
+    specialty: 'Medical', medicalType: 'Dentist', states: ['ALL'],
+    phone: null, website: 'https://www.scdaonline.org/find-a-provider',
+    medicaidAccepted: false, acceptingPatients: true, waitlistNote: null,
+    description: 'National directory of dentists who specialize in treating patients with special needs, including autism. Search by zip code to find providers near you.',
+    tags: ['Special Needs Dentistry', 'National Directory', 'Autism-Friendly'],
+    tipsForGettingIn: ['Search by your zip code on their website', 'Call ahead to confirm autism experience'],
+    featured: true, caregiverVerified: false,
+  },
+  {
+    id: 'med_102', name: "Children's Hospital Colorado — Pediatric Dentistry", type: 'Specialty Hospital',
+    specialty: 'Medical', medicalType: 'Dentist', states: ['CO'], city: 'Aurora',
+    phone: '(720) 777-6800', website: 'https://www.childrenscolorado.org/departments-and-programs/dentistry/',
+    medicaidAccepted: true, acceptingPatients: true, waitlistNote: null,
+    description: 'Pediatric dentistry with experience in children with autism and sensory sensitivities. Offers sedation dentistry and desensitization visits.',
+    tags: ['Autism-Friendly', 'Pediatric Dentistry', 'Sedation', 'Sensory-Aware', 'Medicaid'],
+    tipsForGettingIn: ['Ask about a "meet the dentist" visit before the first cleaning', 'Request the sensory-friendly protocol'],
+    featured: true, caregiverVerified: true,
+  },
+  {
+    id: 'med_103', name: 'AAPD — Find a Pediatric Dentist', type: 'National Directory',
+    specialty: 'Medical', medicalType: 'Dentist', states: ['ALL'],
+    phone: null, website: 'https://www.aapd.org/resources/parent/find-a-pediatric-dentist/',
+    medicaidAccepted: false, acceptingPatients: true, waitlistNote: null,
+    description: 'American Academy of Pediatric Dentistry directory. Many pediatric dentists have experience with special needs patients. Filter by location.',
+    tags: ['Pediatric Dentistry', 'National Directory', 'Special Needs'],
+    tipsForGettingIn: ['Call and specifically ask about autism experience', 'Ask if they offer desensitization visits'],
+    featured: false, caregiverVerified: false,
+  },
+  {
+    id: 'med_104', name: "Cincinnati Children's — Division of Dentistry", type: 'Specialty Hospital',
+    specialty: 'Medical', medicalType: 'Dentist', states: ['OH'], city: 'Cincinnati',
+    phone: '(513) 636-4641', website: 'https://www.cincinnatichildrens.org/service/d/dentistry',
+    medicaidAccepted: true, acceptingPatients: true, waitlistNote: null,
+    description: 'Pediatric dental care for children with complex medical needs including autism. Offers general anesthesia for patients who cannot tolerate traditional dental visits.',
+    tags: ['Autism-Friendly', 'Pediatric Dentistry', 'Sedation', 'Medicaid', 'Complex Needs'],
+    tipsForGettingIn: ['Mention autism at scheduling — they have a special needs protocol', 'Ask about the pre-visit social story'],
+    featured: false, caregiverVerified: true,
+  },
+  {
+    id: 'med_105', name: 'NYU Langone — Pediatric Dentistry for Special Needs', type: 'University Center',
+    specialty: 'Medical', medicalType: 'Dentist', states: ['NY'], city: 'New York City',
+    phone: '(212) 998-9800', website: 'https://dental.nyu.edu/patientcare/special-patients.html',
+    medicaidAccepted: true, acceptingPatients: true, waitlistNote: null,
+    description: 'NYU Dental offers specialized care for patients with autism and other developmental disabilities. Sliding scale fees and Medicaid accepted.',
+    tags: ['Autism-Friendly', 'Pediatric Dentistry', 'Medicaid', 'Sliding Scale', 'NYC'],
+    tipsForGettingIn: ['Call the special patients clinic directly', 'Bring a list of sensory triggers to the first visit'],
+    featured: false, caregiverVerified: false,
+  },
+  // ── ORTHODONTISTS ────────────────────────────────────────────────────────────
+  {
+    id: 'med_201', name: 'AAO — Find an Orthodontist (Special Needs Filter)', type: 'National Directory',
+    specialty: 'Medical', medicalType: 'Orthodontist', states: ['ALL'],
+    phone: null, website: 'https://www.aaoinfo.org/find-an-orthodontist/',
+    medicaidAccepted: false, acceptingPatients: true, waitlistNote: null,
+    description: 'American Association of Orthodontists directory. Search for orthodontists near you and ask specifically about experience with autism and sensory sensitivities.',
+    tags: ['Orthodontics', 'National Directory', 'Special Needs'],
+    tipsForGettingIn: ['Call and ask about autism experience before booking', 'Ask about clear aligners as a sensory-friendlier option'],
+    featured: true, caregiverVerified: false,
+  },
+  {
+    id: 'med_202', name: "Children's Hospital of Michigan — Orthodontics", type: 'Specialty Hospital',
+    specialty: 'Medical', medicalType: 'Orthodontist', states: ['MI'], city: 'Detroit',
+    phone: '(313) 745-5437', website: 'https://www.childrensdmc.org/services/dental-medicine',
+    medicaidAccepted: true, acceptingPatients: true, waitlistNote: null,
+    description: 'Pediatric orthodontic services with experience treating children with autism and developmental disabilities. Sedation available for procedures.',
+    tags: ['Autism-Friendly', 'Orthodontics', 'Medicaid', 'Sedation'],
+    tipsForGettingIn: ['Ask for the developmental disabilities orthodontist specifically', 'Request a consultation-only first visit'],
+    featured: false, caregiverVerified: false,
+  },
+  {
+    id: 'med_203', name: "Seattle Children's — Orthodontics & Craniofacial", type: 'Specialty Hospital',
+    specialty: 'Medical', medicalType: 'Orthodontist', states: ['WA'], city: 'Seattle',
+    phone: '(206) 987-2000', website: 'https://www.seattlechildrens.org/clinics/craniofacial/',
+    medicaidAccepted: true, acceptingPatients: true, waitlistNote: null,
+    description: 'Orthodontic and craniofacial services for children with special needs including autism. Sensory-aware staff trained in working with anxious patients.',
+    tags: ['Autism-Friendly', 'Orthodontics', 'Sensory-Aware', 'Medicaid'],
+    tipsForGettingIn: ['Request the special needs orthodontics team', 'Ask about the desensitization protocol'],
+    featured: false, caregiverVerified: false,
+  },
+];
 export type Specialty = typeof SPECIALTIES[number];

@@ -28,6 +28,9 @@ export interface ChildProfile {
   gender?: string;
   avatar?: string; // emoji or initials
   color?: string;  // accent color for this child's cards
+  state?: string;   // US state for services/resources
+  county?: string;  // county for local resources
+  concerns?: string[]; // journey IDs (e.g. 'diagnosis', 'school', 'behavior')
   createdAt: string;
 }
 

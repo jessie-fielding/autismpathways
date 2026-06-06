@@ -442,8 +442,32 @@ export function AuthProvider({ children }: any) {
       if (email && !cachedEmail) {
         await AsyncStorage.setItem(`apple_email_${appleUserId}`, email);
       }
-      // Store the identity token as the session token
-      await AsyncStorage.setItem(TOKEN_KEY, identityToken);
+      // Exchange Apple identity token for a Cognito token via Lambda
+      // so that all API endpoints (forum, contacts, etc.) accept the token
+      const LAMBDA_BASE = 'https://inu3nb5lrfvftfyiwprftqshpy0zcegu.lambda-url.us-east-2.on.aws';
+      let sessionToken = identityToken; // fallback if exchange fails
+      try {
+        const exchangeRes = await fetch(`${LAMBDA_BASE}/api/auth/apple-exchange`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            identityToken,
+            email: resolvedEmail,
+            firstName: fullName?.givenName || undefined,
+            lastName: fullName?.familyName || undefined,
+          }),
+        });
+        const exchangeData = await exchangeRes.json();
+        if (exchangeRes.ok && exchangeData.token) {
+          sessionToken = exchangeData.token;
+          if (exchangeData.refreshToken) {
+            await AsyncStorage.setItem('authRefreshToken', exchangeData.refreshToken);
+          }
+        }
+      } catch (exchangeErr) {
+        console.warn('Apple token exchange failed, using identity token as fallback:', exchangeErr);
+      }
+      await AsyncStorage.setItem(TOKEN_KEY, sessionToken);
       await AsyncStorage.setItem(USER_EMAIL_KEY, resolvedEmail);
       // Persist the display name (only available on first sign-in)
       if (fullName?.givenName) {

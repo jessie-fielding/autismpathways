@@ -22,6 +22,9 @@ import {
   TouchableOpacity,
   View,
   Platform,
+  Linking,
+  Modal,
+  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -33,6 +36,7 @@ import { useIsPremium } from '../../hooks/useIsPremium';
 import { useLanguage } from '../../lib/LanguageContext';
 import { trackPathwayOpened, trackPaywallViewed } from '../../lib/analytics';
 import { useActiveChild } from '../../services/childManager';
+import { nextAppointmentDate } from '../../lib/serviceNotifications';
 import HamburgerMenu from '../../components/HamburgerMenu';
 
 // ─── Brand palette (aligned with lib/theme.ts) ────────────────────────────────
@@ -83,18 +87,22 @@ const IEP_TOTAL       = 5;
 
 // ─── Concern → chip config (matches start-here.tsx concerns list) ──────────────
 const CONCERN_CHIPS: Record<string, { label: string; icon: string; bg: string; border: string; textColor: string }> = {
-  speech:    { label: 'Speech',     icon: '🗣️', bg: C.blue,    border: C.blueAccent,     textColor: '#2C5F8A' },
-  behavior:  { label: 'Behavior',   icon: '🧠', bg: C.lavender, border: C.lavenderAccent, textColor: C.purpleDark },
-  medicaid:  { label: 'Medicaid',   icon: '💳', bg: C.lavender, border: C.lavenderAccent, textColor: C.purpleDark },
-  school:    { label: 'IEP/School', icon: '🏫', bg: C.yellow,  border: C.yellowAccent,   textColor: '#7A6020' },
-  waivers:   { label: 'Waiver',     icon: '🛡️', bg: C.mint,    border: C.mintAccent,     textColor: '#0A7A5A' },
-  providers: { label: 'Providers',  icon: '🩺', bg: C.blue,    border: C.blueAccent,     textColor: '#2C5F8A' },
-  denied:    { label: 'Appeals',    icon: '📁', bg: C.peach,   border: C.peachAccent,    textColor: '#8A2C4A' },
-  family:    { label: 'Family',     icon: '❤️', bg: C.peach,   border: C.peachAccent,    textColor: '#8A2C4A' },
-  sensory:   { label: 'Sensory',    icon: '🌊', bg: C.tealLight, border: C.mintAccent,   textColor: '#0A7A5A' },
-  sleep:     { label: 'Sleep',      icon: '🌙', bg: C.yellow,  border: C.yellowAccent,   textColor: '#7A6020' },
+  // IDs match profile-setup.tsx journey option IDs exactly
+  diagnosis:  { label: 'Diagnosis',  icon: '🔍', bg: C.blue,      border: C.blueAccent,     textColor: '#2C5F8A' },
+  medicaid:   { label: 'Medicaid',   icon: '💳', bg: C.lavender,  border: C.lavenderAccent, textColor: C.purpleDark },
+  waivers:    { label: 'Waiver',     icon: '🛡️', bg: C.mint,      border: C.mintAccent,     textColor: '#0A7A5A' },
+  school:     { label: 'IEP/School', icon: '🏫', bg: C.yellow,    border: C.yellowAccent,   textColor: '#7A6020' },
+  behavior:   { label: 'Behavior',   icon: '🧠', bg: C.lavender,  border: C.lavenderAccent, textColor: C.purpleDark },
+  speech:     { label: 'Speech',     icon: '🗣️', bg: C.blue,      border: C.blueAccent,     textColor: '#2C5F8A' },
+  sensory:    { label: 'Sensory',    icon: '🌊', bg: C.tealLight, border: C.mintAccent,     textColor: '#0A7A5A' },
+  sleep:      { label: 'Sleep',      icon: '🌙', bg: C.yellow,    border: C.yellowAccent,   textColor: '#7A6020' },
+  transition: { label: 'Transition', icon: '🎓', bg: C.peach,     border: C.peachAccent,    textColor: '#8A2C4A' },
+  family:     { label: 'Family',     icon: '❤️', bg: C.peach,     border: C.peachAccent,    textColor: '#8A2C4A' },
+  // legacy keys from old start-here flow (backwards compat)
+  providers:  { label: 'Providers',  icon: '🩺', bg: C.blue,      border: C.blueAccent,     textColor: '#2C5F8A' },
+  denied:     { label: 'Appeals',    icon: '📁', bg: C.peach,     border: C.peachAccent,    textColor: '#8A2C4A' },
 };
-const DEFAULT_CHIPS = ['medicaid', 'school', 'waivers', 'behavior', 'speech'];
+const DEFAULT_CHIPS = ['diagnosis', 'medicaid', 'waivers', 'school', 'behavior'];
 
 // ─── Tool tiles config ─────────────────────────────────────────────────────────
 const ALL_TOOLS = [
@@ -135,6 +143,9 @@ export default function DashboardScreen() {
   const [diagApptDate,     setDiagApptDate]     = useState<string | null>(null);
   const [searchQuery,      setSearchQuery]      = useState('');
   const [pinnedTools,      setPinnedTools]      = useState<string[]>(DEFAULT_PINNED);
+  const [serviceEvents,    setServiceEvents]    = useState<{ title: string; date: Date; icon: string; color: string }[]>([]);
+  const [showPinManager,   setShowPinManager]   = useState(false);
+  const [draftPinned,      setDraftPinned]      = useState<string[]>(DEFAULT_PINNED);
 
   // ── Load all data ────────────────────────────────────────────────────────────
   const loadData = useCallback(async (overrideChildId?: string) => {
@@ -195,6 +206,36 @@ export default function DashboardScreen() {
       if (rawPinned) {
         try { setPinnedTools(JSON.parse(rawPinned)); } catch { /* keep default */ }
       }
+
+      // Load service tracker events for the next 30 days
+      try {
+        const rawServices = await AsyncStorage.getItem('ap_services_tracker_v2');
+        if (rawServices) {
+          const services: any[] = JSON.parse(rawServices);
+          const now = new Date();
+          const thirtyDays = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+          const events: { title: string; date: Date; icon: string; color: string }[] = [];
+          for (const svc of services) {
+            if (svc.status === 'ended' || svc.status === 'paused') continue;
+            const nextDate = nextAppointmentDate(
+              svc.scheduleMode,
+              svc.scheduleDays || [],
+              svc.scheduleTime || '09:00',
+              svc.occasionalDate,
+            );
+            if (nextDate && nextDate <= thirtyDays) {
+              events.push({
+                title: svc.customType || svc.type || 'Service',
+                date: nextDate,
+                icon: '📅',
+                color: C.teal,
+              });
+            }
+          }
+          events.sort((a, b) => a.date.getTime() - b.date.getTime());
+          setServiceEvents(events.slice(0, 5));
+        }
+      } catch { /* ignore */ }
     } catch (_) {}
   }, [childId]);
 
@@ -207,16 +248,41 @@ export default function DashboardScreen() {
   const greeting       = getGreeting();
   const activeConcerns = concerns.length > 0 ? concerns : DEFAULT_CHIPS;
 
-  // ── Upcoming reminders ────────────────────────────────────────────────────────
-  const upcomingReminders: { title: string; date: string; icon: string; color: string }[] = [];
+  // ── Upcoming reminders (next 30 days) ──────────────────────────────────────────
+  const upcomingReminders: { title: string; date: Date; icon: string; color: string }[] = [];
   if (diagApptDate && diagApptDate !== 'pending') {
-    upcomingReminders.push({
-      title: t('Diagnosis Appointment', 'Cita de Diagnóstico'),
-      date: diagApptDate,
-      icon: '🔍',
-      color: C.diagnosisAccent,
-    });
+    const apptDate = new Date(diagApptDate);
+    const thirtyDays = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    if (apptDate <= thirtyDays && apptDate >= new Date()) {
+      upcomingReminders.push({
+        title: t('Diagnosis Appointment', 'Cita de Diagnóstico'),
+        date: apptDate,
+        icon: '\uD83D\uDD0D',
+        color: C.diagnosisAccent,
+      });
+    }
   }
+  for (const evt of serviceEvents) {
+    upcomingReminders.push(evt);
+  }
+  upcomingReminders.sort((a, b) => a.date.getTime() - b.date.getTime());
+
+  const formatReminderDate = (d: Date) => {
+    const today = new Date();
+    const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
+    if (d.toDateString() === today.toDateString()) return t('Today', 'Hoy') + ', ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    if (d.toDateString() === tomorrow.toDateString()) return t('Tomorrow', 'Mañana') + ', ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return d.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ', ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const addToCalendar = (title: string, date: Date) => {
+    const start = date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    const end = new Date(date.getTime() + 60 * 60 * 1000).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    const url = Platform.OS === 'ios'
+      ? `calshow:${Math.floor(date.getTime() / 1000)}`
+      : `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${start}/${end}`;
+    Linking.openURL(url).catch(() => {});
+  };
 
   // ── Pathway cards ─────────────────────────────────────────────────────────────
   const PATHWAY_CARDS = [
@@ -290,6 +356,33 @@ export default function DashboardScreen() {
     .filter(Boolean)
     .slice(0, 3) as typeof ALL_TOOLS;
 
+  // ── Manage Pinned Tools ──────────────────────────────────────────────────────
+  const openPinManager = () => {
+    setDraftPinned([...pinnedTools]);
+    setShowPinManager(true);
+  };
+
+  const toggleDraftPin = (id: string) => {
+    setDraftPinned((prev) => {
+      if (prev.includes(id)) return prev.filter((x) => x !== id);
+      if (prev.length >= 3) {
+        Alert.alert('Limit reached', 'You can pin up to 3 tools. Remove one first.');
+        return prev;
+      }
+      return [...prev, id];
+    });
+  };
+
+  const savePinnedTools = async () => {
+    if (draftPinned.length === 0) {
+      Alert.alert('Select at least one tool', 'Please pick at least 1 tool to pin.');
+      return;
+    }
+    setPinnedTools(draftPinned);
+    await AsyncStorage.setItem('ap_pinned_tools', JSON.stringify(draftPinned));
+    setShowPinManager(false);
+  };
+
   // ── Search handler ────────────────────────────────────────────────────────────
   const handleSearch = (q: string) => {
     if (!q.trim()) return;
@@ -334,9 +427,13 @@ export default function DashboardScreen() {
           </Text>
         </View>
         <TouchableOpacity style={styles.avatarCircle} onPress={() => setMenuOpen(true)}>
-          <Text style={styles.avatarText}>
-            {(parentFirst || 'A').charAt(0).toUpperCase()}
-          </Text>
+          {child?.avatar && child.avatar.length <= 4 ? (
+            <Text style={styles.avatarEmoji}>{child.avatar}</Text>
+          ) : (
+            <Text style={styles.avatarText}>
+              {(parentFirst || 'A').charAt(0).toUpperCase()}
+            </Text>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -393,16 +490,28 @@ export default function DashboardScreen() {
           })}
         </ScrollView>
 
-        {/* ── UPCOMING REMINDERS ─────────────────────────────────────────── */}
-        {upcomingReminders.length > 0 && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionLabel}>{t('UPCOMING REMINDERS', 'PRÓXIMOS RECORDATORIOS')}</Text>
-              <TouchableOpacity onPress={() => router.push('/diagnosis' as any)}>
-                <Text style={styles.seeAll}>{t('See All', 'Ver Todo')}</Text>
+        {/* ── UPCOMING EVENTS (next 30 days) ──────────────────────────────────────────── */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionLabel}>{t('UPCOMING EVENTS', 'PRÓXIMOS EVENTOS')}</Text>
+            <TouchableOpacity onPress={() => router.push('/services-tracker' as any)}>
+              <Text style={styles.seeAll}>{t('Services Tracker', 'Rastreador')}</Text>
+            </TouchableOpacity>
+          </View>
+          {upcomingReminders.length === 0 ? (
+            <View style={styles.upcomingEmptyCard}>
+              <Text style={styles.upcomingEmptyIcon}>✅</Text>
+              <Text style={styles.upcomingEmptyTitle}>{t("You're all caught up!", '¡Estás al día!')}</Text>
+              <Text style={styles.upcomingEmptySub}>{t('No events in the next 30 days.', 'Sin eventos en los próximos 30 días.')}</Text>
+              <TouchableOpacity
+                style={styles.upcomingAddBtn}
+                onPress={() => router.push('/services-tracker' as any)}
+              >
+                <Text style={styles.upcomingAddBtnText}>{t('+ Add to Services Tracker', '+ Agregar al Rastreador')}</Text>
               </TouchableOpacity>
             </View>
-            {upcomingReminders.map((r, i) => (
+          ) : (
+            upcomingReminders.map((r, i) => (
               <View key={i} style={styles.reminderCard}>
                 <View style={[styles.reminderAccent, { backgroundColor: r.color }]} />
                 <View style={[styles.reminderIconWrap, { backgroundColor: r.color + '22' }]}>
@@ -410,12 +519,19 @@ export default function DashboardScreen() {
                 </View>
                 <View style={styles.reminderBody}>
                   <Text style={styles.reminderTitle}>{r.title}</Text>
-                  <Text style={styles.reminderDate}>📅 {r.date}</Text>
+                  <Text style={styles.reminderDate}>{formatReminderDate(r.date)}</Text>
                 </View>
+                <TouchableOpacity
+                  style={styles.calendarBtn}
+                  onPress={() => addToCalendar(r.title, r.date)}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <Text style={styles.calendarBtnText}>{t('+ Cal', '+ Cal')}</Text>
+                </TouchableOpacity>
               </View>
-            ))}
-          </View>
-        )}
+            ))
+          )}
+        </View>
 
         {/* ── YOUR PATHWAYS ──────────────────────────────────────────────── */}
         <View style={styles.section}>
@@ -506,6 +622,9 @@ export default function DashboardScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionLabel}>{t('PINNED TOOLS', 'HERRAMIENTAS FIJADAS')}</Text>
+            <TouchableOpacity onPress={openPinManager} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Text style={styles.seeAll}>{t('Edit', 'Editar')}</Text>
+            </TouchableOpacity>
           </View>
           <View style={styles.pinnedRow}>
             {pinnedTileData.map((tool) => (
@@ -522,8 +641,8 @@ export default function DashboardScreen() {
           </View>
         </View>
 
-        {/* ── UPGRADE BANNER (non-premium) ───────────────────────────────── */}
-        {!isPremium && (
+        {/* ── UPGRADE BANNER (non-premium) / PREMIUM TOOLS BAR (premium) ── */}
+        {!isPremium ? (
           <TouchableOpacity
             style={styles.upgradeBannerWrap}
             onPress={() => { trackPaywallViewed('dashboard'); router.push('/paywall/premium-features' as any); }}
@@ -544,6 +663,30 @@ export default function DashboardScreen() {
               <Text style={styles.upgradeArrow}>→</Text>
             </LinearGradient>
           </TouchableOpacity>
+        ) : (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionLabel}>⭐ {t('PREMIUM TOOLS', 'HERRAMIENTAS PREMIUM')}</Text>
+            </View>
+            <View style={styles.premiumToolsRow}>
+              {[
+                { icon: '🗺️', label: t('Transition\nGuide', 'Guía de\nTransición'), route: '/transition' },
+                { icon: '🎙️', label: t('IEP\nRecorder', 'Grabadora\nIEP'), route: '/iep-recorder' },
+                { icon: '🏥', label: t('Provider\nDirectory', 'Directorio'), route: '/provider-directory' },
+                { icon: '📊', label: t('Trends', 'Tendencias'), route: '/trends' },
+              ].map((tool) => (
+                <TouchableOpacity
+                  key={tool.route}
+                  style={styles.premiumToolTile}
+                  onPress={() => router.push(tool.route as any)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.premiumToolIcon}>{tool.icon}</Text>
+                  <Text style={styles.premiumToolLabel}>{tool.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
         )}
 
         {/* ── 1:1 SUPPORT CALLOUT ────────────────────────────────────────── */}
@@ -597,6 +740,45 @@ export default function DashboardScreen() {
       </View>
 
       <HamburgerMenu visible={menuOpen} onClose={() => setMenuOpen(false)} />
+
+      {/* ── MANAGE PINNED TOOLS MODAL ───────────────────────────────────────────────────── */}
+      <Modal visible={showPinManager} animationType="slide" transparent>
+        <View style={styles.pinModalOverlay}>
+          <View style={styles.pinModalCard}>
+            <Text style={styles.pinModalTitle}>{t('Manage Pinned Tools', 'Administrar Herramientas')}</Text>
+            <Text style={styles.pinModalSub}>
+              {t('Pick up to 3 tools to pin to your dashboard.', 'Elige hasta 3 herramientas para fijar.')}
+            </Text>
+            {ALL_TOOLS.map((tool) => {
+              const isPinned = draftPinned.includes(tool.id);
+              return (
+                <TouchableOpacity
+                  key={tool.id}
+                  style={[styles.pinToolRow, isPinned && styles.pinToolRowSelected, { borderColor: isPinned ? C.purple : C.border }]}
+                  onPress={() => toggleDraftPin(tool.id)}
+                  activeOpacity={0.8}
+                >
+                  <View style={[styles.pinToolIcon, { backgroundColor: tool.bg }]}>
+                    <Text style={{ fontSize: 22 }}>{tool.icon}</Text>
+                  </View>
+                  <Text style={[styles.pinToolName, isPinned && { color: C.purple }]}>{tool.name}</Text>
+                  <View style={[styles.pinToolCheck, isPinned && styles.pinToolCheckSelected]}>
+                    {isPinned && <Text style={styles.pinToolCheckText}>✓</Text>}
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+            <View style={styles.pinModalBtns}>
+              <TouchableOpacity style={styles.pinModalCancel} onPress={() => setShowPinManager(false)}>
+                <Text style={styles.pinModalCancelText}>{t('Cancel', 'Cancelar')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.pinModalSave} onPress={savePinnedTools}>
+                <Text style={styles.pinModalSaveText}>{t('Save', 'Guardar')}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -631,6 +813,7 @@ const styles = StyleSheet.create({
     marginTop: SP.xs,
   },
   avatarText: { fontSize: 18, fontWeight: '700', color: C.purpleDark },
+  avatarEmoji: { fontSize: 26 },
 
   // Rainbow bar
   rainbowBar: { height: 3, width: '100%' },
@@ -682,6 +865,38 @@ const styles = StyleSheet.create({
   seeAll: { fontSize: 12, color: C.purple, fontWeight: '600' },
 
   // Reminder card
+  upcomingEmptyCard: {
+    backgroundColor: C.white,
+    borderRadius: R.md,
+    borderWidth: 1,
+    borderColor: C.border,
+    padding: SP.lg,
+    alignItems: 'center',
+    marginBottom: SP.sm,
+  },
+  upcomingEmptyIcon: { fontSize: 28, marginBottom: SP.xs },
+  upcomingEmptyTitle: { fontSize: 15, fontWeight: '700', color: C.textDark, marginBottom: 4 },
+  upcomingEmptySub: { fontSize: 13, color: C.textMid, textAlign: 'center', marginBottom: SP.md },
+  upcomingAddBtn: {
+    backgroundColor: C.lavender,
+    borderRadius: R.sm,
+    borderWidth: 1,
+    borderColor: C.lavenderAccent,
+    paddingHorizontal: SP.md,
+    paddingVertical: SP.xs,
+  },
+  upcomingAddBtnText: { fontSize: 13, fontWeight: '700', color: C.purpleDark },
+  calendarBtn: {
+    backgroundColor: C.lavender,
+    borderRadius: R.sm,
+    paddingHorizontal: SP.sm,
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: C.lavenderAccent,
+    marginLeft: SP.sm,
+  },
+  calendarBtnText: { fontSize: 11, fontWeight: '700', color: C.purpleDark },
+
   reminderCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -791,6 +1006,21 @@ const styles = StyleSheet.create({
   pinnedLabel: { fontSize: 11, fontWeight: '700', textAlign: 'center' },
 
   // Upgrade banner
+  premiumToolsRow: { flexDirection: 'row', gap: SP.sm },
+  premiumToolTile: {
+    flex: 1,
+    backgroundColor: C.lavender,
+    borderRadius: R.md,
+    borderWidth: 1,
+    borderColor: C.lavenderAccent,
+    paddingVertical: SP.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 72,
+  },
+  premiumToolIcon: { fontSize: 22, marginBottom: 4 },
+  premiumToolLabel: { fontSize: 10, fontWeight: '700', color: C.purpleDark, textAlign: 'center' },
+
   upgradeBannerWrap: { marginHorizontal: SP.lg, marginBottom: SP.md, borderRadius: R.md, overflow: 'hidden' },
   upgradeBannerInner: {
     flexDirection: 'row',
@@ -862,4 +1092,38 @@ const styles = StyleSheet.create({
     borderColor: C.white,
   },
   sosBtnText: { fontSize: 13, fontWeight: '800', color: C.white, letterSpacing: 0.5 },
+
+  // Manage Pinned Tools modal
+  pinModalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
+  pinModalCard: {
+    backgroundColor: C.white, borderTopLeftRadius: R.lg, borderTopRightRadius: R.lg,
+    padding: SP.xl, paddingBottom: 40,
+  },
+  pinModalTitle: { fontSize: 18, fontWeight: '700', color: C.text, marginBottom: SP.xs, textAlign: 'center' },
+  pinModalSub: { fontSize: 13, color: C.textMid, textAlign: 'center', marginBottom: SP.lg },
+  pinToolRow: {
+    flexDirection: 'row', alignItems: 'center', gap: SP.md,
+    borderWidth: 1.5, borderRadius: R.md, padding: SP.md, marginBottom: SP.sm,
+    backgroundColor: C.bg,
+  },
+  pinToolRowSelected: { backgroundColor: '#F0EDFF' },
+  pinToolIcon: { width: 44, height: 44, borderRadius: R.sm, alignItems: 'center', justifyContent: 'center' },
+  pinToolName: { flex: 1, fontSize: 15, fontWeight: '600', color: C.text },
+  pinToolCheck: {
+    width: 24, height: 24, borderRadius: 12, borderWidth: 2, borderColor: C.border,
+    alignItems: 'center', justifyContent: 'center', backgroundColor: C.white,
+  },
+  pinToolCheckSelected: { backgroundColor: C.purple, borderColor: C.purple },
+  pinToolCheckText: { color: '#fff', fontSize: 13, fontWeight: '800' },
+  pinModalBtns: { flexDirection: 'row', gap: SP.md, marginTop: SP.xl },
+  pinModalCancel: {
+    flex: 1, paddingVertical: SP.md, borderRadius: R.sm,
+    backgroundColor: C.bg, borderWidth: 1, borderColor: C.border, alignItems: 'center',
+  },
+  pinModalCancelText: { fontSize: 15, color: C.textMid, fontWeight: '600' },
+  pinModalSave: {
+    flex: 2, paddingVertical: SP.md, borderRadius: R.sm,
+    backgroundColor: C.purple, alignItems: 'center',
+  },
+  pinModalSaveText: { fontSize: 15, color: '#fff', fontWeight: '700' },
 });
