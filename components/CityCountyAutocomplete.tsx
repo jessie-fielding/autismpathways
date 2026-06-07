@@ -4,6 +4,9 @@
  * A lightweight autocomplete text input for US cities and counties.
  * Uses a bundled dataset — no API key required.
  *
+ * Uses an INLINE dropdown (not absolute-positioned) so it works correctly
+ * inside ScrollViews without clipping or zIndex issues.
+ *
  * Props:
  *   value          — current text value
  *   onChangeText   — called when text changes
@@ -11,10 +14,11 @@
  *   placeholder    — input placeholder
  *   style          — optional extra style for the input
  *   stateFilter    — optional 2-letter state code to restrict suggestions
+ *   label          — optional label above the input
  */
 import React, { useState, useMemo, useCallback } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet,
+  View, Text, TextInput, TouchableOpacity, StyleSheet,
   ViewStyle, TextStyle,
 } from 'react-native';
 import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '../lib/theme';
@@ -102,7 +106,7 @@ export default function CityCountyAutocomplete({
   stateFilter,
   label,
 }: Props) {
-  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [focused, setFocused] = useState(false);
 
   const suggestions = useMemo<AutocompleteResult[]>(() => {
     const q = value.trim().toLowerCase();
@@ -127,8 +131,10 @@ export default function CityCountyAutocomplete({
 
   const handleSelect = useCallback((result: AutocompleteResult) => {
     onSelect(result);
-    setShowSuggestions(false);
+    setFocused(false);
   }, [onSelect]);
+
+  const showDropdown = focused && suggestions.length > 0;
 
   return (
     <View style={styles.wrapper}>
@@ -136,32 +142,28 @@ export default function CityCountyAutocomplete({
       <TextInput
         style={[styles.input, style as any]}
         value={value}
-        onChangeText={(t) => {
-          onChangeText(t);
-          setShowSuggestions(true);
-        }}
-        onFocus={() => setShowSuggestions(true)}
-        onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+        onChangeText={onChangeText}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setTimeout(() => setFocused(false), 200)}
         placeholder={placeholder}
         placeholderTextColor={COLORS.textLight}
         autoCapitalize="words"
         autoCorrect={false}
       />
-      {showSuggestions && suggestions.length > 0 && (
+      {/* Inline dropdown — renders in normal flow so it works inside ScrollViews */}
+      {showDropdown && (
         <View style={styles.dropdown}>
-          <ScrollView keyboardShouldPersistTaps="handled" nestedScrollEnabled>
-            {suggestions.map((s, i) => (
-              <TouchableOpacity
-                key={`${s.city}-${s.state}-${i}`}
-                style={[styles.suggestion, i < suggestions.length - 1 && styles.suggestionBorder]}
-                onPress={() => handleSelect(s)}
-                activeOpacity={0.75}
-              >
-                <Text style={styles.suggestionCity}>{s.city}, {s.state}</Text>
-                <Text style={styles.suggestionCounty}>{s.county} County</Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
+          {suggestions.map((s, i) => (
+            <TouchableOpacity
+              key={`${s.city}-${s.state}-${i}`}
+              style={[styles.suggestion, i < suggestions.length - 1 && styles.suggestionBorder]}
+              onPress={() => handleSelect(s)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.suggestionCity}>{s.city}, {s.state}</Text>
+              <Text style={styles.suggestionCounty}>{s.county} County</Text>
+            </TouchableOpacity>
+          ))}
         </View>
       )}
     </View>
@@ -169,7 +171,7 @@ export default function CityCountyAutocomplete({
 }
 
 const styles = StyleSheet.create({
-  wrapper: { position: 'relative', zIndex: 100 },
+  wrapper: { },
   label: {
     fontSize: FONT_SIZES.sm, fontWeight: '600', color: COLORS.text,
     marginBottom: SPACING.xs,
@@ -180,14 +182,11 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZES.base, color: COLORS.text, backgroundColor: COLORS.white,
   },
   dropdown: {
-    position: 'absolute',
-    top: '100%',
-    left: 0, right: 0,
     backgroundColor: COLORS.white,
     borderRadius: RADIUS.sm,
-    borderWidth: 1, borderColor: COLORS.border,
-    maxHeight: 220,
-    zIndex: 999,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    marginTop: 2,
     ...SHADOWS.md,
   },
   suggestion: {

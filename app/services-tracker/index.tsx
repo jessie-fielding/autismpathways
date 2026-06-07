@@ -799,7 +799,7 @@ export default function ServicesTrackerScreen() {
       {/* 12hr Time picker modal */}
       <Modal animationType="fade" transparent visible={showTimePicker} onRequestClose={() => setShowTimePicker(false)}>
         <TouchableOpacity style={s.durationBackdrop} onPress={() => setShowTimePicker(false)} activeOpacity={1}>
-          <View style={[s.durationSheet, { maxHeight: 400 }]}>
+          <TouchableOpacity activeOpacity={1} onPress={() => {}} style={[s.durationSheet, { maxHeight: 400 }]}>
             <Text style={s.durationTitle}>Select Time</Text>
             <ScrollView showsVerticalScrollIndicator={true} keyboardShouldPersistTaps="handled" style={{ flexGrow: 0 }}>
             {['6:00 AM','6:30 AM','7:00 AM','7:30 AM','8:00 AM','8:30 AM','9:00 AM','9:30 AM',
@@ -837,14 +837,13 @@ export default function ServicesTrackerScreen() {
                 </TouchableOpacity>
               );
             })}
-            </ScrollView>
-          </View>
+                        </ScrollView>
+          </TouchableOpacity>
         </TouchableOpacity>
       </Modal>
     </View>
   );
 }
-
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },

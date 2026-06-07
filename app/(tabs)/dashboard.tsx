@@ -25,6 +25,7 @@ import {
   Linking,
   Modal,
   Alert,
+  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -427,7 +428,9 @@ export default function DashboardScreen() {
           </Text>
         </View>
         <TouchableOpacity style={styles.avatarCircle} onPress={() => setMenuOpen(true)}>
-          {child?.avatar && /\p{Emoji}/u.test(child.avatar) ? (
+          {child?.avatar && (child.avatar.startsWith('file://') || child.avatar.startsWith('content://') || child.avatar.startsWith('http')) ? (
+            <Image source={{ uri: child.avatar }} style={styles.avatarImage} />
+          ) : child?.avatar && /\p{Emoji}/u.test(child.avatar) ? (
             <Text style={styles.avatarEmoji}>{child.avatar}</Text>
           ) : child?.name ? (
             <Text style={styles.avatarText}>
@@ -818,6 +821,7 @@ const styles = StyleSheet.create({
   },
   avatarText: { fontSize: 18, fontWeight: '700', color: C.purpleDark },
   avatarEmoji: { fontSize: 26 },
+  avatarImage: { width: 48, height: 48, borderRadius: 24 },
 
   // Rainbow bar
   rainbowBar: { height: 3, width: '100%' },

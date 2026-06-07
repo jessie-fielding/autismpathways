@@ -52,10 +52,10 @@ const USER_EMAIL_KEY = 'authUserEmail';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-/** Persist the Cognito ID token so the app can check auth on startup */
+/** Persist the Cognito Access Token so the Lambda API can validate it via cognitoGetUser */
 async function persistSession(session: CognitoUserSession, email: string) {
-  const idToken = session.getIdToken().getJwtToken();
-  await AsyncStorage.setItem(TOKEN_KEY, idToken);
+  const accessToken = session.getAccessToken().getJwtToken();
+  await AsyncStorage.setItem(TOKEN_KEY, accessToken);
   await AsyncStorage.setItem(USER_EMAIL_KEY, email);
 }
 
@@ -104,8 +104,8 @@ export function AuthProvider({ children }: any) {
         getCurrentSession()
           .then(async (session) => {
             if (session) {
-              // Refresh the stored token with the latest one
-              await AsyncStorage.setItem(TOKEN_KEY, session.getIdToken().getJwtToken());
+              // Refresh the stored token with the latest Access Token
+              await AsyncStorage.setItem(TOKEN_KEY, session.getAccessToken().getJwtToken());
             }
             // If session is null, do NOT sign out — Apple/Phone users have
             // Lambda-issued tokens that Cognito doesn't know about.
@@ -137,7 +137,7 @@ export function AuthProvider({ children }: any) {
         setUserEmail(email);
         setIsSignedIn(true);
         if (email) identifyUser(email, email);
-        await AsyncStorage.setItem(TOKEN_KEY, session.getIdToken().getJwtToken());
+        await AsyncStorage.setItem(TOKEN_KEY, session.getAccessToken().getJwtToken());
       }
     } catch (e) {
       console.error('Auth check failed:', e);
@@ -390,7 +390,8 @@ export function AuthProvider({ children }: any) {
       const payload = JSON.parse(atob(tokens.id_token.split('.')[1]));
       const email = payload.email || payload['cognito:username'] || 'google-user';
 
-      await AsyncStorage.setItem(TOKEN_KEY, tokens.id_token);
+      // Store Access Token (not ID Token) — Lambda cognitoGetUser requires Access Token
+      await AsyncStorage.setItem(TOKEN_KEY, tokens.access_token || tokens.id_token);
       await AsyncStorage.setItem(USER_EMAIL_KEY, email);
       if (tokens.refresh_token) {
         await AsyncStorage.setItem('authRefreshToken', tokens.refresh_token);
@@ -594,9 +595,9 @@ export function AuthProvider({ children }: any) {
       });
       const data = await res.json();
       if (!res.ok) return { success: false, error: data.error || 'Verification failed.' };
-      // Persist tokens the same way email sign-in does (idToken is the bearer)
+      // Store Access Token (not ID Token) — Lambda cognitoGetUser requires Access Token
       const username = `phone_${phone.replace(/\+/g, '')}`;
-      await AsyncStorage.setItem(TOKEN_KEY, data.idToken);
+      await AsyncStorage.setItem(TOKEN_KEY, data.token || data.idToken);
       await AsyncStorage.setItem(USER_EMAIL_KEY, username);
       setUserEmail(username);
       setIsSignedIn(true);
@@ -643,7 +644,7 @@ export async function getValidToken(): Promise<string | null> {
     // Try Cognito refresh first (works for email/Google sign-in)
     const session = await getCurrentSession();
     if (session) {
-      const fresh = session.getIdToken().getJwtToken();
+      const fresh = session.getAccessToken().getJwtToken();
       await AsyncStorage.setItem('authToken', fresh);
       return fresh;
     }
