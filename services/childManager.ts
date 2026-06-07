@@ -114,7 +114,7 @@ export async function addChild(data: Omit<ChildProfile, 'id' | 'createdAt' | 'co
     id: generateId(),
     createdAt: new Date().toISOString(),
     color: CHILD_COLORS[children.length % CHILD_COLORS.length],
-    avatar: data.name ? data.name.slice(0, 2).toUpperCase() : '??',
+    avatar: data.avatar || (data.name ? data.name.slice(0, 2).toUpperCase() : '??'),
   };
   await saveChildren([...children, newChild]);
   return newChild;

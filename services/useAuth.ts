@@ -634,6 +634,31 @@ export function AuthProvider({ children }: any) {
   return React.createElement(AuthContext.Provider, { value }, children);
 }
 
+/**
+ * Get a fresh auth token, refreshing via Cognito if possible.
+ * Falls back to the stored token (Apple/Phone users whose tokens don't expire via Cognito).
+ * Returns null if the user is not signed in at all.
+ */
+export async function getValidToken(): Promise<string | null> {
+  try {
+    // Try Cognito refresh first (works for email/Google sign-in)
+    const session = await getCurrentSession();
+    if (session) {
+      const fresh = session.getIdToken().getJwtToken();
+      await AsyncStorage.setItem('authToken', fresh);
+      return fresh;
+    }
+  } catch {
+    // Cognito not available (Apple/Phone user) — fall through
+  }
+  // Fallback: return stored token (Apple/Phone tokens are long-lived)
+  try {
+    return await AsyncStorage.getItem('authToken');
+  } catch {
+    return null;
+  }
+}
+
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) throw new Error('useAuth must be used within AuthProvider');

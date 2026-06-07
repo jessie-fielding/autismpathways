@@ -1,31 +1,28 @@
 /**
  * Support — Book Session Screen
  *
- * Native booking UI backed by Calendly API:
- *  1. Fetches real available time slots for the selected event type
- *  2. User picks date → time → session format → adds notes
- *  3. "Confirm Booking" creates a scheduling link and opens it in Safari
- *     (Calendly handles the final confirmation + Stripe payment in browser)
- *
- * Apple-safe: payment happens in external browser, not in-app.
+ * Simple form: collect name/email/state/county/discuss/format/notes,
+ * then open the direct Calendly page immediately — no API, no loading.
  */
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  TextInput, Linking, Alert, ActivityIndicator,
+  TextInput, Linking, Alert,
   KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZES, SHADOWS } from '../../lib/theme';
-import CityCountyAutocomplete from '../../components/CityCountyAutocomplete';
-import {
-  fetchAvailability, createSchedulingLink, formatDateLabel, formatTimeLabel,
-  EVENT_TYPE_URIS, DaySlots, TimeSlot,
-} from '../../services/calendly';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type SessionFormat = 'video' | 'phone';
+
+// Direct Calendly page URLs — no API dependency
+const CALENDLY_URLS: Record<string, string> = {
+  quick:   'https://calendly.com/contact-autismpathways/quick-check-in',
+  deep:    'https://calendly.com/contact-autismpathways/deep-dive',
+  ongoing: 'https://calendly.com/contact-autismpathways/meet-greet',
+};
 
 function BookSessionContent() {
   const router = useRouter();
@@ -37,16 +34,11 @@ function BookSessionContent() {
     sessionId: string;
   }>();
 
-  const [loading, setLoading] = useState(true);
-  const [daySlots, setDaySlots] = useState<DaySlots[]>([]);
-  const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
   const [format, setFormat] = useState<SessionFormat>('video');
   const [notes, setNotes] = useState('');
   const [booking, setBooking] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  // User profile for Calendly prefill
+  // User profile prefill
   const [userEmail, setUserEmail] = useState('');
   const [userName, setUserName] = useState('');
   const [userState, setUserState] = useState('');
@@ -69,60 +61,24 @@ function BookSessionContent() {
     })();
   }, []);
 
-  const eventTypeUri = EVENT_TYPE_URIS[sessionId ?? 'deep'] ?? EVENT_TYPE_URIS.deep;
-
-  const loadAvailability = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const slots = await fetchAvailability(eventTypeUri);
-      setDaySlots(slots);
-      if (slots.length > 0) {
-        setSelectedDate(slots[0].date);
-      }
-    } catch {
-      setError('Could not load availability. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  }, [eventTypeUri]);
-
-  useEffect(() => {
-    loadAvailability();
-  }, [loadAvailability]);
-
-  const currentDaySlots = daySlots.find((d) => d.date === selectedDate)?.slots ?? [];
-
-  const handleConfirm = async () => {
-    if (!selectedSlot) {
-      Alert.alert('Select a time', 'Please choose a date and time before confirming.');
-      return;
-    }
+  const handleBook = async () => {
     setBooking(true);
     try {
-      const bookingUrl = await createSchedulingLink(eventTypeUri);
-      if (!bookingUrl) throw new Error('Could not generate booking link');
-
-      // Build prefill params: name, email, state+county in notes, discuss topic
+      const baseUrl = CALENDLY_URLS[sessionId ?? 'deep'] ?? CALENDLY_URLS.deep;
       const params = new URLSearchParams();
       if (userName) params.set('name', userName);
       if (userEmail) params.set('email', userEmail);
-      // Combine discuss topic + notes + location context for Jessie
       const locationNote = [userState, userCounty].filter(Boolean).join(', ');
       const fullNotes = [
         discuss.trim() ? `Topic: ${discuss.trim()}` : '',
+        `Format: ${format === 'video' ? 'Video Call' : 'Phone Call'}`,
         notes.trim(),
         locationNote ? `Location: ${locationNote}` : '',
       ].filter(Boolean).join(' | ');
       if (fullNotes) params.set('a1', fullNotes.slice(0, 300));
-
       const queryStr = params.toString();
-      const finalUrl = `${bookingUrl}${queryStr ? '?' + queryStr : ''}`;
-
-      const supported = await Linking.canOpenURL(finalUrl);
-      await Linking.openURL(supported ? finalUrl : 'https://calendly.com/contact-autismpathways');
-
-      // Show payment reminder after opening Calendly
+      const finalUrl = `${baseUrl}${queryStr ? '?' + queryStr : ''}`;
+      await Linking.openURL(finalUrl);
       setTimeout(() => {
         Alert.alert(
           '📅 Almost done!',
@@ -132,8 +88,8 @@ function BookSessionContent() {
       }, 1500);
     } catch {
       Alert.alert(
-        'Booking error',
-        'Something went wrong. Please visit calendly.com/contact-autismpathways or email jessie@autismpathways.app.',
+        'Could not open Calendly',
+        'Please visit calendly.com/contact-autismpathways or email jessie@autismpathways.app.',
       );
     } finally {
       setBooking(false);
@@ -170,176 +126,121 @@ function BookSessionContent() {
           </View>
         </View>
 
-        {loading ? (
-          <View style={styles.loadingWrap}>
-            <ActivityIndicator size="large" color={COLORS.purple} />
-            <Text style={styles.loadingText}>Loading availability…</Text>
-          </View>
-        ) : error ? (
-          <View style={styles.errorWrap}>
-            <Text style={styles.errorText}>{error}</Text>
-            <TouchableOpacity style={styles.retryBtn} onPress={loadAvailability}>
-              <Text style={styles.retryBtnText}>Try Again</Text>
-            </TouchableOpacity>
-          </View>
-        ) : daySlots.length === 0 ? (
-          <View style={styles.errorWrap}>
-            <Text style={styles.errorText}>No availability in the next 14 days.</Text>
-            <TouchableOpacity
-              style={styles.retryBtn}
-              onPress={() => Linking.openURL('https://calendly.com/contact-autismpathways')}
-            >
-              <Text style={styles.retryBtnText}>Open Calendly →</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <>
-            <Text style={styles.sectionLabel}>Choose a Date</Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.dateRow}
-            >
-              {daySlots.map((d) => {
-                const label = formatDateLabel(d.date);
-                const parts = label.split(', ');
-                const dayOfWeek = parts[0];
-                const monthDay = parts[1] ?? '';
-                const [month, day] = monthDay.split(' ');
-                const isSelected = selectedDate === d.date;
-                return (
-                  <TouchableOpacity
-                    key={d.date}
-                    style={[styles.dateChip, isSelected && styles.dateChipSelected]}
-                    onPress={() => { setSelectedDate(d.date); setSelectedSlot(null); }}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={[styles.dateChipDay, isSelected && styles.dateChipTextSelected]}>{dayOfWeek}</Text>
-                    <Text style={[styles.dateChipMonth, isSelected && styles.dateChipTextSelected]}>{month}</Text>
-                    <Text style={[styles.dateChipNum, isSelected && styles.dateChipTextSelected]}>{day}</Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-
-            <Text style={styles.sectionLabel}>Available Times</Text>
-            <View style={styles.timeGrid}>
-              {currentDaySlots.map((slot) => {
-                const isSelected = selectedSlot?.start_time === slot.start_time;
-                return (
-                  <TouchableOpacity
-                    key={slot.start_time}
-                    style={[styles.timeChip, isSelected && styles.timeChipSelected]}
-                    onPress={() => setSelectedSlot(slot)}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={[styles.timeChipText, isSelected && styles.timeChipTextSelected]}>
-                      {formatTimeLabel(slot.start_time)}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
+        {/* Session format */}
+        <Text style={styles.sectionLabel}>Session Format</Text>
+        <View style={styles.formatRow}>
+          <TouchableOpacity
+            style={[styles.formatChip, format === 'video' && styles.formatChipSelected]}
+            onPress={() => setFormat('video')}
+            activeOpacity={0.85}
+          >
+            <View style={styles.formatChipInner}>
+              <Text style={styles.formatIcon}>📹</Text>
+              <View>
+                <Text style={[styles.formatTitle, format === 'video' && styles.formatTitleSelected]}>Video Call</Text>
+                <Text style={styles.formatSub}>Zoom link sent by email</Text>
+              </View>
             </View>
-
-            <Text style={styles.sectionLabel}>Session Format</Text>
-            <View style={styles.formatRow}>
-              <TouchableOpacity
-                style={[styles.formatChip, format === 'video' && styles.formatChipSelected]}
-                onPress={() => setFormat('video')}
-                activeOpacity={0.85}
-              >
-                <View style={styles.formatChipInner}>
-                  <Text style={styles.formatIcon}>📹</Text>
-                  <View>
-                    <Text style={[styles.formatTitle, format === 'video' && styles.formatTitleSelected]}>Video Call</Text>
-                    <Text style={styles.formatSub}>Zoom link sent by email</Text>
-                  </View>
-                </View>
-                {format === 'video' && <View style={styles.formatCheck}><Text style={styles.formatCheckText}>✓</Text></View>}
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.formatChip, format === 'phone' && styles.formatChipSelected]}
-                onPress={() => setFormat('phone')}
-                activeOpacity={0.85}
-              >
-                <View style={styles.formatChipInner}>
-                  <Text style={styles.formatIcon}>📞</Text>
-                  <View>
-                    <Text style={[styles.formatTitle, format === 'phone' && styles.formatTitleSelected]}>Phone Call</Text>
-                    <Text style={styles.formatSub}>We call you</Text>
-                  </View>
-                </View>
-                {format === 'phone' && <View style={styles.formatCheck}><Text style={styles.formatCheckText}>✓</Text></View>}
-              </TouchableOpacity>
+            {format === 'video' && <View style={styles.formatCheck}><Text style={styles.formatCheckText}>✓</Text></View>}
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.formatChip, format === 'phone' && styles.formatChipSelected]}
+            onPress={() => setFormat('phone')}
+            activeOpacity={0.85}
+          >
+            <View style={styles.formatChipInner}>
+              <Text style={styles.formatIcon}>📞</Text>
+              <View>
+                <Text style={[styles.formatTitle, format === 'phone' && styles.formatTitleSelected]}>Phone Call</Text>
+                <Text style={styles.formatSub}>We call you</Text>
+              </View>
             </View>
+            {format === 'phone' && <View style={styles.formatCheck}><Text style={styles.formatCheckText}>✓</Text></View>}
+          </TouchableOpacity>
+        </View>
 
-            {/* ── LOCATION FIELDS ──────────────────────────────────────────── */}
-            <Text style={styles.sectionLabel}>Your State</Text>
-            <TextInput
-              style={styles.fieldInput}
-              placeholder="e.g. Ohio"
-              placeholderTextColor={COLORS.textLight}
-              value={userState}
-              onChangeText={setUserState}
-              autoCapitalize="words"
-              returnKeyType="next"
-            />
+        <Text style={styles.sectionLabel}>Your Name <Text style={styles.optional}>(optional)</Text></Text>
+        <TextInput
+          style={styles.fieldInput}
+          placeholder="First name"
+          placeholderTextColor={COLORS.textLight}
+          value={userName}
+          onChangeText={setUserName}
+          autoCapitalize="words"
+          returnKeyType="next"
+        />
 
-            <CityCountyAutocomplete
-              label="Your City / County"
-              value={userCounty}
-              onChangeText={setUserCounty}
-              onSelect={(r) => { setUserCounty(r.county); if (!userState) setUserState(r.state); }}
-              placeholder="e.g. Franklin County or Columbus, OH"
-              style={styles.fieldInput}
-            />
+        <Text style={styles.sectionLabel}>Your Email <Text style={styles.optional}>(optional)</Text></Text>
+        <TextInput
+          style={styles.fieldInput}
+          placeholder="you@email.com"
+          placeholderTextColor={COLORS.textLight}
+          value={userEmail}
+          onChangeText={setUserEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          returnKeyType="next"
+        />
 
-            <Text style={styles.sectionLabel}>
-              What would you like to discuss?{' '}
-              <Text style={styles.sectionLabelOptional}>(optional)</Text>
-            </Text>
-            <TextInput
-              style={styles.fieldInput}
-              placeholder="e.g. IEP help, diagnosis next steps, meltdowns…"
-              placeholderTextColor={COLORS.textLight}
-              value={discuss}
-              onChangeText={setDiscuss}
-              returnKeyType="next"
-              maxLength={200}
-            />
+        <Text style={styles.sectionLabel}>Your State <Text style={styles.optional}>(optional)</Text></Text>
+        <TextInput
+          style={styles.fieldInput}
+          placeholder="e.g. Ohio"
+          placeholderTextColor={COLORS.textLight}
+          value={userState}
+          onChangeText={setUserState}
+          autoCapitalize="words"
+          returnKeyType="next"
+        />
 
-            <Text style={styles.sectionLabel}>
-              Additional notes{' '}
-              <Text style={styles.sectionLabelOptional}>(optional)</Text>
-            </Text>
-            <TextInput
-              style={styles.notesInput}
-              placeholder="Anything else Jessie should know before your call."
-              placeholderTextColor={COLORS.textLight}
-              multiline
-              numberOfLines={3}
-              value={notes}
-              onChangeText={setNotes}
-              maxLength={500}
-            />
+        <Text style={styles.sectionLabel}>Your City / County <Text style={styles.optional}>(optional)</Text></Text>
+        <TextInput
+          style={styles.fieldInput}
+          placeholder="e.g. Franklin County or Columbus"
+          placeholderTextColor={COLORS.textLight}
+          value={userCounty}
+          onChangeText={setUserCounty}
+          autoCapitalize="words"
+          returnKeyType="next"
+        />
 
-            <TouchableOpacity
-              style={[styles.confirmBtn, (!selectedSlot || booking) && styles.confirmBtnDisabled]}
-              onPress={handleConfirm}
-              activeOpacity={0.85}
-              disabled={!selectedSlot || booking}
-            >
-              {booking
-                ? <ActivityIndicator color={COLORS.white} size="small" />
-                : <Text style={styles.confirmBtnText}>Confirm Booking{price ? ` — ${price}` : ''} →</Text>
-              }
-            </TouchableOpacity>
+        <Text style={styles.sectionLabel}>What would you like to discuss? <Text style={styles.optional}>(optional)</Text></Text>
+        <TextInput
+          style={styles.fieldInput}
+          placeholder="e.g. IEP help, diagnosis next steps, meltdowns…"
+          placeholderTextColor={COLORS.textLight}
+          value={discuss}
+          onChangeText={setDiscuss}
+          returnKeyType="next"
+          maxLength={200}
+        />
 
-            <Text style={styles.disclaimer}>
-              After booking, you'll receive an email with a secure payment link. Payment is required at least 1 hour before your session. Cancel up to 24 hours before for a full refund.
-            </Text>
-          </>
-        )}
+        <Text style={styles.sectionLabel}>Additional notes <Text style={styles.optional}>(optional)</Text></Text>
+        <TextInput
+          style={styles.notesInput}
+          placeholder="Anything else Jessie should know before your call."
+          placeholderTextColor={COLORS.textLight}
+          multiline
+          numberOfLines={3}
+          value={notes}
+          onChangeText={setNotes}
+          maxLength={500}
+        />
+
+        <TouchableOpacity
+          style={[styles.confirmBtn, booking && styles.confirmBtnDisabled]}
+          onPress={handleBook}
+          activeOpacity={0.85}
+          disabled={booking}
+        >
+          <Text style={styles.confirmBtnText}>
+            {booking ? 'Opening Calendly…' : `Choose a Time${price ? ` — ${price}` : ''} →`}
+          </Text>
+        </TouchableOpacity>
+
+        <Text style={styles.disclaimer}>
+          You'll pick your time directly in Calendly. After booking, you'll receive an email with a secure payment link. Payment is required at least 1 hour before your session.
+        </Text>
         <View style={{ height: insets.bottom + 40 }} />
       </ScrollView>
     </KeyboardAvoidingView>
@@ -351,7 +252,7 @@ export default function BookSessionScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bg },
+  container: { flex: 1, backgroundColor: COLORS.background ?? '#F7F5FF' },
   scroll: { flex: 1 },
   scrollContent: { padding: SPACING.lg },
   header: {
@@ -382,6 +283,7 @@ const styles = StyleSheet.create({
   retryBtnText: { color: COLORS.white, fontWeight: '700', fontSize: FONT_SIZES.sm },
   sectionLabel: { fontSize: FONT_SIZES.md, fontWeight: '800', color: COLORS.text, marginBottom: SPACING.sm, marginTop: SPACING.xs },
   sectionLabelOptional: { fontSize: FONT_SIZES.sm, fontWeight: '400', color: COLORS.textMid },
+  optional: { fontSize: FONT_SIZES.sm, fontWeight: '400', color: COLORS.textMid },
   dateRow: { paddingBottom: SPACING.md, gap: SPACING.sm, paddingRight: SPACING.lg },
   dateChip: { alignItems: 'center', justifyContent: 'center', width: 62, paddingVertical: SPACING.sm, borderRadius: RADIUS.md, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.white },
   dateChipSelected: { backgroundColor: COLORS.purple, borderColor: COLORS.purple },

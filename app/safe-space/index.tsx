@@ -19,6 +19,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, SPACING, RADIUS, FONT_SIZES, SHADOWS } from '../../lib/theme';
 import { useChildChanged } from '../../hooks/useChildChanged';
+import { getValidToken } from '../../services/useAuth';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const STORE_KEY = 'ap_journal_entries';
@@ -239,8 +240,8 @@ export default function SafeSpaceScreen() {
 
   // ── Share to community ─────────────────────────────────────────────────────
   const shareToForum = async (entry: JournalEntry, anonymous: boolean) => {
-    let token: string | null = null;
-    try { token = await AsyncStorage.getItem(TOKEN_KEY); } catch {}
+    // Use getValidToken to auto-refresh Cognito token before posting
+    const token = await getValidToken();
     if (!token) {
       Alert.alert('Sign in required', 'Please sign in to share with the community.');
       return;

@@ -671,9 +671,9 @@ export default function DashboardScreen() {
             <View style={styles.premiumToolsRow}>
               {[
                 { icon: '🗺️', label: t('Transition\nGuide', 'Guía de\nTransición'), route: '/transition' },
-                { icon: '🎙️', label: t('IEP\nRecorder', 'Grabadora\nIEP'), route: '/iep-recorder' },
+                { icon: '🎙️', label: t('IEP\nRecorder', 'Grabadora\nIEP'), route: '/iep/meeting-recorder' },
                 { icon: '🏥', label: t('Provider\nDirectory', 'Directorio'), route: '/provider-directory' },
-                { icon: '📊', label: t('Trends', 'Tendencias'), route: '/trends' },
+                { icon: '📊', label: t('Trends', 'Tendencias'), route: '/observations/trends' },
               ].map((tool) => (
                 <TouchableOpacity
                   key={tool.route}

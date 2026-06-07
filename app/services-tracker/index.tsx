@@ -10,7 +10,6 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useChildChanged } from '../../hooks/useChildChanged';
 import { COLORS, SPACING, RADIUS, FONT_SIZES, SHADOWS } from '../../lib/theme';
-import CityCountyAutocomplete from '../../components/CityCountyAutocomplete';
 import { useIsPremium } from '../../hooks/useIsPremium';
 import {
   scheduleServiceReminders,
@@ -125,7 +124,11 @@ function daysUntil(dateStr?: string): number | null {
 }
 
 function formatDisplayTime(time24: string): string {
-  const [h, m] = time24.split(':').map(Number);
+  if (!time24 || !time24.includes(':')) return '';
+  const parts = time24.split(':');
+  const h = parseInt(parts[0], 10);
+  const m = parseInt(parts[1], 10);
+  if (isNaN(h) || isNaN(m)) return '';
   const ampm = h >= 12 ? 'PM' : 'AM';
   const h12 = h % 12 || 12;
   return `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
@@ -169,6 +172,8 @@ export default function ServicesTrackerScreen() {
   const [form, setForm] = useState<Omit<Service, 'id' | 'createdAt'>>(EMPTY_FORM);
   const [filterStatus, setFilterStatus] = useState<ServiceStatus | 'all'>('all');
   const [showDurationPicker, setShowDurationPicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
+  const [timePickerTarget, setTimePickerTarget] = useState<number | 'global'>('global'); // dow or 'global'
   const [saving, setSaving] = useState(false);
 
   // ── Data ──
@@ -594,12 +599,13 @@ export default function ServicesTrackerScreen() {
               <TextInput style={s.input} value={form.providerName} onChangeText={(v) => setForm({ ...form, providerName: v })} placeholder="e.g., Bright Futures ABA" placeholderTextColor={COLORS.textLight} />
 
               <Text style={s.fieldLabel}>Address / City</Text>
-              <CityCountyAutocomplete
+              <TextInput
+                style={s.input}
                 value={form.address ?? ''}
                 onChangeText={(v) => setForm({ ...form, address: v })}
-                onSelect={(r) => setForm({ ...form, address: `${r.city}, ${r.state}` })}
                 placeholder="e.g. Columbus, OH or 123 Main St"
-                style={s.input}
+                placeholderTextColor={COLORS.textLight}
+                autoCapitalize="words"
               />
 
               <View style={s.twoCol}>
@@ -677,13 +683,14 @@ export default function ServicesTrackerScreen() {
                   {form.scheduleDays.slice().sort((a, b) => a - b).map((dow) => (
                     <View key={dow} style={[s.twoCol, { marginBottom: SPACING.sm }]}>
                       <Text style={[s.fieldLabel, { width: 44, marginBottom: 0, alignSelf: 'center' }]}>{DAY_FULL[dow]}</Text>
-                      <TextInput
-                        style={[s.input, { flex: 1 }]}
-                        value={(form.scheduleTimes ?? {})[dow] ?? form.scheduleTime}
-                        onChangeText={(v) => setForm({ ...form, scheduleTimes: { ...(form.scheduleTimes ?? {}), [dow]: v } })}
-                        placeholder="09:00"
-                        placeholderTextColor={COLORS.textLight}
-                      />
+                      <TouchableOpacity
+                        style={[s.input, s.pickerBtn, { flex: 1 }]}
+                        onPress={() => { setTimePickerTarget(dow); setShowTimePicker(true); }}
+                      >
+                        <Text style={s.pickerBtnText}>
+                          {formatDisplayTime((form.scheduleTimes ?? {})[dow] ?? form.scheduleTime) || 'Pick time'}
+                        </Text>
+                      </TouchableOpacity>
                     </View>
                   ))}
                   <View style={{ marginTop: SPACING.xs }}>
@@ -696,8 +703,15 @@ export default function ServicesTrackerScreen() {
               ) : (
                 <View style={s.twoCol}>
                   <View style={{ flex: 1 }}>
-                    <Text style={s.fieldLabel}>Start Time (HH:MM)</Text>
-                    <TextInput style={s.input} value={form.scheduleTime} onChangeText={(v) => setForm({ ...form, scheduleTime: v })} placeholder="09:00" placeholderTextColor={COLORS.textLight} />
+                    <Text style={s.fieldLabel}>Start Time</Text>
+                    <TouchableOpacity
+                      style={[s.input, s.pickerBtn]}
+                      onPress={() => { setTimePickerTarget('global'); setShowTimePicker(true); }}
+                    >
+                      <Text style={s.pickerBtnText}>
+                        {formatDisplayTime(form.scheduleTime) || 'Pick time'}
+                      </Text>
+                    </TouchableOpacity>
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={s.fieldLabel}>Duration</Text>
@@ -777,6 +791,50 @@ export default function ServicesTrackerScreen() {
               return (
                 <TouchableOpacity key={opt} style={[s.durationOption, form.scheduleDuration === mins && s.durationOptionOn]} onPress={() => { setForm({ ...form, scheduleDuration: mins }); setShowDurationPicker(false); }}>
                   <Text style={[s.durationOptionText, form.scheduleDuration === mins && s.durationOptionTextOn]}>{opt}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* 12hr Time picker modal */}
+      <Modal animationType="fade" transparent visible={showTimePicker} onRequestClose={() => setShowTimePicker(false)}>
+        <TouchableOpacity style={s.durationBackdrop} onPress={() => setShowTimePicker(false)} activeOpacity={1}>
+          <View style={s.durationSheet}>
+            <Text style={s.durationTitle}>Select Time</Text>
+            {['6:00 AM','6:30 AM','7:00 AM','7:30 AM','8:00 AM','8:30 AM','9:00 AM','9:30 AM',
+              '10:00 AM','10:30 AM','11:00 AM','11:30 AM','12:00 PM','12:30 PM',
+              '1:00 PM','1:30 PM','2:00 PM','2:30 PM','3:00 PM','3:30 PM',
+              '4:00 PM','4:30 PM','5:00 PM','5:30 PM','6:00 PM','6:30 PM',
+              '7:00 PM','7:30 PM','8:00 PM',
+            ].map((label) => {
+              // Convert 12hr label to HH:MM 24h
+              const [timePart, ampm] = label.split(' ');
+              const [hStr, mStr] = timePart.split(':');
+              let h24 = parseInt(hStr, 10);
+              const m24 = parseInt(mStr, 10);
+              if (ampm === 'PM' && h24 !== 12) h24 += 12;
+              if (ampm === 'AM' && h24 === 12) h24 = 0;
+              const val24 = `${String(h24).padStart(2,'0')}:${String(m24).padStart(2,'0')}`;
+              const currentVal = timePickerTarget === 'global'
+                ? form.scheduleTime
+                : ((form.scheduleTimes ?? {})[timePickerTarget as number] ?? form.scheduleTime);
+              const isSelected = currentVal === val24;
+              return (
+                <TouchableOpacity
+                  key={label}
+                  style={[s.durationOption, isSelected && s.durationOptionOn]}
+                  onPress={() => {
+                    if (timePickerTarget === 'global') {
+                      setForm({ ...form, scheduleTime: val24 });
+                    } else {
+                      setForm({ ...form, scheduleTimes: { ...(form.scheduleTimes ?? {}), [timePickerTarget as number]: val24 } });
+                    }
+                    setShowTimePicker(false);
+                  }}
+                >
+                  <Text style={[s.durationOptionText, isSelected && s.durationOptionTextOn]}>{label}</Text>
                 </TouchableOpacity>
               );
             })}

@@ -19,7 +19,6 @@ import * as ImagePicker from 'expo-image-picker';
 import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '../lib/theme';
 import { storage } from '../services/storage';
 import { addChild, setActiveChildId, loadChildren } from '../services/childManager';
-import CityCountyAutocomplete from '../components/CityCountyAutocomplete';
 
 const AVATAR_EMOJIS = [
   '🦋', '🌈', '🦄', '🐻',
@@ -230,13 +229,14 @@ export default function ProfileSetupScreen() {
             <Text style={[styles.pickerText, !state && styles.pickerPlaceholder]}>{state || 'Select your state'}</Text>
             <Text style={styles.pickerChevron}>›</Text>
           </TouchableOpacity>
-          <CityCountyAutocomplete
-            label="City / County"
+          <Text style={styles.label}>City / County</Text>
+          <TextInput
+            style={styles.input}
             value={county}
             onChangeText={setCounty}
-            onSelect={(r) => { setCounty(r.county); if (!state) setState(r.state); }}
-            placeholder="e.g. Franklin County or Columbus, OH"
-            style={styles.input}
+            placeholder="e.g. Franklin County or Columbus"
+            placeholderTextColor={COLORS.textLight}
+            autoCapitalize="words"
           />
         </View>
 

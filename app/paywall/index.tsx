@@ -218,14 +218,14 @@ export default function PaywallScreen() {
         const subs = await fetchProducts({ skus: PRODUCT_IDS, type: 'subs' });
         (subs ?? []).forEach((sub: any) => {
           const price = sub.localizedPrice ?? sub.displayPrice ?? null;
-          if (sub.productId === PRODUCT_ID_ANNUAL)  setAnnualPrice(price  ?? '$119.99');
-          if (sub.productId === PRODUCT_ID_MONTHLY) setMonthlyPrice(price ?? '$14.99');
+          if (sub.productId === PRODUCT_ID_ANNUAL)  setAnnualPrice(price  ?? '$79.99');
+          if (sub.productId === PRODUCT_ID_MONTHLY) setMonthlyPrice(price ?? '$9.99');
         });
         setIapReady(true);
       } catch (e) {
         console.log('IAP setup error', e);
-        setAnnualPrice('$119.99');
-        setMonthlyPrice('$14.99');
+        setAnnualPrice('$79.99');
+        setMonthlyPrice('$9.99');
         setIapReady(true);
       }
     };
@@ -233,8 +233,8 @@ export default function PaywallScreen() {
     setup();
 
     const fallbackTimer = setTimeout(() => {
-      setAnnualPrice(prev => prev ?? '$119.99');
-      setMonthlyPrice(prev => prev ?? '$14.99');
+      setAnnualPrice(prev => prev ?? '$79.99');
+      setMonthlyPrice(prev => prev ?? '$9.99');
       setIapReady(true);
     }, 4000);
 
@@ -328,7 +328,7 @@ export default function PaywallScreen() {
           <View style={styles.planToggle}>
             <TouchableOpacity style={[styles.planOption, selectedPlan === 'monthly' && styles.planOptionActive]} onPress={() => setSelectedPlan('monthly')} activeOpacity={0.8}>
               <Text style={[styles.planLabel, selectedPlan === 'monthly' && styles.planLabelActive]}>Monthly</Text>
-              <Text style={[styles.planPrice, selectedPlan === 'monthly' && styles.planPriceActive]}>{monthlyPrice ?? '$14.99'}</Text>
+              <Text style={[styles.planPrice, selectedPlan === 'monthly' && styles.planPriceActive]}>{monthlyPrice ?? '$9.99'}</Text>
               <Text style={[styles.planSub, selectedPlan === 'monthly' && styles.planSubActive]}>per month</Text>
             </TouchableOpacity>
 
@@ -337,7 +337,7 @@ export default function PaywallScreen() {
                 <Text style={[styles.planLabel, selectedPlan === 'annual' && styles.planLabelActive]}>Annual</Text>
                 <View style={styles.saveBadge}><Text style={styles.saveBadgeText}>BEST VALUE</Text></View>
               </View>
-              <Text style={[styles.planPrice, selectedPlan === 'annual' && styles.planPriceActive]}>{annualPrice ?? '$119.99'}</Text>
+              <Text style={[styles.planPrice, selectedPlan === 'annual' && styles.planPriceActive]}>{annualPrice ?? '$79.99'}</Text>
               <Text style={[styles.planSub, selectedPlan === 'annual' && styles.planSubActive]}>~$9.99/mo</Text>
             </TouchableOpacity>
           </View>
@@ -356,7 +356,7 @@ export default function PaywallScreen() {
               <Text style={styles.purchaseBtnText}>{priceLoaded ? `Get Premium — ${currentPrice}` : 'Get Premium'}</Text>
             )}
           </TouchableOpacity>
-          <Text style={styles.priceNote}>{selectedPlan === 'annual' ? `Billed annually at ${annualPrice ?? '$119.99'} · ~$9.99/mo · cancel anytime` : `Billed monthly at ${monthlyPrice ?? '$14.99'} · cancel anytime`}</Text>
+          <Text style={styles.priceNote}>{selectedPlan === 'annual' ? `Billed annually at ${annualPrice ?? '$79.99'} · ~$9.99/mo · cancel anytime` : `Billed monthly at ${monthlyPrice ?? '$9.99'} · cancel anytime`}</Text>
 
           {/* Hardship callout — light blue, above Get Premium in ctaSection */}
           <TouchableOpacity
@@ -450,8 +450,8 @@ export default function PaywallScreen() {
 
           <Text style={styles.legalText}>
             {selectedPlan === 'annual'
-              ? `Subscription auto-renews annually at ${annualPrice ?? '$119.99'} unless cancelled at least 24 hours before the renewal date.`
-              : `Subscription auto-renews monthly at ${monthlyPrice ?? '$14.99'} unless cancelled at least 24 hours before the renewal date.`}
+              ? `Subscription auto-renews annually at ${annualPrice ?? '$79.99'} unless cancelled at least 24 hours before the renewal date.`
+              : `Subscription auto-renews monthly at ${monthlyPrice ?? '$9.99'} unless cancelled at least 24 hours before the renewal date.`}
           </Text>
           <View style={styles.legalLinks}>
             <TouchableOpacity onPress={() => Linking.openURL('https://info.autismpathways.app/privacy-policy/')}><Text style={styles.legalLink}>Privacy Policy</Text></TouchableOpacity>
