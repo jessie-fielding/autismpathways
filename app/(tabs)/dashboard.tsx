@@ -427,8 +427,12 @@ export default function DashboardScreen() {
           </Text>
         </View>
         <TouchableOpacity style={styles.avatarCircle} onPress={() => setMenuOpen(true)}>
-          {child?.avatar && child.avatar.length <= 4 ? (
+          {child?.avatar && /\p{Emoji}/u.test(child.avatar) ? (
             <Text style={styles.avatarEmoji}>{child.avatar}</Text>
+          ) : child?.name ? (
+            <Text style={styles.avatarText}>
+              {child.name.slice(0, 2).toUpperCase()}
+            </Text>
           ) : (
             <Text style={styles.avatarText}>
               {(parentFirst || 'A').charAt(0).toUpperCase()}

@@ -106,12 +106,10 @@ export function AuthProvider({ children }: any) {
             if (session) {
               // Refresh the stored token with the latest one
               await AsyncStorage.setItem(TOKEN_KEY, session.getIdToken().getJwtToken());
-            } else {
-              // Session expired — sign the user out silently
-              await AsyncStorage.multiRemove([TOKEN_KEY, USER_EMAIL_KEY]);
-              setIsSignedIn(false);
-              setUserEmail(null);
             }
+            // If session is null, do NOT sign out — Apple/Phone users have
+            // Lambda-issued tokens that Cognito doesn't know about.
+            // Only sign out if there is truly no stored token at all.
           })
           .catch(() => {
             // Network error — keep the user signed in optimistically
@@ -640,6 +638,7 @@ export function AuthProvider({ children }: any) {
  * Returns null if the user is not signed in at all.
  */
 export async function getValidToken(): Promise<string | null> {
+  const LAMBDA_BASE = 'https://inu3nb5lrfvftfyiwprftqshpy0zcegu.lambda-url.us-east-2.on.aws';
   try {
     // Try Cognito refresh first (works for email/Google sign-in)
     const session = await getCurrentSession();
@@ -651,7 +650,28 @@ export async function getValidToken(): Promise<string | null> {
   } catch {
     // Cognito not available (Apple/Phone user) — fall through
   }
-  // Fallback: return stored token (Apple/Phone tokens are long-lived)
+  // Try Lambda Cognito refresh using stored refresh token (Apple/Phone users)
+  try {
+    const refreshToken = await AsyncStorage.getItem('authRefreshToken');
+    if (refreshToken) {
+      const res = await fetch(`${LAMBDA_BASE}/api/auth/cognito-refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.token) {
+          await AsyncStorage.setItem('authToken', data.token);
+          if (data.refreshToken) await AsyncStorage.setItem('authRefreshToken', data.refreshToken);
+          return data.token;
+        }
+      }
+    }
+  } catch {
+    // Lambda refresh failed — fall through to stored token
+  }
+  // Final fallback: return stored token
   try {
     return await AsyncStorage.getItem('authToken');
   } catch {
