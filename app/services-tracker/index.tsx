@@ -10,6 +10,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useChildChanged } from '../../hooks/useChildChanged';
 import { COLORS, SPACING, RADIUS, FONT_SIZES, SHADOWS } from '../../lib/theme';
+import CityCountyAutocomplete from '../../components/CityCountyAutocomplete';
 import { useIsPremium } from '../../hooks/useIsPremium';
 import {
   scheduleServiceReminders,
@@ -599,13 +600,11 @@ export default function ServicesTrackerScreen() {
               <TextInput style={s.input} value={form.providerName} onChangeText={(v) => setForm({ ...form, providerName: v })} placeholder="e.g., Bright Futures ABA" placeholderTextColor={COLORS.textLight} />
 
               <Text style={s.fieldLabel}>Address / City</Text>
-              <TextInput
-                style={s.input}
+              <CityCountyAutocomplete
                 value={form.address ?? ''}
                 onChangeText={(v) => setForm({ ...form, address: v })}
+                onSelect={({ city, state }) => setForm({ ...form, address: `${city}, ${state}` })}
                 placeholder="e.g. Columbus, OH or 123 Main St"
-                placeholderTextColor={COLORS.textLight}
-                autoCapitalize="words"
               />
 
               <View style={s.twoCol}>
@@ -737,12 +736,11 @@ export default function ServicesTrackerScreen() {
                   <Text style={s.leaveBoxTitle}>🚗 Leave Reminder Setup</Text>
                   <Text style={s.leaveBoxSub}>We'll calculate your drive time and alert you when it's time to leave. Enter your starting address below.</Text>
                   <Text style={s.fieldLabel}>Your Starting Address</Text>
-                  <TextInput
-                    style={s.input}
-                    value={form.startingAddress}
+                  <CityCountyAutocomplete
+                    value={form.startingAddress ?? ''}
                     onChangeText={(v) => setForm({ ...form, startingAddress: v })}
+                    onSelect={({ city, state }) => setForm({ ...form, startingAddress: `${city}, ${state}` })}
                     placeholder="e.g., 456 Oak Ave, Denver CO 80204"
-                    placeholderTextColor={COLORS.textLight}
                   />
                   <Text style={s.leaveBoxNote}>
                     Stored only on your device. Used once to estimate drive time when saving.
