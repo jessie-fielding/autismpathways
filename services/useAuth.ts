@@ -650,11 +650,11 @@ export async function getValidToken(): Promise<string | null> {
   } catch {
     // Cognito not available (Apple/Phone user) — fall through
   }
-  // Try Lambda Cognito refresh using stored refresh token (Apple/Phone users)
+  // Try Lambda /api/auth/refresh endpoint using stored Cognito refresh token (all users)
   try {
     const refreshToken = await AsyncStorage.getItem('authRefreshToken');
     if (refreshToken) {
-      const res = await fetch(`${LAMBDA_BASE}/api/auth/cognito-refresh`, {
+      const res = await fetch(`${LAMBDA_BASE}/api/auth/refresh`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ refreshToken }),
@@ -663,7 +663,6 @@ export async function getValidToken(): Promise<string | null> {
         const data = await res.json();
         if (data.token) {
           await AsyncStorage.setItem('authToken', data.token);
-          if (data.refreshToken) await AsyncStorage.setItem('authRefreshToken', data.refreshToken);
           return data.token;
         }
       }
