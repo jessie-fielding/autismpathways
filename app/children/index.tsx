@@ -1,8 +1,9 @@
 import React, { useState, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  TextInput, Modal, Alert, ActivityIndicator, KeyboardAvoidingView, Platform,
+  TextInput, Modal, Alert, ActivityIndicator, KeyboardAvoidingView, Platform, Image,
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -213,7 +214,11 @@ export default function ManageChildrenScreen() {
                     activeOpacity={0.75}
                   >
                     <View style={[styles.avatar, { backgroundColor: child.color || COLORS.purple }]}>
-                      <Text style={styles.avatarText}>{child.avatar || child.name.slice(0, 2).toUpperCase()}</Text>
+                      {child.avatar && (child.avatar.startsWith('file://') || child.avatar.startsWith('content://') || child.avatar.startsWith('http')) ? (
+                        <Image source={{ uri: child.avatar }} style={{ width: 48, height: 48, borderRadius: 24 }} />
+                      ) : (
+                        <Text style={styles.avatarText}>{child.avatar || child.name.slice(0, 2).toUpperCase()}</Text>
+                      )}
                     </View>
                     <View style={styles.childInfo}>
                       <View style={styles.childNameRow}>
@@ -293,8 +298,72 @@ export default function ManageChildrenScreen() {
                 {editingId ? 'Edit Child' : 'Add a Child'}
               </Text>
 
-              {/* Avatar Emoji Picker */}
-              <Text style={styles.fieldLabel}>Pick an Avatar</Text>
+              {/* Photo / Avatar Picker */}
+              <Text style={styles.fieldLabel}>Child's Photo or Avatar</Text>
+              <View style={styles.photoRow}>
+                <View style={styles.photoPreview}>
+                  {form.avatar && (form.avatar.startsWith('file://') || form.avatar.startsWith('content://') || form.avatar.startsWith('http')) ? (
+                    <Image source={{ uri: form.avatar }} style={styles.photoPreviewImg} />
+                  ) : form.avatar ? (
+                    <Text style={{ fontSize: 36 }}>{form.avatar}</Text>
+                  ) : (
+                    <Text style={{ fontSize: 32 }}>📷</Text>
+                  )}
+                </View>
+                <View style={styles.photoButtons}>
+                  <TouchableOpacity
+                    style={styles.photoBtn}
+                    onPress={async () => {
+                      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+                      if (status !== 'granted') {
+                        Alert.alert('Permission needed', 'Please allow photo access in Settings.');
+                        return;
+                      }
+                      const result = await ImagePicker.launchImageLibraryAsync({
+                        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                        allowsEditing: true,
+                        aspect: [1, 1],
+                        quality: 0.7,
+                      });
+                      if (!result.canceled && result.assets[0]) {
+                        setForm((f) => ({ ...f, avatar: result.assets[0].uri }));
+                      }
+                    }}
+                  >
+                    <Text style={styles.photoBtnText}>📁 Choose Photo</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.photoBtn}
+                    onPress={async () => {
+                      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+                      if (status !== 'granted') {
+                        Alert.alert('Permission needed', 'Please allow camera access in Settings.');
+                        return;
+                      }
+                      const result = await ImagePicker.launchCameraAsync({
+                        allowsEditing: true,
+                        aspect: [1, 1],
+                        quality: 0.7,
+                      });
+                      if (!result.canceled && result.assets[0]) {
+                        setForm((f) => ({ ...f, avatar: result.assets[0].uri }));
+                      }
+                    }}
+                  >
+                    <Text style={styles.photoBtnText}>📸 Take Photo</Text>
+                  </TouchableOpacity>
+                  {form.avatar && (
+                    <TouchableOpacity
+                      style={[styles.photoBtn, { borderColor: '#E53E3E' }]}
+                      onPress={() => setForm((f) => ({ ...f, avatar: '' }))}
+                    >
+                      <Text style={[styles.photoBtnText, { color: '#E53E3E' }]}>✕ Remove</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </View>
+              {/* Emoji Picker */}
+              <Text style={[styles.fieldLabel, { marginTop: SPACING.sm }]}>Or Pick an Emoji</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.emojiScroll} contentContainerStyle={styles.emojiScrollContent}>
                 {AVATAR_EMOJIS.map((emoji) => (
                   <TouchableOpacity
@@ -579,6 +648,22 @@ const styles = StyleSheet.create({
   },
   journeyCheckSelected: { backgroundColor: COLORS.purple, borderColor: COLORS.purple },
   journeyCheckText: { color: '#fff', fontSize: 13, fontWeight: '800' },
+
+  // ── Photo picker ──
+  photoRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md, marginBottom: SPACING.sm },
+  photoPreview: {
+    width: 72, height: 72, borderRadius: 36,
+    backgroundColor: COLORS.bg, borderWidth: 1.5, borderColor: COLORS.border,
+    alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
+  },
+  photoPreviewImg: { width: 72, height: 72, borderRadius: 36 },
+  photoButtons: { flex: 1, gap: 6 },
+  photoBtn: {
+    paddingVertical: 7, paddingHorizontal: SPACING.md,
+    borderRadius: RADIUS.sm, borderWidth: 1, borderColor: COLORS.purple,
+    alignItems: 'center',
+  },
+  photoBtnText: { fontSize: FONT_SIZES.sm, color: COLORS.purple, fontWeight: '600' },
 
   modalBtns: { flexDirection: 'row', gap: SPACING.md, marginTop: SPACING.xxl },
   modalCancel: {

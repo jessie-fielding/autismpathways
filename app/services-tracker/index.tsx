@@ -2,7 +2,7 @@ import React, { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
   Modal, TextInput, Alert, KeyboardAvoidingView, Platform,
-  Linking,
+  Linking, FlatList,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
@@ -796,50 +796,54 @@ export default function ServicesTrackerScreen() {
         </TouchableOpacity>
       </Modal>
 
-      {/* 12hr Time picker modal */}
-      <Modal animationType="fade" transparent visible={showTimePicker} onRequestClose={() => setShowTimePicker(false)}>
-        <TouchableOpacity style={s.durationBackdrop} onPress={() => setShowTimePicker(false)} activeOpacity={1}>
-          <TouchableOpacity activeOpacity={1} onPress={() => {}} style={[s.durationSheet, { maxHeight: 400 }]}>
+      {/* 12hr Time picker modal — uses FlatList (not nested ScrollView) to avoid iOS touch conflicts */}
+      <Modal animationType="slide" transparent visible={showTimePicker} onRequestClose={() => setShowTimePicker(false)}>
+        <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.4)' }}>
+          <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={() => setShowTimePicker(false)} />
+          <View style={[s.durationSheet, { maxHeight: 420, paddingBottom: 24 }]}>
+            <View style={s.durationHandle} />
             <Text style={s.durationTitle}>Select Time</Text>
-            <ScrollView showsVerticalScrollIndicator={true} keyboardShouldPersistTaps="handled" style={{ flexGrow: 0 }}>
-            {['6:00 AM','6:30 AM','7:00 AM','7:30 AM','8:00 AM','8:30 AM','9:00 AM','9:30 AM',
-              '10:00 AM','10:30 AM','11:00 AM','11:30 AM','12:00 PM','12:30 PM',
-              '1:00 PM','1:30 PM','2:00 PM','2:30 PM','3:00 PM','3:30 PM',
-              '4:00 PM','4:30 PM','5:00 PM','5:30 PM','6:00 PM','6:30 PM',
-              '7:00 PM','7:30 PM','8:00 PM',
-            ].map((label) => {
-              // Convert 12hr label to HH:MM 24h
-              const [timePart, ampm] = label.split(' ');
-              const [hStr, mStr] = timePart.split(':');
-              let h24 = parseInt(hStr, 10);
-              const m24 = parseInt(mStr, 10);
-              if (ampm === 'PM' && h24 !== 12) h24 += 12;
-              if (ampm === 'AM' && h24 === 12) h24 = 0;
-              const val24 = `${String(h24).padStart(2,'0')}:${String(m24).padStart(2,'0')}`;
-              const currentVal = timePickerTarget === 'global'
-                ? form.scheduleTime
-                : ((form.scheduleTimes ?? {})[timePickerTarget as number] ?? form.scheduleTime);
-              const isSelected = currentVal === val24;
-              return (
-                <TouchableOpacity
-                  key={label}
-                  style={[s.durationOption, isSelected && s.durationOptionOn]}
-                  onPress={() => {
-                    if (timePickerTarget === 'global') {
-                      setForm({ ...form, scheduleTime: val24 });
-                    } else {
-                      setForm({ ...form, scheduleTimes: { ...(form.scheduleTimes ?? {}), [timePickerTarget as number]: val24 } });
-                    }
-                    setShowTimePicker(false);
-                  }}
-                >
-                  <Text style={[s.durationOptionText, isSelected && s.durationOptionTextOn]}>{label}</Text>
-                </TouchableOpacity>
-              );
-            })}
-                        </ScrollView>
-          </TouchableOpacity>
-        </TouchableOpacity>
+            <FlatList
+              data={['6:00 AM','6:30 AM','7:00 AM','7:30 AM','8:00 AM','8:30 AM','9:00 AM','9:30 AM',
+                '10:00 AM','10:30 AM','11:00 AM','11:30 AM','12:00 PM','12:30 PM',
+                '1:00 PM','1:30 PM','2:00 PM','2:30 PM','3:00 PM','3:30 PM',
+                '4:00 PM','4:30 PM','5:00 PM','5:30 PM','6:00 PM','6:30 PM',
+                '7:00 PM','7:30 PM','8:00 PM']}
+              keyExtractor={(item) => item}
+              showsVerticalScrollIndicator
+              keyboardShouldPersistTaps="always"
+              style={{ width: '100%' }}
+              renderItem={({ item: label }) => {
+                const [timePart, ampm] = label.split(' ');
+                const [hStr, mStr] = timePart.split(':');
+                let h24 = parseInt(hStr, 10);
+                const m24 = parseInt(mStr, 10);
+                if (ampm === 'PM' && h24 !== 12) h24 += 12;
+                if (ampm === 'AM' && h24 === 12) h24 = 0;
+                const val24 = `${String(h24).padStart(2,'0')}:${String(m24).padStart(2,'0')}`;
+                const currentVal = timePickerTarget === 'global'
+                  ? form.scheduleTime
+                  : ((form.scheduleTimes ?? {})[timePickerTarget as number] ?? form.scheduleTime);
+                const isSelected = currentVal === val24;
+                return (
+                  <TouchableOpacity
+                    style={[s.durationOption, isSelected && s.durationOptionOn]}
+                    onPress={() => {
+                      if (timePickerTarget === 'global') {
+                        setForm(prev => ({ ...prev, scheduleTime: val24 }));
+                      } else {
+                        setForm(prev => ({ ...prev, scheduleTimes: { ...(prev.scheduleTimes ?? {}), [timePickerTarget as number]: val24 } }));
+                      }
+                      setShowTimePicker(false);
+                    }}
+                  >
+                    <Text style={[s.durationOptionText, isSelected && s.durationOptionTextOn]}>{label}</Text>
+                  </TouchableOpacity>
+                );
+              }}
+            />
+          </View>
+        </View>
       </Modal>
     </View>
   );

@@ -16,7 +16,7 @@
  *   stateFilter    — optional 2-letter state code to restrict suggestions
  *   label          — optional label above the input
  */
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useRef } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   ViewStyle, TextStyle,
@@ -107,6 +107,8 @@ export default function CityCountyAutocomplete({
   label,
 }: Props) {
   const [focused, setFocused] = useState(false);
+  // Prevents blur from hiding the dropdown when user taps a suggestion
+  const suppressBlurRef = useRef(false);
 
   const suggestions = useMemo<AutocompleteResult[]>(() => {
     const q = value.trim().toLowerCase();
@@ -130,6 +132,7 @@ export default function CityCountyAutocomplete({
   }, [value, stateFilter]);
 
   const handleSelect = useCallback((result: AutocompleteResult) => {
+    suppressBlurRef.current = false;
     onSelect(result);
     setFocused(false);
   }, [onSelect]);
@@ -144,7 +147,12 @@ export default function CityCountyAutocomplete({
         value={value}
         onChangeText={onChangeText}
         onFocus={() => setFocused(true)}
-        onBlur={() => setTimeout(() => setFocused(false), 200)}
+        onBlur={() => {
+          // Only hide if user didn't tap a suggestion
+          setTimeout(() => {
+            if (!suppressBlurRef.current) setFocused(false);
+          }, 300);
+        }}
         placeholder={placeholder}
         placeholderTextColor={COLORS.textLight}
         autoCapitalize="words"
@@ -157,6 +165,7 @@ export default function CityCountyAutocomplete({
             <TouchableOpacity
               key={`${s.city}-${s.state}-${i}`}
               style={[styles.suggestion, i < suggestions.length - 1 && styles.suggestionBorder]}
+              onPressIn={() => { suppressBlurRef.current = true; }}
               onPress={() => handleSelect(s)}
               activeOpacity={0.7}
             >
