@@ -4,8 +4,10 @@
  * A lightweight autocomplete text input for US cities and counties.
  * Uses a bundled dataset — no API key required.
  *
- * Uses an INLINE dropdown (not absolute-positioned) so it works correctly
- * inside ScrollViews without clipping or zIndex issues.
+ * Uses a MODAL OVERLAY for the suggestion list so it works correctly
+ * inside ScrollViews and nested Modals without clipping or zIndex issues.
+ * The suggestion list is positioned absolutely over the input using
+ * onLayout + measure to find the input's screen position.
  *
  * Props:
  *   value          — current text value
@@ -19,7 +21,7 @@
 import React, { useState, useMemo, useCallback, useRef } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  ViewStyle, TextStyle,
+  Modal, FlatList, ViewStyle, TextStyle,
 } from 'react-native';
 import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '../lib/theme';
 
@@ -87,6 +89,8 @@ export type AutocompleteResult = {
   display: string;
 };
 
+type DropdownPosition = { top: number; left: number; width: number };
+
 type Props = {
   value: string;
   onChangeText: (text: string) => void;
@@ -107,8 +111,8 @@ export default function CityCountyAutocomplete({
   label,
 }: Props) {
   const [focused, setFocused] = useState(false);
-  // Prevents blur from hiding the dropdown when user taps a suggestion
-  const suppressBlurRef = useRef(false);
+  const [dropdownPos, setDropdownPos] = useState<DropdownPosition | null>(null);
+  const inputRef = useRef<View>(null);
 
   const suggestions = useMemo<AutocompleteResult[]>(() => {
     const q = value.trim().toLowerCase();
@@ -131,56 +135,102 @@ export default function CityCountyAutocomplete({
       }));
   }, [value, stateFilter]);
 
+  const measureInput = useCallback(() => {
+    if (inputRef.current) {
+      inputRef.current.measureInWindow((x, y, width, height) => {
+        setDropdownPos({ top: y + height + 2, left: x, width });
+      });
+    }
+  }, []);
+
+  const handleFocus = useCallback(() => {
+    setFocused(true);
+    measureInput();
+  }, [measureInput]);
+
+  const handleBlur = useCallback(() => {
+    // Small delay so onPress on suggestion fires before blur hides the list
+    setTimeout(() => setFocused(false), 200);
+  }, []);
+
   const handleSelect = useCallback((result: AutocompleteResult) => {
-    suppressBlurRef.current = false;
     onSelect(result);
     setFocused(false);
   }, [onSelect]);
 
-  const showDropdown = focused && suggestions.length > 0;
+  const showDropdown = focused && suggestions.length > 0 && dropdownPos !== null;
 
   return (
-    <View style={styles.wrapper}>
+    <View ref={inputRef} collapsable={false} style={styles.wrapper}>
       {label ? <Text style={styles.label}>{label}</Text> : null}
       <TextInput
         style={[styles.input, style as any]}
         value={value}
-        onChangeText={onChangeText}
-        onFocus={() => setFocused(true)}
-        onBlur={() => {
-          // Only hide if user didn't tap a suggestion
-          setTimeout(() => {
-            if (!suppressBlurRef.current) setFocused(false);
-          }, 300);
+        onChangeText={(text) => {
+          onChangeText(text);
+          // Re-measure on each keystroke in case layout shifted
+          setTimeout(measureInput, 50);
         }}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
         placeholder={placeholder}
         placeholderTextColor={COLORS.textLight}
         autoCapitalize="words"
         autoCorrect={false}
       />
-      {/* Inline dropdown — renders in normal flow so it works inside ScrollViews */}
-      {showDropdown && (
-        <View style={styles.dropdown}>
-          {suggestions.map((s, i) => (
-            <TouchableOpacity
-              key={`${s.city}-${s.state}-${i}`}
-              style={[styles.suggestion, i < suggestions.length - 1 && styles.suggestionBorder]}
-              onPressIn={() => { suppressBlurRef.current = true; }}
-              onPress={() => handleSelect(s)}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.suggestionCity}>{s.city}, {s.state}</Text>
-              <Text style={styles.suggestionCounty}>{s.county} County</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+
+      {/* Modal overlay — renders on top of everything including nested Modals */}
+      {showDropdown && dropdownPos && (
+        <Modal
+          visible
+          transparent
+          animationType="none"
+          onRequestClose={() => setFocused(false)}
+        >
+          {/* Invisible full-screen backdrop to dismiss on outside tap */}
+          <TouchableOpacity
+            style={styles.backdrop}
+            activeOpacity={1}
+            onPress={() => setFocused(false)}
+          />
+          {/* Suggestion list absolutely positioned at measured input location */}
+          <View
+            style={[
+              styles.dropdown,
+              {
+                position: 'absolute',
+                top: dropdownPos.top,
+                left: dropdownPos.left,
+                width: dropdownPos.width,
+              },
+            ]}
+            pointerEvents="box-none"
+          >
+            <FlatList
+              data={suggestions}
+              keyExtractor={(item, i) => `${item.city}-${item.state}-${i}`}
+              keyboardShouldPersistTaps="always"
+              scrollEnabled={false}
+              renderItem={({ item: s, index: i }) => (
+                <TouchableOpacity
+                  style={[styles.suggestion, i < suggestions.length - 1 && styles.suggestionBorder]}
+                  onPress={() => handleSelect(s)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.suggestionCity}>{s.city}, {s.state}</Text>
+                  <Text style={styles.suggestionCounty}>{s.county} County</Text>
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </Modal>
       )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrapper: { },
+  wrapper: {},
   label: {
     fontSize: FONT_SIZES.sm, fontWeight: '600', color: COLORS.text,
     marginBottom: SPACING.xs,
@@ -190,12 +240,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md,
     fontSize: FONT_SIZES.base, color: COLORS.text, backgroundColor: COLORS.white,
   },
+  backdrop: {
+    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+  },
   dropdown: {
     backgroundColor: COLORS.white,
     borderRadius: RADIUS.sm,
     borderWidth: 1,
     borderColor: COLORS.border,
-    marginTop: 2,
+    zIndex: 9999,
     ...SHADOWS.md,
   },
   suggestion: {

@@ -773,77 +773,76 @@ export default function ServicesTrackerScreen() {
             <TouchableOpacity style={[s.saveBtn, saving && { opacity: 0.6 }]} onPress={handleSave} disabled={saving}>
               <Text style={s.saveBtnText}>{saving ? 'Saving…' : 'Save Service'}</Text>
             </TouchableOpacity>
+
+            {/* ── Duration picker inline sheet — rendered INSIDE form modal so iOS shows it ── */}
+            {showDurationPicker && (
+              <TouchableOpacity style={s.inlinePickerBackdrop} onPress={() => setShowDurationPicker(false)} activeOpacity={1}>
+                <View style={s.inlinePickerSheet}>
+                  <Text style={s.durationTitle}>Select Duration</Text>
+                  {DURATION_OPTIONS.map((opt) => {
+                    const mins = opt.includes('hr')
+                      ? (parseFloat(opt) * 60).toString()
+                      : opt.replace(' min', '');
+                    return (
+                      <TouchableOpacity key={opt} style={[s.durationOption, form.scheduleDuration === mins && s.durationOptionOn]} onPress={() => { setForm({ ...form, scheduleDuration: mins }); setShowDurationPicker(false); }}>
+                        <Text style={[s.durationOptionText, form.scheduleDuration === mins && s.durationOptionTextOn]}>{opt}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </TouchableOpacity>
+            )}
+
+            {/* ── Time picker inline sheet — rendered INSIDE form modal so iOS shows it ── */}
+            {showTimePicker && (
+              <TouchableOpacity style={s.inlinePickerBackdrop} onPress={() => setShowTimePicker(false)} activeOpacity={1}>
+                <View style={[s.inlinePickerSheet, { maxHeight: 400 }]}>
+                  <View style={s.durationHandle} />
+                  <Text style={s.durationTitle}>Select Time</Text>
+                  <FlatList
+                    data={['6:00 AM','6:30 AM','7:00 AM','7:30 AM','8:00 AM','8:30 AM','9:00 AM','9:30 AM',
+                      '10:00 AM','10:30 AM','11:00 AM','11:30 AM','12:00 PM','12:30 PM',
+                      '1:00 PM','1:30 PM','2:00 PM','2:30 PM','3:00 PM','3:30 PM',
+                      '4:00 PM','4:30 PM','5:00 PM','5:30 PM','6:00 PM','6:30 PM',
+                      '7:00 PM','7:30 PM','8:00 PM']}
+                    keyExtractor={(item) => item}
+                    showsVerticalScrollIndicator
+                    keyboardShouldPersistTaps="always"
+                    style={{ width: '100%' }}
+                    renderItem={({ item: label }) => {
+                      const [timePart, ampm] = label.split(' ');
+                      const [hStr, mStr] = timePart.split(':');
+                      let h24 = parseInt(hStr, 10);
+                      const m24 = parseInt(mStr, 10);
+                      if (ampm === 'PM' && h24 !== 12) h24 += 12;
+                      if (ampm === 'AM' && h24 === 12) h24 = 0;
+                      const val24 = `${String(h24).padStart(2,'0')}:${String(m24).padStart(2,'0')}`;
+                      const currentVal = timePickerTarget === 'global'
+                        ? form.scheduleTime
+                        : ((form.scheduleTimes ?? {})[timePickerTarget as number] ?? form.scheduleTime);
+                      const isSelected = currentVal === val24;
+                      return (
+                        <TouchableOpacity
+                          style={[s.durationOption, isSelected && s.durationOptionOn]}
+                          onPress={() => {
+                            if (timePickerTarget === 'global') {
+                              setForm(prev => ({ ...prev, scheduleTime: val24 }));
+                            } else {
+                              setForm(prev => ({ ...prev, scheduleTimes: { ...(prev.scheduleTimes ?? {}), [timePickerTarget as number]: val24 } }));
+                            }
+                            setShowTimePicker(false);
+                          }}
+                        >
+                          <Text style={[s.durationOptionText, isSelected && s.durationOptionTextOn]}>{label}</Text>
+                        </TouchableOpacity>
+                      );
+                    }}
+                  />
+                </View>
+              </TouchableOpacity>
+            )}
           </View>
         </KeyboardAvoidingView>
-      </Modal>
-
-      {/* Duration picker modal */}
-      <Modal animationType="fade" transparent visible={showDurationPicker} onRequestClose={() => setShowDurationPicker(false)}>
-        <TouchableOpacity style={s.durationBackdrop} onPress={() => setShowDurationPicker(false)} activeOpacity={1}>
-          <View style={s.durationSheet}>
-            <Text style={s.durationTitle}>Select Duration</Text>
-            {DURATION_OPTIONS.map((opt) => {
-              const mins = opt.includes('hr')
-                ? (parseFloat(opt) * 60).toString()
-                : opt.replace(' min', '');
-              return (
-                <TouchableOpacity key={opt} style={[s.durationOption, form.scheduleDuration === mins && s.durationOptionOn]} onPress={() => { setForm({ ...form, scheduleDuration: mins }); setShowDurationPicker(false); }}>
-                  <Text style={[s.durationOptionText, form.scheduleDuration === mins && s.durationOptionTextOn]}>{opt}</Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </TouchableOpacity>
-      </Modal>
-
-      {/* 12hr Time picker modal — uses FlatList (not nested ScrollView) to avoid iOS touch conflicts */}
-      <Modal animationType="slide" transparent visible={showTimePicker} onRequestClose={() => setShowTimePicker(false)}>
-        <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.4)' }}>
-          <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={() => setShowTimePicker(false)} />
-          <View style={[s.durationSheet, { maxHeight: 420, paddingBottom: 24 }]}>
-            <View style={s.durationHandle} />
-            <Text style={s.durationTitle}>Select Time</Text>
-            <FlatList
-              data={['6:00 AM','6:30 AM','7:00 AM','7:30 AM','8:00 AM','8:30 AM','9:00 AM','9:30 AM',
-                '10:00 AM','10:30 AM','11:00 AM','11:30 AM','12:00 PM','12:30 PM',
-                '1:00 PM','1:30 PM','2:00 PM','2:30 PM','3:00 PM','3:30 PM',
-                '4:00 PM','4:30 PM','5:00 PM','5:30 PM','6:00 PM','6:30 PM',
-                '7:00 PM','7:30 PM','8:00 PM']}
-              keyExtractor={(item) => item}
-              showsVerticalScrollIndicator
-              keyboardShouldPersistTaps="always"
-              style={{ width: '100%' }}
-              renderItem={({ item: label }) => {
-                const [timePart, ampm] = label.split(' ');
-                const [hStr, mStr] = timePart.split(':');
-                let h24 = parseInt(hStr, 10);
-                const m24 = parseInt(mStr, 10);
-                if (ampm === 'PM' && h24 !== 12) h24 += 12;
-                if (ampm === 'AM' && h24 === 12) h24 = 0;
-                const val24 = `${String(h24).padStart(2,'0')}:${String(m24).padStart(2,'0')}`;
-                const currentVal = timePickerTarget === 'global'
-                  ? form.scheduleTime
-                  : ((form.scheduleTimes ?? {})[timePickerTarget as number] ?? form.scheduleTime);
-                const isSelected = currentVal === val24;
-                return (
-                  <TouchableOpacity
-                    style={[s.durationOption, isSelected && s.durationOptionOn]}
-                    onPress={() => {
-                      if (timePickerTarget === 'global') {
-                        setForm(prev => ({ ...prev, scheduleTime: val24 }));
-                      } else {
-                        setForm(prev => ({ ...prev, scheduleTimes: { ...(prev.scheduleTimes ?? {}), [timePickerTarget as number]: val24 } }));
-                      }
-                      setShowTimePicker(false);
-                    }}
-                  >
-                    <Text style={[s.durationOptionText, isSelected && s.durationOptionTextOn]}>{label}</Text>
-                  </TouchableOpacity>
-                );
-              }}
-            />
-          </View>
-        </View>
       </Modal>
     </View>
   );
@@ -993,6 +992,7 @@ const s = StyleSheet.create({
   modalSheet: {
     backgroundColor: COLORS.white, borderTopLeftRadius: RADIUS.lg, borderTopRightRadius: RADIUS.lg,
     padding: SPACING.lg, maxHeight: '92%', alignItems: 'center',
+    position: 'relative', overflow: 'hidden',
   },
   modalHandle: { width: 40, height: 4, borderRadius: 2, backgroundColor: COLORS.border, marginBottom: SPACING.md },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginBottom: SPACING.md },
@@ -1052,10 +1052,22 @@ const s = StyleSheet.create({
   },
   saveBtnText: { color: '#fff', fontSize: FONT_SIZES.md, fontWeight: '700' },
 
-  // Duration picker
-  durationBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' },
-  durationSheet: { backgroundColor: COLORS.white, borderRadius: RADIUS.lg, padding: SPACING.lg, width: 220, ...SHADOWS.lg },
+  // Duration / Time picker — inline sheets rendered inside form modal (iOS requires this)
+  inlinePickerBackdrop: {
+    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'flex-end',
+  },
+  inlinePickerSheet: {
+    backgroundColor: COLORS.white,
+    borderTopLeftRadius: RADIUS.lg,
+    borderTopRightRadius: RADIUS.lg,
+    padding: SPACING.lg,
+    paddingBottom: 32,
+    ...SHADOWS.lg,
+  },
   durationTitle: { fontSize: FONT_SIZES.md, fontWeight: '700', color: COLORS.text, marginBottom: SPACING.md, textAlign: 'center' },
+  durationHandle: { width: 40, height: 4, borderRadius: 2, backgroundColor: COLORS.border, alignSelf: 'center', marginBottom: SPACING.sm },
   durationOption: { paddingVertical: 12, paddingHorizontal: SPACING.md, borderRadius: RADIUS.sm, marginBottom: 4 },
   durationOptionOn: { backgroundColor: COLORS.lavender },
   durationOptionText: { fontSize: FONT_SIZES.md, color: COLORS.text, textAlign: 'center' },
