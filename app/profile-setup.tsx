@@ -119,9 +119,30 @@ export default function ProfileSetupScreen() {
   const [loading, setLoading]             = useState(false);
   const [showRelPicker, setShowRelPicker] = useState(false);
   const [showStatePicker, setShowStatePicker] = useState(false);
+  const [showCountyPicker, setShowCountyPicker] = useState(false);
+  const [countySearch, setCountySearch] = useState('');
 
   // Derived: is this a provider?
   const isProvider = relationship === 'Provider';
+
+  // County list derived from selected state (uses waiver-data.json)
+  const countyOptions = React.useMemo(() => {
+    if (!state) return [];
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const waiverData = require('../data/waiver-data.json') as Record<string, { counties: Record<string, { countyDisplay: string }> }>;
+      const stateData = waiverData[state];
+      if (!stateData?.counties) return [];
+      return Object.values(stateData.counties)
+        .map((c) => c.countyDisplay)
+        .sort((a, b) => a.localeCompare(b));
+    } catch { return []; }
+  }, [state]);
+
+  const filteredCounties = React.useMemo(() => {
+    if (!countySearch.trim()) return countyOptions;
+    return countyOptions.filter((c) => c.toLowerCase().includes(countySearch.toLowerCase()));
+  }, [countyOptions, countySearch]);
 
   // Adjust children array when count changes
   const handleChildCountChange = (count: number) => {
@@ -281,14 +302,21 @@ export default function ProfileSetupScreen() {
             <Text style={styles.pickerChevron}>›</Text>
           </TouchableOpacity>
           <Text style={styles.label}>City / County</Text>
-          <TextInput
-            style={styles.input}
-            value={county}
-            onChangeText={setCounty}
-            placeholder="e.g. Franklin County or Columbus"
-            placeholderTextColor={COLORS.textLight}
-            autoCapitalize="words"
-          />
+          {countyOptions.length > 0 ? (
+            <TouchableOpacity style={styles.picker} onPress={() => { setCountySearch(''); setShowCountyPicker(true); }} activeOpacity={0.8}>
+              <Text style={[styles.pickerText, !county && styles.pickerPlaceholder]}>{county || 'Select your county'}</Text>
+              <Text style={styles.pickerChevron}>›</Text>
+            </TouchableOpacity>
+          ) : (
+            <TextInput
+              style={styles.input}
+              value={county}
+              onChangeText={setCounty}
+              placeholder="e.g. Franklin County or Columbus"
+              placeholderTextColor={COLORS.textLight}
+              autoCapitalize="words"
+            />
+          )}
         </View>
 
         {/* ── PROVIDER MODE: Specialty + Reasons ── */}
@@ -478,6 +506,41 @@ export default function ProfileSetupScreen() {
                   {state === s && <Text style={styles.modalCheck}>✓</Text>}
                 </TouchableOpacity>
               )}
+            />
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* County Picker Modal */}
+      <Modal visible={showCountyPicker} transparent animationType="slide">
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowCountyPicker(false)}>
+          <View style={[styles.modalSheet, { maxHeight: '75%' }]}>
+            <Text style={styles.modalTitle}>Select Your County</Text>
+            <TextInput
+              style={[styles.input, { marginHorizontal: SPACING.md, marginBottom: SPACING.sm }]}
+              placeholder="Search counties..."
+              placeholderTextColor={COLORS.textLight}
+              value={countySearch}
+              onChangeText={setCountySearch}
+              autoCapitalize="none"
+            />
+            <FlatList
+              data={filteredCounties}
+              keyExtractor={(c) => c}
+              renderItem={({ item: c }) => (
+                <TouchableOpacity
+                  style={[styles.modalOption, county === c && styles.modalOptionSelected]}
+                  onPress={() => { setCounty(c); setShowCountyPicker(false); }}
+                >
+                  <Text style={[styles.modalOptionText, county === c && styles.modalOptionTextSelected]}>{c}</Text>
+                  {county === c && <Text style={styles.modalCheck}>✓</Text>}
+                </TouchableOpacity>
+              )}
+              ListEmptyComponent={
+                <Text style={{ textAlign: 'center', color: COLORS.textLight, padding: SPACING.lg }}>
+                  No counties found. Try a different search.
+                </Text>
+              }
             />
           </View>
         </TouchableOpacity>

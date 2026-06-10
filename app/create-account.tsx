@@ -453,6 +453,13 @@ export default function CreateAccountScreen() {
                   <Text style={styles.verifyEmail}>{email}</Text>
                 </Text>
 
+                {/* Spam callout */}
+                <View style={styles.spamCallout}>
+                  <Text style={styles.spamCalloutText}>
+                    📬 Don't see it? Check your <Text style={{ fontWeight: '700' }}>spam or junk folder</Text> — verification emails sometimes land there.
+                  </Text>
+                </View>
+
                 <TextInput
                   style={[styles.input, styles.codeInput]}
                   placeholder="Enter code"
@@ -712,6 +719,20 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   verifyEmail: { fontWeight: '700', color: COLORS.text },
+  spamCallout: {
+    backgroundColor: '#FFF8E1',
+    borderRadius: 10,
+    padding: SPACING.md,
+    borderWidth: 1,
+    borderColor: '#F59E0B',
+    marginBottom: SPACING.sm,
+  },
+  spamCalloutText: {
+    fontSize: FONT_SIZES.xs,
+    color: '#92400E',
+    lineHeight: 18,
+    textAlign: 'center',
+  },
   resendMsg: {
     fontSize: FONT_SIZES.xs,
     color: COLORS.teal,

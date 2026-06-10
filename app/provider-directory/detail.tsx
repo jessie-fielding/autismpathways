@@ -13,6 +13,13 @@ const ALL_PROVIDERS_DETAIL = [...PROVIDERS, ...MEDICAL_PROVIDERS];
 
 const API_BASE = 'https://inu3nb5lrfvftfyiwprftqshpy0zcegu.lambda-url.us-east-2.on.aws';
 
+async function getAuthHeaders(): Promise<Record<string, string>> {
+  const token = await AsyncStorage.getItem('authToken');
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  return headers;
+}
+
 const SPECIALTY_COLORS: Record<string, string> = {
   'ABA Therapy':        COLORS.purple,
   'Speech & OT':        COLORS.teal,
@@ -112,10 +119,12 @@ export default function ProviderDetailScreen() {
     if (!myText.trim()) { Alert.alert('Please write a short review'); return; }
     setSubmitting(true);
     try {
+      const authHeaders = await getAuthHeaders();
+
       // Ensure the provider "post" exists first
       await fetch(`${API_BASE}/api/forum/posts`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders,
         body: JSON.stringify({
           id: reviewPostId,
           title: `Reviews: ${provider?.name}`,
@@ -134,7 +143,7 @@ export default function ProviderDetailScreen() {
 
       const res = await fetch(`${API_BASE}/api/forum/comments`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders,
         body: JSON.stringify({ postId: reviewPostId, content: payload, anonymous: true }),
       });
 

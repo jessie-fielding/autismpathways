@@ -9,8 +9,9 @@
  */
 import React, { useState, useCallback } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert,
+  View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert, Linking,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -55,6 +56,44 @@ export default function ProviderConnections() {
           onPress: async () => {
             await respondToRequest(req.id, status);
             await load();
+
+            if (status === 'accepted') {
+              // Option C: notify both sides simultaneously
+              // 1. Notify the owner/provider (in-app confirmation)
+              const contactDetail = req.shareEmail
+                ? `Email: ${req.requesterEmail || 'shared via app'}`
+                : req.sharePhone
+                ? `Phone: ${req.requesterPhone || 'shared via app'}`
+                : 'They have chosen not to share contact info yet — reach out through the app.';
+
+              // 2. Notify the family (via owner notification API)
+              try {
+                const profileRaw = await AsyncStorage.getItem('profile');
+                const profile = profileRaw ? JSON.parse(profileRaw) : {};
+                const API_BASE = 'https://inu3nb5lrfvftfyiwprftqshpq.supabase.co';
+                await fetch(`${API_BASE}/api/notify/owner`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    subject: `🤝 Connection Accepted — ${req.requesterName}`,
+                    body: [
+                      `Great news! ${profile?.name || 'A provider'} has accepted ${req.requesterName}'s introduction request.`,
+                      ``,
+                      `Family contact preference: ${contactDetail}`,
+                      `Their message: ${req.message || '(none)'}`,
+                      ``,
+                      `Next step: reach out to the family through their preferred contact method.`,
+                    ].join('\n'),
+                  }),
+                });
+              } catch { /* non-blocking */ }
+
+              Alert.alert(
+                '🤝 Connection Made!',
+                `You've accepted ${req.requesterName}'s request.\n\n${req.shareEmail || req.sharePhone ? 'Their contact info is now visible in the Accepted tab.' : 'They\'ve chosen not to share contact info yet.'}\n\nExpect them to reach out, or use the \"Forward to My Team\" button to pass this along to your intake coordinator.`,
+                [{ text: 'Got it', style: 'default' }]
+              );
+            }
           },
         },
       ]
@@ -174,16 +213,39 @@ export default function ProviderConnections() {
 
               {/* Contact preference (only shown after accept) */}
               {req.status === 'accepted' && (
-                <View style={styles.contactBox}>
-                  <Ionicons name="checkmark-circle" size={16} color={COLORS.teal} />
-                  <Text style={styles.contactText}>
-                    {req.shareEmail
-                      ? 'Prefers to be contacted by email'
-                      : req.sharePhone
-                      ? 'Prefers to be contacted by phone'
-                      : 'Waiting for you to reach out through the app'}
-                  </Text>
-                </View>
+                <>
+                  <View style={styles.contactBox}>
+                    <Ionicons name="checkmark-circle" size={16} color={COLORS.teal} />
+                    <Text style={styles.contactText}>
+                      {req.shareEmail
+                        ? 'Prefers to be contacted by email'
+                        : req.sharePhone
+                        ? 'Prefers to be contacted by phone'
+                        : 'Waiting for you to reach out through the app'}
+                    </Text>
+                  </View>
+
+                  {/* Forward to My Team button */}
+                  <TouchableOpacity
+                    style={styles.forwardBtn}
+                    activeOpacity={0.8}
+                    onPress={() => {
+                      const contactLine = req.shareEmail
+                        ? `Contact preference: Email`
+                        : req.sharePhone
+                        ? `Contact preference: Phone`
+                        : `Contact preference: Not shared yet`;
+                      const subject = encodeURIComponent(`New Patient Intro Request — ${req.requesterName}`);
+                      const body = encodeURIComponent(
+                        `Hi,\n\nA family has sent an introduction request through Autism Pathways.\n\nFamily name: ${req.requesterName}\n${contactLine}\nMessage: ${req.message || '(none)'}\nDate: ${new Date(req.createdAt).toLocaleDateString()}\n\nPlease follow up through your normal intake process.\n\nNote: This is a warm introduction request, not a clinical referral. No PHI was shared through the app.`
+                      );
+                      Linking.openURL(`mailto:?subject=${subject}&body=${body}`);
+                    }}
+                  >
+                    <Ionicons name="mail-outline" size={14} color={COLORS.purple} />
+                    <Text style={styles.forwardBtnText}>📧 Forward to My Team</Text>
+                  </TouchableOpacity>
+                </>
               )}
 
               {/* Actions */}
@@ -249,6 +311,8 @@ const styles = StyleSheet.create({
   messageText: { fontSize: FONT_SIZES.sm, color: COLORS.text, lineHeight: 20 },
   contactBox: { flexDirection: 'row', gap: SPACING.sm, alignItems: 'center', backgroundColor: '#E3F7F1', borderRadius: RADIUS.md, padding: SPACING.sm },
   contactText: { fontSize: FONT_SIZES.sm, color: '#0A5A42', flex: 1 },
+  forwardBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1.5, borderColor: COLORS.purple, borderRadius: RADIUS.md, paddingVertical: SPACING.sm, paddingHorizontal: SPACING.md, alignSelf: 'flex-start', marginTop: 4 },
+  forwardBtnText: { fontSize: FONT_SIZES.sm, fontWeight: '700', color: COLORS.purple },
   actionRow: { flexDirection: 'row', gap: SPACING.sm },
   declineBtn: { flex: 1, borderRadius: RADIUS.md, borderWidth: 1.5, borderColor: COLORS.border, paddingVertical: SPACING.sm, alignItems: 'center' },
   declineBtnText: { fontSize: FONT_SIZES.sm, fontWeight: '700', color: COLORS.textMid },

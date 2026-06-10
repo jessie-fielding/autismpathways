@@ -81,7 +81,7 @@ export default function SubmitProviderScreen() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            subject: '📋 New Provider Directory Submission',
+            subject: '📋 New Provider Directory Submission — Action Required',
             body: [
               `Provider: ${submissionData.providerName}`,
               `Type: ${submissionData.providerType}`,
@@ -94,6 +94,11 @@ export default function SubmitProviderScreen() {
               `Submitted by: ${submissionData.submittedBy} (${submissionData.submitterRelation || 'relation not provided'})`,
               `Submitted at: ${submissionData.submittedAt}`,
               submissionData.description ? `\nDescription: ${submissionData.description}` : '',
+              ``,
+              `── APPROVE THIS SUBMISSION ──`,
+              `To grant the Verified badge and add this provider to the directory, open the app and go to:`,
+              `Settings → Admin → Pending Submissions`,
+              `Or tap this deep link on your device: autismpathways://admin/approve-submission?id=${pending[pending.length - 1]?.id || 'pending'}`,
             ].filter(Boolean).join('\n'),
           }),
         });

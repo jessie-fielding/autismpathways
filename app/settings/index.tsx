@@ -66,8 +66,9 @@ export default function SettingsScreen() {
   const { scheduleAll } = useNotifications();
   const { signOut, signOutAndForget, deleteAccount } = useAuth();
 
-  const [profile, setProfile] = useState<{ childName?: string; state?: string; email?: string } | null>(null);
+  const [profile, setProfile] = useState<{ childName?: string; state?: string; email?: string; relationship?: string; specialty?: string; county?: string } | null>(null);
   const [activeChild, setActiveChild] = useState<ChildProfile | null>(null);
+  const [isProvider, setIsProvider] = useState(false);
   const [notifs, setNotifs] = useState<Record<NotifKey, boolean>>({
     ap_notification_appeal: true,
     ap_notification_appointment: true,
@@ -86,8 +87,9 @@ export default function SettingsScreen() {
       const found = kids.find((c) => c.id === activeId) ?? kids[0] ?? null;
       setActiveChild(found);
 
-      const [profileRaw, ...notifValues] = await AsyncStorage.multiGet([
+      const [profileRaw, isProviderRaw, ...notifValues] = await AsyncStorage.multiGet([
         'profile',
+        'ap_is_provider',
         ...NOTIF_ITEMS.map(n => n.key),
       ]);
       // Prefer childManager data; fall back to legacy ap_profile
@@ -96,6 +98,7 @@ export default function SettingsScreen() {
         const legacy = await AsyncStorage.getItem('ap_profile');
         if (legacy) setProfile(JSON.parse(legacy));
       }
+      setIsProvider(isProviderRaw[1] === 'true');
       const notifState = { ...notifs };
       NOTIF_ITEMS.forEach((item, i) => {
         const val = notifValues[i][1];
@@ -325,36 +328,84 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        {/* ACCOUNT */}
+        {/* ACCOUNT — provider vs parent */}
         <Text style={styles.sectionLabel}>ACCOUNT</Text>
         <View style={styles.card}>
-          <Row
-            icon="👧"
-            title="Active Child"
-            subtitle={activeChild?.name || profile?.childName || 'Not set'}
-            onPress={() => router.push('/children')}
-          />
-          <View style={styles.divider} />
-          <Row
-            icon="👨‍👩‍👧‍👦"
-            title="Manage Children"
-            subtitle="Add, switch, or edit child profiles"
-            onPress={() => router.push('/children')}
-          />
-          <View style={styles.divider} />
-          <Row
-            icon="📍"
-            title="Your State"
-            subtitle={profile?.state ? `Personalized for ${profile.state}` : 'Not set'}
-            onPress={() => router.push('/(tabs)/start-here')}
-          />
-          <View style={styles.divider} />
-          <Row
-            icon="🚪"
-            title="Sign Out"
-            subtitle="You can sign back in anytime"
-            onPress={handleSignOut}
-          />
+          {isProvider ? (
+            <>
+              <Row
+                icon="🏥"
+                title="Provider Profile"
+                subtitle={profile?.specialty || 'Update your specialty and info'}
+                onPress={() => router.push('/profile-setup')}
+              />
+              <View style={styles.divider} />
+              <Row
+                icon="📍"
+                title="Your State"
+                subtitle={profile?.state ? `Personalized for ${profile.state}` : 'Not set'}
+                onPress={() => router.push('/(tabs)/start-here')}
+              />
+              <View style={styles.divider} />
+              <Row
+                icon="🏘️"
+                title="Your County"
+                subtitle={profile?.county || 'Set your county for local resources'}
+                onPress={() => router.push('/profile-setup')}
+              />
+              <View style={styles.divider} />
+              <Row
+                icon="💜"
+                title="Connection Requests"
+                subtitle="Manage pending intro requests from families"
+                onPress={() => router.push('/provider-connections')}
+              />
+              <View style={styles.divider} />
+              <Row
+                icon="📋"
+                title="Pending Submissions"
+                subtitle="Review provider directory submissions (Admin)"
+                onPress={() => router.push('/admin/pending-submissions')}
+              />
+              <View style={styles.divider} />
+              <Row
+                icon="🚪"
+                title="Sign Out"
+                subtitle="You can sign back in anytime"
+                onPress={handleSignOut}
+              />
+            </>
+          ) : (
+            <>
+              <Row
+                icon="👧"
+                title="Active Child"
+                subtitle={activeChild?.name || profile?.childName || 'Not set'}
+                onPress={() => router.push('/children')}
+              />
+              <View style={styles.divider} />
+              <Row
+                icon="👨\u200d👩\u200d👧\u200d👦"
+                title="Manage Children"
+                subtitle="Add, switch, or edit child profiles"
+                onPress={() => router.push('/children')}
+              />
+              <View style={styles.divider} />
+              <Row
+                icon="📍"
+                title="Your State"
+                subtitle={profile?.state ? `Personalized for ${profile.state}` : 'Not set'}
+                onPress={() => router.push('/(tabs)/start-here')}
+              />
+              <View style={styles.divider} />
+              <Row
+                icon="🚪"
+                title="Sign Out"
+                subtitle="You can sign back in anytime"
+                onPress={handleSignOut}
+              />
+            </>
+          )}
         </View>
 
         {/* NOTIFICATIONS */}
