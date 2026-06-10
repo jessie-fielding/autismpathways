@@ -6,6 +6,9 @@ import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '../../lib/theme';
 import { getEvaluatorsForState, normalizeState, type Evaluator } from '../../data/evaluators';
 import { useActiveChild } from '../../services/childManager';
 import NearMeButton from '../../components/NearMeButton';
+// Providers who have signed up through Provider Mode get the On the App! badge.
+// We use a static set for now; in a real build this would come from the backend.
+const ON_APP_PROVIDER_IDS = new Set<string>([]);
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const TOTAL_STEPS = 6;
@@ -214,6 +217,12 @@ export default function EvaluatorListScreen() {
               onPress={() => !tried && handleSelect(evaluator)}
               activeOpacity={tried ? 1 : 0.7}
             >
+              {/* On the App! badge — shown for providers registered in Provider Mode */}
+              {ON_APP_PROVIDER_IDS.has(evaluator.id) && (
+                <View style={styles.onAppBadge}>
+                  <Text style={styles.onAppBadgeText}>💜 On the App!</Text>
+                </View>
+              )}
               {/* Type badge + tried badge */}
               <View style={styles.evaluatorTopRow}>
                 <View style={[styles.typeBadge, { backgroundColor: colors.bg }]}>
@@ -272,6 +281,23 @@ export default function EvaluatorListScreen() {
                       </TouchableOpacity>
                     )}
                   </View>
+                  {ON_APP_PROVIDER_IDS.has(evaluator.id) && (
+                    <TouchableOpacity
+                      style={styles.connectBtn}
+                      onPress={() => router.push({
+                        pathname: '/request-connection',
+                        params: {
+                          providerId: evaluator.id,
+                          providerName: evaluator.name,
+                          providerSpecialty: evaluator.type,
+                          providerCounty: (evaluator as any).county ?? '',
+                        },
+                      })}
+                      activeOpacity={0.85}
+                    >
+                      <Text style={styles.connectBtnText}>💜 Request a Connection</Text>
+                    </TouchableOpacity>
+                  )}
                   <TouchableOpacity style={styles.selectBtn} onPress={() => handleSelect(evaluator)}>
                     <Text style={styles.selectBtnText}>Select this evaluator →</Text>
                   </TouchableOpacity>
@@ -492,6 +518,37 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: COLORS.textLight,
     marginTop: -4,
+  },
+  // On the App! badge
+  onAppBadge: {
+    backgroundColor: '#ffe5db',
+    borderRadius: RADIUS.pill,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 4,
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderColor: '#ffb8a0',
+    marginBottom: 2,
+  },
+  onAppBadgeText: {
+    fontSize: FONT_SIZES.xs,
+    fontWeight: '800',
+    color: '#8B3A1A',
+  },
+  // Request a Connection button
+  connectBtn: {
+    backgroundColor: '#ffe5db',
+    borderRadius: RADIUS.pill,
+    paddingVertical: SPACING.sm,
+    alignItems: 'center',
+    marginTop: SPACING.xs,
+    borderWidth: 1.5,
+    borderColor: '#ffb8a0',
+  },
+  connectBtnText: {
+    color: '#8B3A1A',
+    fontWeight: '700',
+    fontSize: FONT_SIZES.sm,
   },
   submitEvaluatorCta: {
     marginHorizontal: SPACING.md,

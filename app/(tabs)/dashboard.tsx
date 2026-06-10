@@ -179,6 +179,13 @@ export default function DashboardScreen() {
 
       if (rawParentName) setParentName(rawParentName);
 
+      // Provider Mode: redirect to provider dashboard
+      const isProvider = await AsyncStorage.getItem('ap_is_provider');
+      if (isProvider === 'true') {
+        router.replace('/provider-dashboard' as any);
+        return;
+      }
+
       if (rawProfile) {
         const p = JSON.parse(rawProfile);
         setProfile(p);

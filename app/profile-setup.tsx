@@ -1,8 +1,10 @@
 /**
- * Tell Us About Your Family
+ * Tell Us About Your Family / Tell Us About You
  *
- * Optional onboarding screen — collects parent info + dynamic child profiles.
- * Asks "How many kids are on this journey?" (1–5) and shows that many child blocks.
+ * Optional onboarding screen — collects parent/provider info.
+ * When "Provider" is selected as role, the form dynamically switches to
+ * provider-specific fields (specialty chips, "What brings you here?" chips)
+ * and hides the family/child sections.
  * All fields are optional. Skippable. Warm, low-pressure tone.
  *
  * Flow: create-account → profile-setup → onboarding
@@ -26,7 +28,7 @@ const AVATAR_EMOJIS = [
   '🐬', '🌸', '🎯', '⚡',
 ];
 
-// Journey / concern options — drive dashboard personalisation
+// Journey / concern options — drive dashboard personalisation (parent/caregiver)
 const JOURNEY_OPTIONS = [
   { id: 'diagnosis',   icon: '🔍', label: 'Getting a Diagnosis',      sub: 'Evaluations, waitlists & next steps' },
   { id: 'medicaid',   icon: '💳', label: 'Medicaid / Insurance',       sub: 'Applying, appealing, or understanding coverage' },
@@ -40,9 +42,25 @@ const JOURNEY_OPTIONS = [
   { id: 'family',     icon: '❤️', label: 'Family & Self-Care',         sub: 'Sibling support, caregiver burnout, community' },
 ];
 
+// Provider "What brings you here?" options
+const PROVIDER_REASONS = [
+  { id: 'resources',     label: 'Finding resources for patients' },
+  { id: 'research',      label: 'Staying current on research' },
+  { id: 'connecting',    label: 'Connecting with families' },
+  { id: 'iep',           label: 'IEP & school advocacy' },
+  { id: 'waivers',       label: 'Waiver navigation' },
+  { id: 'professional',  label: 'Professional development' },
+];
+
+// Provider specialty chips
+const PROVIDER_SPECIALTIES = [
+  'Pediatrician', 'BCBA', 'Speech Therapist', 'Psychologist',
+  'OT / PT', 'Social Worker', 'Educator', 'Other',
+];
+
 const RELATIONSHIPS = [
   'Parent', 'Guardian', 'Caregiver', 'Grandparent',
-  'Foster Parent', 'Therapist', 'Teacher', 'Other',
+  'Foster Parent', 'Provider', 'Therapist', 'Teacher', 'Other',
 ];
 
 const STATES = [
@@ -71,13 +89,22 @@ export default function ProfileSetupScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  // Parent info
+  // Parent / user info
   const [parentName, setParentName]       = useState('');
   const [relationship, setRelationship]   = useState('');
   const [state, setState]                 = useState('');
   const [county, setCounty]               = useState('');
 
-  // Journey / priorities — drives dashboard chips and pathway cards
+  // Provider-specific
+  const [providerSpecialty, setProviderSpecialty] = useState('');
+  const [providerReasons, setProviderReasons]     = useState<string[]>([]);
+  const toggleProviderReason = (id: string) => {
+    setProviderReasons((prev) =>
+      prev.includes(id) ? prev.filter((r) => r !== id) : [...prev, id]
+    );
+  };
+
+  // Journey / priorities (parent mode)
   const [selectedJourneys, setSelectedJourneys] = useState<string[]>([]);
   const toggleJourney = (id: string) => {
     setSelectedJourneys((prev) =>
@@ -85,13 +112,16 @@ export default function ProfileSetupScreen() {
     );
   };
 
-  // Dynamic children
+  // Dynamic children (parent mode)
   const [childCount, setChildCount]       = useState(1);
   const [children, setChildren]           = useState<ChildForm[]>([makeChild()]);
 
   const [loading, setLoading]             = useState(false);
   const [showRelPicker, setShowRelPicker] = useState(false);
   const [showStatePicker, setShowStatePicker] = useState(false);
+
+  // Derived: is this a provider?
+  const isProvider = relationship === 'Provider';
 
   // Adjust children array when count changes
   const handleChildCountChange = (count: number) => {
@@ -159,35 +189,54 @@ export default function ProfileSetupScreen() {
   const handleSave = async () => {
     setLoading(true);
     try {
-      // Save parent profile using first child's info for legacy compat
-      const firstChild = children[0];
-      await storage.setProfile({
-        parentName: parentName.trim() || null,
-        relationship: relationship || null,
-        state: state || null,
-        county: county.trim() || null,
-        childName: firstChild.name.trim() || null,
-        childAge: firstChild.age ? parseInt(firstChild.age) : null,
-        concerns: selectedJourneys.length > 0 ? selectedJourneys : null,
-        createdAt: new Date().toISOString(),
-      });
+      if (isProvider) {
+        // Save provider profile
+        await storage.setProfile({
+          parentName: parentName.trim() || null,
+          relationship: 'Provider',
+          state: state || null,
+          county: county.trim() || null,
+          isProvider: true,
+          providerSpecialty: providerSpecialty || null,
+          providerReasons: providerReasons.length > 0 ? providerReasons : null,
+          createdAt: new Date().toISOString(),
+        });
+        // Store provider flag for routing
+        const { default: AsyncStorage } = await import('@react-native-async-storage/async-storage');
+        await AsyncStorage.setItem('ap_is_provider', 'true');
+        router.replace('/onboarding');
+      } else {
+        // Save parent profile using first child's info for legacy compat
+        const firstChild = children[0];
+        await storage.setProfile({
+          parentName: parentName.trim() || null,
+          relationship: relationship || null,
+          state: state || null,
+          county: county.trim() || null,
+          childName: firstChild.name.trim() || null,
+          childAge: firstChild.age ? parseInt(firstChild.age) : null,
+          concerns: selectedJourneys.length > 0 ? selectedJourneys : null,
+          isProvider: false,
+          createdAt: new Date().toISOString(),
+        });
 
-      // Add all children to the child manager
-      const existingChildren = await loadChildren();
-      if (existingChildren.length === 0) {
-        let firstChildId: string | null = null;
-        for (let i = 0; i < children.length; i++) {
-          const c = children[i];
-          const name = c.name.trim() || `Child ${i + 1}`;
-          const avatarValue = c.photoUri || c.emoji || name.slice(0, 2).toUpperCase();
-          const newChild = await addChild({ name, avatar: avatarValue });
-          if (i === 0) firstChildId = newChild.id;
+        // Add all children to the child manager
+        const existingChildren = await loadChildren();
+        if (existingChildren.length === 0) {
+          let firstChildId: string | null = null;
+          for (let i = 0; i < children.length; i++) {
+            const c = children[i];
+            const name = c.name.trim() || `Child ${i + 1}`;
+            const avatarValue = c.photoUri || c.emoji || name.slice(0, 2).toUpperCase();
+            const newChild = await addChild({ name, avatar: avatarValue });
+            if (i === 0) firstChildId = newChild.id;
+          }
+          if (firstChildId) await setActiveChildId(firstChildId);
         }
-        if (firstChildId) await setActiveChildId(firstChildId);
-      }
 
-      await seedDefaults();
-      router.replace('/onboarding');
+        await seedDefaults();
+        router.replace('/onboarding');
+      }
     } catch (err) {
       console.error('Failed to save profile:', err);
       Alert.alert('Error', 'Something went wrong. Please try again.');
@@ -204,7 +253,9 @@ export default function ProfileSetupScreen() {
   return (
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: COLORS.bg }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
-        <Text style={styles.headerTitle}>Tell Us About Your Family</Text>
+        <Text style={styles.headerTitle}>
+          {isProvider ? 'Tell Us About You' : 'Tell Us About Your Family'}
+        </Text>
         <Text style={styles.headerSub}>Everything here is optional — share only what you're comfortable with 💜</Text>
       </View>
       <ScrollView
@@ -240,105 +291,155 @@ export default function ProfileSetupScreen() {
           />
         </View>
 
-        {/* How many kids */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>How many kids are on this journey?</Text>
-          <Text style={styles.sectionSub}>You can always add more children later in Settings</Text>
-          <View style={styles.countRow}>
-            {[1, 2, 3, 4, 5].map((n) => (
-              <TouchableOpacity
-                key={n}
-                style={[styles.countBtn, childCount === n && styles.countBtnSelected]}
-                onPress={() => handleChildCountChange(n)}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.countBtnText, childCount === n && styles.countBtnTextSelected]}>{n}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
+        {/* ── PROVIDER MODE: Specialty + Reasons ── */}
+        {isProvider && (
+          <>
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Your Specialty</Text>
+              <Text style={styles.sectionSub}>Helps us show the most relevant resources</Text>
+              <View style={styles.chipWrap}>
+                {PROVIDER_SPECIALTIES.map((spec) => {
+                  const selected = providerSpecialty === spec;
+                  return (
+                    <TouchableOpacity
+                      key={spec}
+                      style={[styles.chip, selected && styles.chipSelected]}
+                      onPress={() => setProviderSpecialty(selected ? '' : spec)}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={[styles.chipText, selected && styles.chipTextSelected]}>{spec}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
 
-        {/* Child profile blocks */}
-        {children.map((child, index) => (
-          <View key={index} style={styles.section}>
-            <Text style={styles.sectionTitle}>
-              {childCount === 1 ? 'About Your Child' : `Child ${index + 1}`}
-            </Text>
-            <Text style={styles.sectionSub}>You can always update this later in Settings</Text>
-            <Text style={styles.label}>Photo or Avatar</Text>
-            <View style={styles.avatarRow}>
-              <TouchableOpacity style={styles.photoBtn} onPress={() => pickPhoto(index)} activeOpacity={0.8}>
-                {child.photoUri ? (
-                  <Image source={{ uri: child.photoUri }} style={styles.photoPreview} />
-                ) : (
-                  <View style={styles.photoBtnInner}>
-                    <Text style={styles.photoBtnIcon}>📷</Text>
-                    <Text style={styles.photoBtnText}>Add Photo</Text>
-                  </View>
-                )}
-              </TouchableOpacity>
-              <View style={styles.emojiGrid}>
-                {AVATAR_EMOJIS.map((emoji) => (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>What brings you here? 🗺️</Text>
+              <Text style={styles.sectionSub}>Select all that apply</Text>
+              <View style={styles.chipWrap}>
+                {PROVIDER_REASONS.map((opt) => {
+                  const selected = providerReasons.includes(opt.id);
+                  return (
+                    <TouchableOpacity
+                      key={opt.id}
+                      style={[styles.chip, selected && styles.chipSelected]}
+                      onPress={() => toggleProviderReason(opt.id)}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={[styles.chipText, selected && styles.chipTextSelected]}>{opt.label}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+          </>
+        )}
+
+        {/* ── PARENT/CAREGIVER MODE: Kids + Journey ── */}
+        {!isProvider && (
+          <>
+            {/* How many kids */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>How many kids are on this journey?</Text>
+              <Text style={styles.sectionSub}>You can always add more children later in Settings</Text>
+              <View style={styles.countRow}>
+                {[1, 2, 3, 4, 5].map((n) => (
                   <TouchableOpacity
-                    key={emoji}
-                    style={[styles.emojiBtn, child.emoji === emoji && styles.emojiBtnSelected]}
-                    onPress={() => updateChild(index, { emoji, photoUri: null })}
+                    key={n}
+                    style={[styles.countBtn, childCount === n && styles.countBtnSelected]}
+                    onPress={() => handleChildCountChange(n)}
                     activeOpacity={0.7}
                   >
-                    <Text style={styles.emojiText}>{emoji}</Text>
+                    <Text style={[styles.countBtnText, childCount === n && styles.countBtnTextSelected]}>{n}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
             </View>
-            <Text style={styles.label}>Name</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="First name or nickname"
-              placeholderTextColor={COLORS.textLight}
-              value={child.name}
-              onChangeText={(v) => updateChild(index, { name: v })}
-              autoCapitalize="words"
-            />
-            <Text style={styles.label}>Age</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Age in years"
-              placeholderTextColor={COLORS.textLight}
-              value={child.age}
-              onChangeText={(v) => updateChild(index, { age: v })}
-              keyboardType="number-pad"
-              maxLength={2}
-            />
-          </View>
-        ))}
 
-        {/* What journey are you on? */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>What journey are you on? 🗺️</Text>
-          <Text style={styles.sectionSub}>Pick all that apply — this personalises your dashboard and pathways</Text>
-          {JOURNEY_OPTIONS.map((opt) => {
-            const selected = selectedJourneys.includes(opt.id);
-            return (
-              <TouchableOpacity
-                key={opt.id}
-                style={[styles.journeyRow, selected && styles.journeyRowSelected]}
-                onPress={() => toggleJourney(opt.id)}
-                activeOpacity={0.8}
-              >
-                <View style={[styles.journeyIconWrap, selected && styles.journeyIconWrapSelected]}>
-                  <Text style={styles.journeyIcon}>{opt.icon}</Text>
+            {/* Child profile blocks */}
+            {children.map((child, index) => (
+              <View key={index} style={styles.section}>
+                <Text style={styles.sectionTitle}>
+                  {childCount === 1 ? 'About Your Child' : `Child ${index + 1}`}
+                </Text>
+                <Text style={styles.sectionSub}>You can always update this later in Settings</Text>
+                <Text style={styles.label}>Photo or Avatar</Text>
+                <View style={styles.avatarRow}>
+                  <TouchableOpacity style={styles.photoBtn} onPress={() => pickPhoto(index)} activeOpacity={0.8}>
+                    {child.photoUri ? (
+                      <Image source={{ uri: child.photoUri }} style={styles.photoPreview} />
+                    ) : (
+                      <View style={styles.photoBtnInner}>
+                        <Text style={styles.photoBtnIcon}>📷</Text>
+                        <Text style={styles.photoBtnText}>Add Photo</Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                  <View style={styles.emojiGrid}>
+                    {AVATAR_EMOJIS.map((emoji) => (
+                      <TouchableOpacity
+                        key={emoji}
+                        style={[styles.emojiBtn, child.emoji === emoji && styles.emojiBtnSelected]}
+                        onPress={() => updateChild(index, { emoji, photoUri: null })}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={styles.emojiText}>{emoji}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
                 </View>
-                <View style={styles.journeyBody}>
-                  <Text style={[styles.journeyLabel, selected && styles.journeyLabelSelected]}>{opt.label}</Text>
-                  <Text style={styles.journeySub}>{opt.sub}</Text>
-                </View>
-                <View style={[styles.journeyCheck, selected && styles.journeyCheckSelected]}>
-                  {selected && <Text style={styles.journeyCheckText}>✓</Text>}
-                </View>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+                <Text style={styles.label}>Name</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="First name or nickname"
+                  placeholderTextColor={COLORS.textLight}
+                  value={child.name}
+                  onChangeText={(v) => updateChild(index, { name: v })}
+                  autoCapitalize="words"
+                />
+                <Text style={styles.label}>Age</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Age in years"
+                  placeholderTextColor={COLORS.textLight}
+                  value={child.age}
+                  onChangeText={(v) => updateChild(index, { age: v })}
+                  keyboardType="number-pad"
+                  maxLength={2}
+                />
+              </View>
+            ))}
+
+            {/* What journey are you on? */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>What journey are you on? 🗺️</Text>
+              <Text style={styles.sectionSub}>Pick all that apply — this personalises your dashboard and pathways</Text>
+              {JOURNEY_OPTIONS.map((opt) => {
+                const selected = selectedJourneys.includes(opt.id);
+                return (
+                  <TouchableOpacity
+                    key={opt.id}
+                    style={[styles.journeyRow, selected && styles.journeyRowSelected]}
+                    onPress={() => toggleJourney(opt.id)}
+                    activeOpacity={0.8}
+                  >
+                    <View style={[styles.journeyIconWrap, selected && styles.journeyIconWrapSelected]}>
+                      <Text style={styles.journeyIcon}>{opt.icon}</Text>
+                    </View>
+                    <View style={styles.journeyBody}>
+                      <Text style={[styles.journeyLabel, selected && styles.journeyLabelSelected]}>{opt.label}</Text>
+                      <Text style={styles.journeySub}>{opt.sub}</Text>
+                    </View>
+                    <View style={[styles.journeyCheck, selected && styles.journeyCheckSelected]}>
+                      {selected && <Text style={styles.journeyCheckText}>✓</Text>}
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </>
+        )}
 
         <TouchableOpacity style={[styles.saveBtn, loading && styles.saveBtnDisabled]} onPress={handleSave} disabled={loading} activeOpacity={0.85}>
           <Text style={styles.saveBtnText}>{loading ? 'Saving…' : "Let's Get Started →"}</Text>
@@ -399,6 +500,12 @@ const styles = StyleSheet.create({
   pickerText: { fontSize: FONT_SIZES.sm, color: COLORS.text, flex: 1 },
   pickerPlaceholder: { color: COLORS.textLight },
   pickerChevron: { fontSize: 18, color: COLORS.textLight },
+  // Provider chips
+  chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: SPACING.xs },
+  chip: { paddingHorizontal: SPACING.md, paddingVertical: SPACING.xs + 2, borderRadius: 20, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.bg },
+  chipSelected: { borderColor: COLORS.purple, backgroundColor: COLORS.lavender ?? '#EDE9FF' },
+  chipText: { fontSize: FONT_SIZES.sm, color: COLORS.textMid, fontWeight: '500' },
+  chipTextSelected: { color: COLORS.purple, fontWeight: '700' },
   // Child count stepper
   countRow: { flexDirection: 'row', gap: SPACING.sm, marginTop: SPACING.xs },
   countBtn: { width: 44, height: 44, borderRadius: 22, borderWidth: 2, borderColor: COLORS.border, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.bg },

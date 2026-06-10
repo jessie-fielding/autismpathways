@@ -62,6 +62,10 @@ const FREE_FEATURED_IDS = ALL_PROVIDERS
   .slice(0, 6)
   .map(p => p.id);
 
+// Providers registered through Provider Mode get the On the App! badge.
+// In production this comes from the backend; here we use a static set.
+const ON_APP_PROVIDER_IDS = new Set<string>([]);
+
 function ProviderCard({
   provider,
   onPress,
@@ -73,6 +77,8 @@ function ProviderCard({
   isPremium: boolean;
   isLocked: boolean;
 }) {
+  const router = useRouter();
+  const isOnApp = ON_APP_PROVIDER_IDS.has(provider.id);
   const accentColor = SPECIALTY_COLORS[provider.specialty] || COLORS.purple;
 
   return (
@@ -122,6 +128,11 @@ function ProviderCard({
               <Text style={styles.verifiedText}>🏅 Verified</Text>
             </View>
           )}
+          {isOnApp && (
+            <View style={styles.onAppBadge}>
+              <Text style={styles.onAppBadgeText}>💜 On the App!</Text>
+            </View>
+          )}
         </View>
 
         {/* Description */}
@@ -149,6 +160,23 @@ function ProviderCard({
                 onPress={() => Linking.openURL(`tel:${provider.phone!.replace(/[^0-9+]/g, '')}`)}
               >
                 <Text style={styles.callBtnText}>📞 Call</Text>
+              </TouchableOpacity>
+            )}
+            {isOnApp && (
+              <TouchableOpacity
+                style={styles.connectBtn}
+                onPress={() => router.push({
+                  pathname: '/request-connection',
+                  params: {
+                    providerId: provider.id,
+                    providerName: provider.name,
+                    providerSpecialty: provider.specialty,
+                    providerCounty: (provider as any).county ?? '',
+                  },
+                })}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.connectBtnText}>💜 Request a Connection</Text>
               </TouchableOpacity>
             )}
             <TouchableOpacity style={styles.detailBtn} onPress={onPress}>
@@ -601,6 +629,16 @@ const styles = StyleSheet.create({
     paddingVertical: 2, borderWidth: 1, borderColor: '#F59E0B',
   },
   verifiedText: { fontSize: 10, fontWeight: '700', color: '#92400E' },
+  onAppBadge: {
+    backgroundColor: '#ffe5db', borderRadius: RADIUS.pill, paddingHorizontal: SPACING.sm,
+    paddingVertical: 2, borderWidth: 1, borderColor: '#ffb8a0',
+  },
+  onAppBadgeText: { fontSize: 10, fontWeight: '800', color: '#8B3A1A' },
+  connectBtn: {
+    flex: 1, backgroundColor: '#ffe5db', borderRadius: RADIUS.pill,
+    paddingVertical: SPACING.xs, alignItems: 'center', borderWidth: 1.5, borderColor: '#ffb8a0',
+  },
+  connectBtnText: { fontSize: FONT_SIZES.xs, fontWeight: '700', color: '#8B3A1A' },
   cardDesc: { fontSize: FONT_SIZES.xs, color: COLORS.textMid, lineHeight: 17, marginBottom: SPACING.sm },
   cardTags: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginBottom: SPACING.sm },
   tag: { backgroundColor: COLORS.lavender, borderRadius: 4, paddingHorizontal: SPACING.sm, paddingVertical: 2 },
