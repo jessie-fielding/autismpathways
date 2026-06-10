@@ -38,7 +38,7 @@ export default function AgencyCardScreen() {
   const stateAbbr = params.state || '';
   const countyKey = params.county || '';
 
-  const stateData = stateAbbr ? (waiverData as Record<string, StateData>)[stateAbbr] : null;
+  const stateData = stateAbbr ? (waiverData as unknown as Record<string, StateData>)[stateAbbr] : null;
   const countyData = stateData && countyKey ? stateData.counties[countyKey] : null;
 
   useEffect(() => {
@@ -92,7 +92,7 @@ export default function AgencyCardScreen() {
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Autism <Text style={styles.headerPurple}>Pathways</Text></Text>
           <TouchableOpacity onPress={() => router.push('/(tabs)/dashboard')} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
-          <Text style={styles.dashText}>🏠 Home</Text>
+          <Text style={{ color: COLORS.purple, fontSize: FONT_SIZES.sm, fontWeight: '600' }}>🏠 Home</Text>
         </TouchableOpacity>
         </View>
         <View style={styles.centered}>
@@ -110,7 +110,7 @@ export default function AgencyCardScreen() {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
           <Text style={styles.backText}>← Counties</Text>
         </TouchableOpacity>
@@ -327,7 +327,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: SPACING.md,
-    
     paddingBottom: SPACING.sm,
     backgroundColor: COLORS.white,
     borderBottomWidth: 1,
