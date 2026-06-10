@@ -94,8 +94,18 @@ export default function PendingSubmissions() {
             approved.push({ ...sub, status: 'approved' });
             await AsyncStorage.setItem(APPROVED_KEY, JSON.stringify(approved));
 
+            // Grant the On the App! badge — write provider ID to ap_on_app_provider_ids
+            if (sub.providerId) {
+              const onAppRaw = await AsyncStorage.getItem('ap_on_app_provider_ids');
+              const onAppIds: string[] = onAppRaw ? JSON.parse(onAppRaw) : [];
+              if (!onAppIds.includes(sub.providerId)) {
+                onAppIds.push(sub.providerId);
+                await AsyncStorage.setItem('ap_on_app_provider_ids', JSON.stringify(onAppIds));
+              }
+            }
+
             setSubmissions(updated);
-            Alert.alert('Approved! 🏅', `${sub.providerName} has been approved and will appear in the directory with a Verified badge.`);
+            Alert.alert('Approved! 🏅', `${sub.providerName} has been approved and will appear in the directory with the On the App! badge.`);
           },
         },
       ]

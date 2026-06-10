@@ -1,4 +1,5 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   TextInput, FlatList, Linking, Alert, Animated,
@@ -63,22 +64,24 @@ const FREE_FEATURED_IDS = ALL_PROVIDERS
   .map(p => p.id);
 
 // Providers registered through Provider Mode get the On the App! badge.
-// In production this comes from the backend; here we use a static set.
-const ON_APP_PROVIDER_IDS = new Set<string>([]);
+// Loaded dynamically from AsyncStorage (ap_on_app_provider_ids key).
+let _onAppIds = new Set<string>();
 
 function ProviderCard({
   provider,
   onPress,
   isPremium,
   isLocked,
+  onAppIds,
 }: {
   provider: Provider;
   onPress: () => void;
   isPremium: boolean;
   isLocked: boolean;
+  onAppIds: Set<string>;
 }) {
   const router = useRouter();
-  const isOnApp = ON_APP_PROVIDER_IDS.has(provider.id);
+  const isOnApp = onAppIds.has(provider.id);
   const accentColor = SPECIALTY_COLORS[provider.specialty] || COLORS.purple;
 
   return (
@@ -195,6 +198,17 @@ export default function ProviderDirectoryScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { isPremium } = useIsPremium();
+  const [onAppIds, setOnAppIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    AsyncStorage.getItem('ap_on_app_provider_ids').then((raw) => {
+      if (raw) {
+        const ids: string[] = JSON.parse(raw);
+        _onAppIds = new Set(ids);
+        setOnAppIds(new Set(ids));
+      }
+    });
+  }, []);
 
   const [selectedState, setSelectedState] = useState('ALL');
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
@@ -468,6 +482,7 @@ export default function ProviderDirectoryScreen() {
             provider={provider}
             isPremium={isPremium}
             isLocked={false}
+            onAppIds={onAppIds}
             onPress={() => router.push({ pathname: '/provider-directory/detail', params: { id: provider.id } })}
           />
         ))}

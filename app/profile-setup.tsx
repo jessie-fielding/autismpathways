@@ -98,6 +98,10 @@ export default function ProfileSetupScreen() {
   // Provider-specific
   const [providerSpecialty, setProviderSpecialty] = useState('');
   const [providerReasons, setProviderReasons]     = useState<string[]>([]);
+  const [practiceName, setPracticeName]           = useState('');
+  const [practiceAddress, setPracticeAddress]     = useState('');
+  // 'browse' = Browse Only, 'connect' = Open to Connections
+  const [providerVisibility, setProviderVisibility] = useState<'browse' | 'connect'>('browse');
   const toggleProviderReason = (id: string) => {
     setProviderReasons((prev) =>
       prev.includes(id) ? prev.filter((r) => r !== id) : [...prev, id]
@@ -220,11 +224,19 @@ export default function ProfileSetupScreen() {
           isProvider: true,
           providerSpecialty: providerSpecialty || null,
           providerReasons: providerReasons.length > 0 ? providerReasons : null,
+          practiceName: practiceName.trim() || null,
+          practiceAddress: practiceAddress.trim() || null,
+          providerVisibility,
           createdAt: new Date().toISOString(),
         });
-        // Store provider flag for routing
+        // Store provider flag and visibility for routing + badge
         const { default: AsyncStorage } = await import('@react-native-async-storage/async-storage');
         await AsyncStorage.setItem('ap_is_provider', 'true');
+        await AsyncStorage.setItem('ap_provider_visibility', providerVisibility);
+        if (providerVisibility === 'connect') {
+          // Flag for On the App! badge — admin will review and activate listing
+          await AsyncStorage.setItem('ap_provider_connect_requested', 'true');
+        }
         router.replace('/onboarding');
       } else {
         // Save parent profile using first child's info for legacy compat
@@ -319,7 +331,7 @@ export default function ProfileSetupScreen() {
           )}
         </View>
 
-        {/* ── PROVIDER MODE: Specialty + Reasons ── */}
+        {/* ── PROVIDER MODE: Specialty + Practice + Visibility ── */}
         {isProvider && (
           <>
             <View style={styles.section}>
@@ -340,6 +352,68 @@ export default function ProfileSetupScreen() {
                   );
                 })}
               </View>
+            </View>
+
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Your Practice</Text>
+              <Text style={styles.sectionSub}>Optional — only needed if you want to appear in the directory</Text>
+              <Text style={styles.label}>Practice or Organization Name</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="e.g. Bright Futures Therapy"
+                placeholderTextColor={COLORS.textLight}
+                value={practiceName}
+                onChangeText={setPracticeName}
+                autoCapitalize="words"
+              />
+              <Text style={styles.label}>Practice Address (optional)</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Street, City, State"
+                placeholderTextColor={COLORS.textLight}
+                value={practiceAddress}
+                onChangeText={setPracticeAddress}
+                autoCapitalize="words"
+              />
+            </View>
+
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>How do you want to show up? 💜</Text>
+              <Text style={styles.sectionSub}>You can change this anytime in Settings</Text>
+
+              <TouchableOpacity
+                style={[styles.visibilityOption, providerVisibility === 'browse' && styles.visibilityOptionSelected]}
+                onPress={() => setProviderVisibility('browse')}
+                activeOpacity={0.8}
+              >
+                <View style={styles.visibilityIconWrap}>
+                  <Text style={styles.visibilityIcon}>🔍</Text>
+                </View>
+                <View style={styles.visibilityBody}>
+                  <Text style={[styles.visibilityTitle, providerVisibility === 'browse' && styles.visibilityTitleSelected]}>Browse Only</Text>
+                  <Text style={styles.visibilitySub}>I want to explore resources and stay informed. Don't show me in the directory.</Text>
+                </View>
+                <View style={[styles.visibilityCheck, providerVisibility === 'browse' && styles.visibilityCheckSelected]}>
+                  {providerVisibility === 'browse' && <Text style={styles.visibilityCheckMark}>✓</Text>}
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.visibilityOption, providerVisibility === 'connect' && styles.visibilityOptionSelected]}
+                onPress={() => setProviderVisibility('connect')}
+                activeOpacity={0.8}
+              >
+                <View style={styles.visibilityIconWrap}>
+                  <Text style={styles.visibilityIcon}>💜</Text>
+                </View>
+                <View style={styles.visibilityBody}>
+                  <Text style={[styles.visibilityTitle, providerVisibility === 'connect' && styles.visibilityTitleSelected]}>Open to Connections</Text>
+                  <Text style={styles.visibilitySub}>Show me in the provider directory with the "On the App!" badge. Families can send me intro requests.</Text>
+                </View>
+                <View style={[styles.visibilityCheck, providerVisibility === 'connect' && styles.visibilityCheckSelected]}>
+                  {providerVisibility === 'connect' && <Text style={styles.visibilityCheckMark}>✓</Text>}
+                </View>
+              </TouchableOpacity>
             </View>
 
             <View style={styles.section}>
@@ -558,7 +632,7 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: FONT_SIZES.md, fontWeight: '700', color: COLORS.text, marginBottom: 2 },
   sectionSub: { fontSize: FONT_SIZES.xs, color: COLORS.textLight, marginBottom: SPACING.sm },
   label: { fontSize: FONT_SIZES.sm, fontWeight: '600', color: COLORS.text, marginTop: SPACING.xs },
-  input: { backgroundColor: COLORS.bg, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.border, paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm, fontSize: FONT_SIZES.sm, color: COLORS.text },
+  input: { backgroundColor: COLORS.bg, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.border, paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm, fontSize: FONT_SIZES.sm, color: COLORS.text, letterSpacing: 0 },
   picker: { backgroundColor: COLORS.bg, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.border, paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   pickerText: { fontSize: FONT_SIZES.sm, color: COLORS.text, flex: 1 },
   pickerPlaceholder: { color: COLORS.textLight },
@@ -605,6 +679,18 @@ const styles = StyleSheet.create({
   journeyCheck: { width: 24, height: 24, borderRadius: 12, borderWidth: 2, borderColor: COLORS.border, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.white },
   journeyCheckSelected: { backgroundColor: COLORS.purple, borderColor: COLORS.purple },
   journeyCheckText: { color: '#fff', fontSize: 13, fontWeight: '800' },
+  // Visibility toggle (provider)
+  visibilityOption: { flexDirection: 'row', alignItems: 'flex-start', gap: SPACING.sm, paddingVertical: SPACING.sm + 2, borderRadius: RADIUS.md, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.bg, paddingHorizontal: SPACING.sm, marginBottom: 8 },
+  visibilityOptionSelected: { borderColor: COLORS.purple, backgroundColor: '#F0EDFF' },
+  visibilityIconWrap: { width: 40, height: 40, borderRadius: 20, backgroundColor: COLORS.white, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: COLORS.border, marginTop: 2 },
+  visibilityIcon: { fontSize: 20 },
+  visibilityBody: { flex: 1 },
+  visibilityTitle: { fontSize: FONT_SIZES.sm, fontWeight: '700', color: COLORS.text },
+  visibilityTitleSelected: { color: COLORS.purple },
+  visibilitySub: { fontSize: FONT_SIZES.xs, color: COLORS.textLight, marginTop: 2, lineHeight: 17 },
+  visibilityCheck: { width: 24, height: 24, borderRadius: 12, borderWidth: 2, borderColor: COLORS.border, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.white, marginTop: 2 },
+  visibilityCheckSelected: { backgroundColor: COLORS.purple, borderColor: COLORS.purple },
+  visibilityCheckMark: { color: '#fff', fontSize: 13, fontWeight: '800' },
   // Modals
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
   modalSheet: { backgroundColor: COLORS.white, borderTopLeftRadius: RADIUS.lg, borderTopRightRadius: RADIUS.lg, paddingTop: SPACING.lg, paddingBottom: SPACING.xxxl, paddingHorizontal: SPACING.lg, maxHeight: '50%' },

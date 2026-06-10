@@ -7,8 +7,7 @@ import { getEvaluatorsForState, normalizeState, type Evaluator } from '../../dat
 import { useActiveChild } from '../../services/childManager';
 import NearMeButton from '../../components/NearMeButton';
 // Providers who have signed up through Provider Mode get the On the App! badge.
-// We use a static set for now; in a real build this would come from the backend.
-const ON_APP_PROVIDER_IDS = new Set<string>([]);
+// Loaded dynamically from AsyncStorage (ap_on_app_provider_ids key).
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const TOTAL_STEPS = 6;
@@ -27,6 +26,13 @@ export default function EvaluatorListScreen() {
   const [childState, setChildState] = useState<string>('');
   const [childName, setChildName] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [onAppIds, setOnAppIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    AsyncStorage.getItem('ap_on_app_provider_ids').then((raw) => {
+      if (raw) setOnAppIds(new Set(JSON.parse(raw) as string[]));
+    });
+  }, []);
 
   useEffect(() => {
     async function load() {
@@ -218,7 +224,7 @@ export default function EvaluatorListScreen() {
               activeOpacity={tried ? 1 : 0.7}
             >
               {/* On the App! badge — shown for providers registered in Provider Mode */}
-              {ON_APP_PROVIDER_IDS.has(evaluator.id) && (
+              {onAppIds.has(evaluator.id) && (
                 <View style={styles.onAppBadge}>
                   <Text style={styles.onAppBadgeText}>💜 On the App!</Text>
                 </View>
@@ -281,7 +287,7 @@ export default function EvaluatorListScreen() {
                       </TouchableOpacity>
                     )}
                   </View>
-                  {ON_APP_PROVIDER_IDS.has(evaluator.id) && (
+                  {onAppIds.has(evaluator.id) && (
                     <TouchableOpacity
                       style={styles.connectBtn}
                       onPress={() => router.push({
