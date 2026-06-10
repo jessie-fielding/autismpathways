@@ -385,7 +385,7 @@ export default function SettingsScreen() {
               />
               <View style={styles.divider} />
               <Row
-                icon="👨\u200d👩\u200d👧\u200d👦"
+                icon="👨‍👩‍👧‍👦"
                 title="Manage Children"
                 subtitle="Add, switch, or edit child profiles"
                 onPress={() => router.push('/children')}
