@@ -9,6 +9,8 @@ export type Evaluator = {
   tags: string[];
   phone: string | null;
   url: string | null;
+  county?: string;
+  last_verified?: string;
 };
 
 export const EVALUATORS: Evaluator[] = [

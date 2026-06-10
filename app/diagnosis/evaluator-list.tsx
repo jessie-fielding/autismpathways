@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Linking, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '../../lib/theme';
@@ -23,6 +23,7 @@ export default function EvaluatorListScreen() {
   const [evaluators, setEvaluators] = useState<Evaluator[]>([]);
   const [childState, setChildState] = useState<string>('');
   const [childName, setChildName] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState<string>('');
 
   useEffect(() => {
     async function load() {
@@ -52,8 +53,16 @@ export default function EvaluatorListScreen() {
   }, []);
 
   const filtered = evaluators.filter((e) => {
-    if (filter === 'all') return true;
-    return e.type === filter || e.type === 'both';
+    if (filter !== 'all' && e.type !== filter && e.type !== 'both') return false;
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      return (
+        e.name.toLowerCase().includes(q) ||
+        ((e as any).county || '').toLowerCase().includes(q) ||
+        e.detail.toLowerCase().includes(q)
+      );
+    }
+    return true;
   });
 
   // Sort: tried evaluators go to the bottom
@@ -129,6 +138,17 @@ export default function EvaluatorListScreen() {
         </View>
       )}
 
+      {/* Search bar */}
+      <View style={styles.searchRow}>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search by name or county..."
+          placeholderTextColor={COLORS.textLight}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          clearButtonMode="while-editing"
+        />
+      </View>
       {/* Filter tabs */}
       <View style={styles.filterRow}>
         {(['all', 'telehealth', 'inperson'] as const).map((f) => (
@@ -208,6 +228,12 @@ export default function EvaluatorListScreen() {
                 )}
               </View>
 
+              {/* County badge */}
+              {(evaluator as any).county && (
+                <View style={styles.countyBadge}>
+                  <Text style={styles.countyBadgeText}>📍 {(evaluator as any).county} County</Text>
+                </View>
+              )}
               {/* Name */}
               <Text style={[styles.evaluatorName, tried && styles.evaluatorNameTried]}>
                 {evaluator.name}
@@ -227,6 +253,10 @@ export default function EvaluatorListScreen() {
                 ))}
               </View>
 
+              {/* Last verified */}
+              {(evaluator as any).last_verified && (
+                <Text style={styles.lastVerified}>Last verified: {(evaluator as any).last_verified}</Text>
+              )}
               {/* Contact + CTA — only for non-tried */}
               {!tried && (
                 <>
@@ -428,6 +458,41 @@ const styles = StyleSheet.create({
     marginTop: SPACING.xs,
   },
   selectBtnText: { color: COLORS.white, fontWeight: '700', fontSize: FONT_SIZES.sm },
+  searchRow: {
+    paddingHorizontal: SPACING.md,
+    paddingBottom: SPACING.sm,
+    paddingTop: SPACING.sm,
+    backgroundColor: COLORS.white,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  searchInput: {
+    backgroundColor: COLORS.bg,
+    borderRadius: RADIUS.pill,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.sm,
+    fontSize: FONT_SIZES.sm,
+    color: COLORS.text,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  countyBadge: {
+    backgroundColor: '#e6f7f3',
+    borderRadius: RADIUS.pill,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 2,
+    alignSelf: 'flex-start',
+  },
+  countyBadgeText: {
+    fontSize: FONT_SIZES.xs,
+    color: '#1a9e7e',
+    fontWeight: '600',
+  },
+  lastVerified: {
+    fontSize: 10,
+    color: COLORS.textLight,
+    marginTop: -4,
+  },
   submitEvaluatorCta: {
     marginHorizontal: SPACING.md,
     marginTop: SPACING.sm,
