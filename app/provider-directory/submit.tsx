@@ -74,6 +74,31 @@ export default function SubmitProviderScreen() {
         id: Date.now().toString(36) + Math.random().toString(36).slice(2),
       });
       await AsyncStorage.setItem(PENDING_KEY, JSON.stringify(pending));
+
+      // Notify owner — non-blocking, submission succeeds regardless
+      try {
+        await fetch(`${API_BASE}/api/notify/owner`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            subject: '📋 New Provider Directory Submission',
+            body: [
+              `Provider: ${submissionData.providerName}`,
+              `Type: ${submissionData.providerType}`,
+              `Specialty: ${submissionData.specialty}`,
+              `State: ${submissionData.state}`,
+              `Phone: ${submissionData.phone || 'Not provided'}`,
+              `Website: ${submissionData.website || 'Not provided'}`,
+              `Medicaid Accepted: ${submissionData.medicaidAccepted ? 'Yes' : 'No'}`,
+              `Accepting Patients: ${submissionData.acceptingPatients ? 'Yes' : 'No'}`,
+              `Submitted by: ${submissionData.submittedBy} (${submissionData.submitterRelation || 'relation not provided'})`,
+              `Submitted at: ${submissionData.submittedAt}`,
+              submissionData.description ? `\nDescription: ${submissionData.description}` : '',
+            ].filter(Boolean).join('\n'),
+          }),
+        });
+      } catch { /* non-blocking — submission still succeeds even if notify fails */ }
+
       setSubmitted(true);
     } catch {
       Alert.alert('Submission Failed', 'Please check your connection and try again.');
