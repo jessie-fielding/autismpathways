@@ -180,10 +180,15 @@ export default function DashboardScreen() {
       if (rawParentName) setParentName(rawParentName);
 
       // Provider Mode: redirect to provider dashboard
+      // Cross-check against stored profile to prevent stale flag from affecting parent accounts
       const isProvider = await AsyncStorage.getItem('ap_is_provider');
-      if (isProvider === 'true') {
+      const profileIsProvider = rawProfile ? JSON.parse(rawProfile)?.isProvider === true : false;
+      if (isProvider === 'true' && profileIsProvider) {
         router.replace('/provider-dashboard' as any);
         return;
+      } else if (isProvider === 'true' && !profileIsProvider) {
+        // Stale flag — clean it up
+        await AsyncStorage.multiRemove(['ap_is_provider', 'ap_provider_visibility', 'ap_provider_connect_requested']);
       }
 
       if (rawProfile) {

@@ -267,6 +267,13 @@ export default function ProfileSetupScreen() {
           if (firstChildId) await setActiveChildId(firstChildId);
         }
 
+        // Clear any stale provider flags so parent accounts don't get routed to provider dashboard
+        await AsyncStorage.multiRemove([
+          'ap_is_provider',
+          'ap_provider_visibility',
+          'ap_provider_connect_requested',
+        ]);
+
         await seedDefaults();
         router.replace('/onboarding');
       }
