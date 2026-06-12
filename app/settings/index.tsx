@@ -293,13 +293,13 @@ export default function SettingsScreen() {
             </TouchableOpacity>
           </View>
         ) : (
-          <View style={[styles.premiumBanner, styles.freeBanner]}>
+          <TouchableOpacity style={[styles.premiumBanner, styles.freeBanner]} onPress={() => router.push('/paywall')} activeOpacity={0.8}>
             <Text style={styles.premiumStar}>⭐</Text>
             <Text style={styles.premiumTitle}>Upgrade to Premium</Text>
             <Text style={styles.premiumSub}>
               Unlock the Appeal Tracker, unlimited contacts, all talking point scripts, and more.
             </Text>
-          </View>
+          </TouchableOpacity>
         )}
 
         {/* LANGUAGE */}
