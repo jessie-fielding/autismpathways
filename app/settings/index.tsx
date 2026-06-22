@@ -551,6 +551,19 @@ export default function SettingsScreen() {
           />
         </View>
 
+        {/* DONATE CALLOUT — always visible */}
+        <TouchableOpacity
+          style={styles.donateCallout}
+          onPress={() => Linking.openURL('https://info.autismpathways.app/donate')}
+          activeOpacity={0.9}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={styles.donateCalloutTitle}>🫶 Support the Mission</Text>
+            <Text style={styles.donateCalloutSub}>Help keep Autism Pathways free for every family who needs it. Donate in 30 seconds.</Text>
+          </View>
+          <Text style={styles.donateCalloutArrow}>→</Text>
+        </TouchableOpacity>
+
         {/* 1:1 SUPPORT CALLOUT — always visible */}
         <TouchableOpacity
           style={styles.supportCallout}
@@ -702,6 +715,36 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZES.xs,
     color: COLORS.infoText,
     lineHeight: 17,
+  },
+
+  // Donate callout
+  donateCallout: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF8E7',
+    borderRadius: RADIUS.sm,
+    padding: SPACING.lg,
+    marginTop: SPACING.xl,
+    marginBottom: SPACING.sm,
+    borderWidth: 1,
+    borderColor: '#F5D87A',
+    ...SHADOWS.sm,
+  },
+  donateCalloutTitle: {
+    fontSize: FONT_SIZES.sm,
+    fontWeight: '800',
+    color: '#7A5200',
+    marginBottom: SPACING.xs,
+  },
+  donateCalloutSub: {
+    fontSize: FONT_SIZES.xs,
+    color: '#9A6800',
+    lineHeight: 16,
+  },
+  donateCalloutArrow: {
+    fontSize: 20,
+    color: '#C88A00',
+    marginLeft: SPACING.md,
   },
 
   // 1:1 Support callout
