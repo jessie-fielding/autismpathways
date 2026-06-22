@@ -12,7 +12,7 @@
 import React, { useState, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  Dimensions, Platform,
+  Dimensions, Platform, Switch,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -74,6 +74,7 @@ export default function ProviderDashboard() {
   const [county, setCounty]                 = useState('');
   const [pendingCount, setPendingCount]     = useState(0);
   const [recentRequests, setRecentRequests] = useState<ConnectionRequest[]>([]);
+  const [readyToConnect, setReadyToConnect] = useState(true);
 
   useFocusEffect(
     useCallback(() => {
@@ -89,6 +90,8 @@ export default function ProviderDashboard() {
         setPendingCount(count);
         const all = await getReceivedRequests();
         setRecentRequests(all.slice(0, 3));
+        const rtcRaw = await AsyncStorage.getItem('provider_ready_to_connect');
+        if (rtcRaw !== null) setReadyToConnect(JSON.parse(rtcRaw));
       })();
     }, [])
   );
@@ -135,6 +138,28 @@ export default function ProviderDashboard() {
           </TouchableOpacity>
         </View>
 
+        {/* Availability toggle */}
+        <View style={styles.availabilityCard}>
+          <View style={styles.availabilityLeft}>
+            <Text style={styles.availabilityTitle}>
+              {readyToConnect ? '🟢 Ready to Connect' : '⚪ Browse Only'}
+            </Text>
+            <Text style={styles.availabilitySub}>
+              {readyToConnect
+                ? 'Families can send you introduction requests'
+                : 'You are browsing only — families cannot request a connection'}
+            </Text>
+          </View>
+          <Switch
+            value={readyToConnect}
+            onValueChange={async (val) => {
+              setReadyToConnect(val);
+              await AsyncStorage.setItem('provider_ready_to_connect', JSON.stringify(val));
+            }}
+            trackColor={{ false: COLORS.border, true: COLORS.teal }}
+            thumbColor={readyToConnect ? '#fff' : '#f4f3f4'}
+          />
+        </View>
         {/* Quick stats */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.statsScroll} contentContainerStyle={styles.statsContent}>
           {[
@@ -260,6 +285,10 @@ const styles = StyleSheet.create({
   greetingSub: { fontSize: FONT_SIZES.xs, color: COLORS.textLight, marginTop: 2 },
   settingsBtn: { padding: SPACING.xs },
   // Stats
+  availabilityCard: { backgroundColor: COLORS.white, borderRadius: RADIUS.lg, padding: SPACING.md, flexDirection: 'row', alignItems: 'center', gap: SPACING.md, ...SHADOWS.sm },
+  availabilityLeft: { flex: 1 },
+  availabilityTitle: { fontSize: FONT_SIZES.sm, fontWeight: '700', color: COLORS.text },
+  availabilitySub: { fontSize: FONT_SIZES.xs, color: COLORS.textLight, marginTop: 2, lineHeight: 16 },
   statsScroll: { marginHorizontal: -SPACING.lg },
   statsContent: { paddingHorizontal: SPACING.lg, gap: SPACING.sm },
   statCard: { backgroundColor: COLORS.white, borderRadius: RADIUS.lg, padding: SPACING.md, alignItems: 'center', minWidth: 88, ...SHADOWS.sm },

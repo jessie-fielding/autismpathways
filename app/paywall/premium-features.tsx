@@ -17,6 +17,36 @@ const VALUE_HINTS = [
 
 const FEATURE_SECTIONS = [
   {
+    emoji: '🧠',
+    title: 'Profound Autism Pathway',
+    color: '#FFF0F5',
+    accent: '#F9A8D4',
+    textColor: '#831843',
+    withPremium: [
+      'SOS+ in-the-moment crisis support tool',
+      'Poop Smearing Quiz with cause analysis',
+      'Is It Pain? medical checklist',
+      'Program Finder for residential & day programs',
+      'Safety at Home equipment guide',
+      'Bigger Than Me physical safety guide',
+      'Medication Guide with doctor questions',
+      'Waitlist Survival action plan',
+      'Community & organizations directory',
+      'ABC Logger for behavior data (coming soon)',
+    ],
+    withoutPremium: [
+      'No SOS+ tool',
+      'No Poop Smearing Quiz',
+      'No Is It Pain? checklist',
+      'No Program Finder',
+      'No safety guides',
+      'No Medication Guide',
+      'No Waitlist Survival plan',
+      'No Community directory',
+      'No ABC Logger',
+    ],
+  },
+  {
     emoji: '📋',
     title: 'IEP & School Tools',
     color: COLORS.lavender,

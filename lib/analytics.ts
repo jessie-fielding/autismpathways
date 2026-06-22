@@ -183,3 +183,33 @@ export const trackProviderTranslatorOpened = () =>
 /** User runs a translation in Provider Translator */
 export const trackProviderTranslatorUsed = (mode: 'translate' | 'decode') =>
   logEvent('provider_translator_used', { mode });
+
+// ─── Profound Autism Pathway events ──────────────────────────────────────────
+
+/** User opens the Profound Autism Pathway dashboard */
+export const trackProfoundAutismOpened = () =>
+  logEvent('profound_autism_pathway_opened');
+
+/** User opens a tool within the Profound Autism Pathway */
+export const trackProfoundToolOpened = (tool: string) =>
+  logEvent('profound_tool_opened', { tool });
+
+/** User completes the Poop Smearing Quiz */
+export const trackPoopSmearingQuizCompleted = (primaryCause: string) =>
+  logEvent('poop_smearing_quiz_completed', { primary_cause: primaryCause });
+
+/** User completes the SOS+ quiz */
+export const trackSOSPlusCompleted = (strategy: string) =>
+  logEvent('sos_plus_completed', { strategy });
+
+/** User completes the Is It Pain? checklist */
+export const trackIsItPainCompleted = (flaggedCount: number) =>
+  logEvent('is_it_pain_completed', { flagged_count: flaggedCount });
+
+/** User searches the Program Finder */
+export const trackProgramFinderSearched = (state: string) =>
+  logEvent('program_finder_searched', { state });
+
+/** Provider toggles Ready to Connect status */
+export const trackProviderAvailabilityToggled = (readyToConnect: boolean) =>
+  logEvent('provider_availability_toggled', { ready_to_connect: readyToConnect });
