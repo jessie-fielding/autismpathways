@@ -23,8 +23,8 @@ import { useIsPremium } from '../../hooks/useIsPremium';
 import { PathwayDisclaimer } from '../../components/PathwayDisclaimer';
 import { useLanguage } from '../../lib/LanguageContext';
 
-const FREE_GOALS = 5;
-const FREE_MEETINGS = 3;
+// IEP goal and meeting tracking is unlimited for all users — IEP documentation is a legal right.
+// (caps removed June 2026)
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface IEPGoal {
@@ -103,10 +103,12 @@ const RIGHTS_TERMS = [
 ];
 
 const SCHOOL_SAYS_NO = [
-  { term: 'Step 1 — Request a PWN', def: 'Ask for the refusal in writing. Schools are required to provide this. It documents exactly what they denied and why.', tip: null },
-  { term: 'Step 2 — Request an IEP meeting', def: 'You can call an IEP meeting at any time. Submit the request in writing and keep a copy.', tip: null },
-  { term: 'Step 3 — File a state complaint', def: 'Each state has a complaint process through the State Education Agency (SEA). This is free and faster than due process.', tip: null },
-  { term: 'Step 4 — Due process hearing', def: 'A formal legal proceeding where an impartial hearing officer decides the dispute. You can have an attorney represent you.', tip: null },
+  { term: 'Step 1 — Request a PWN (Prior Written Notice)', def: 'Any time the school refuses or delays a service, evaluation, or placement change, ask for the refusal IN WRITING. Schools are legally required to provide this under IDEA. It documents exactly what they denied and why — this is your paper trail.', tip: 'Go to the "Write" tab for a ready-to-send PWN request template.' },
+  { term: 'Step 2 — Request an IEP meeting in writing', def: 'You can call an IEP meeting at any time. Submit the request in writing (email is fine) and keep a copy. State your specific concerns clearly. Schools must respond within a reasonable time — typically 10 school days.', tip: null },
+  { term: 'Step 3 — File a state complaint (SEA) — FASTEST ROUTE', def: 'Each state has a complaint process through the State Education Agency (SEA). This is FREE, faster than due process, and does not require an attorney. The SEA must investigate and resolve within 60 days. As of June 2026, this is the most reliable federal-level option.', tip: 'As of June 16, 2026, civil rights enforcement moved from the Dept. of Education OCR to the Dept. of Justice. The SEA complaint process is unaffected and remains your fastest path.' },
+  { term: 'Step 4 — File a complaint with the Dept. of Justice (formerly OCR)', def: 'As of June 16, 2026, the Office for Civil Rights (OCR) functions transferred to the Department of Justice. You can still file disability discrimination complaints — now handled by DOJ. Advocates warn response times may be slower during the transition. File at civilrights.justice.gov.', tip: null },
+  { term: 'Step 5 — Due process hearing', def: 'A formal legal proceeding where an impartial hearing officer decides the dispute. You can have an attorney represent you. This is the most powerful but most time-consuming option.', tip: null },
+  { term: 'Step 6 — Contact your PTI Center (free advocacy)', def: 'Every state has a federally-funded Parent Training and Information (PTI) center that provides FREE advocacy support, helps you understand your rights, and can attend IEP meetings with you. Find yours at parentcenterhub.org. PTI centers are independent of school districts — they work for YOU.', tip: null },
 ];
 
 const PREP_CHECKLIST = [
@@ -265,6 +267,9 @@ export default function IEPScreen() {
   const { child: activeChild } = useActiveChild();
   const { isPremium } = useIsPremium();
   const [activeTab, setActiveTab] = useState('prep');
+  const [writingType, setWritingType] = useState<string | null>(null);
+  const [writingText, setWritingText] = useState('');
+  const [writingCopied, setWritingCopied] = useState(false);
 
   const [goals, setGoals] = useState<IEPGoal[]>([]);
   const [meetings, setMeetings] = useState<IEPMeeting[]>([]);
@@ -372,10 +377,6 @@ export default function IEPScreen() {
   };
 
   const openAddGoal = () => {
-    if (!isPremium && activeGoals.length >= FREE_GOALS) {
-      router.push('/paywall' as any);
-      return;
-    }
     setEditingGoal(null);
     setDraftGoal({ progress: 0, archived: false, year: new Date().getFullYear().toString() });
     setShowGoalModal(true);
@@ -404,10 +405,6 @@ export default function IEPScreen() {
   };
 
   const openAddMeeting = () => {
-    if (!isPremium && meetings.length >= FREE_MEETINGS) {
-      router.push('/paywall' as any);
-      return;
-    }
     setEditingMeeting(null);
     setDraftMeeting({ date: new Date().toISOString().split('T')[0] });
     setShowMeetingModal(true);
@@ -447,12 +444,28 @@ export default function IEPScreen() {
         <TouchableOpacity style={[s.tab, activeTab === 'goals' && s.tabActive]} onPress={() => setActiveTab('goals')}><Text style={[s.tabText, activeTab === 'goals' && s.tabTextActive]}>Goals</Text></TouchableOpacity>
         <TouchableOpacity style={[s.tab, activeTab === 'meetings' && s.tabActive]} onPress={() => setActiveTab('meetings')}><Text style={[s.tabText, activeTab === 'meetings' && s.tabTextActive]}>Meetings</Text></TouchableOpacity>
         <TouchableOpacity style={[s.tab, activeTab === 'flagged' && s.tabActive]} onPress={() => setActiveTab('flagged')}><Text style={[s.tabText, activeTab === 'flagged' && s.tabTextActive]}>From Obs</Text></TouchableOpacity>
+        <TouchableOpacity style={[s.tab, activeTab === 'writing' && s.tabActive]} onPress={() => setActiveTab('writing')}><Text style={[s.tabText, activeTab === 'writing' && s.tabTextActive]}>Write</Text></TouchableOpacity>
       </View>
 
       <ScrollView style={s.contentScroll} showsVerticalScrollIndicator={false}>
         {/* ── PREP TAB ── */}
         {activeTab === 'prep' && (
           <View>
+            {/* June 2026 Policy Alert */}
+            <TouchableOpacity
+              style={s.policyAlertCard}
+              onPress={() => setActiveTab('writing')}
+              activeOpacity={0.85}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
+                <Text style={{ fontSize: 22 }}>{'\u26a0\ufe0f'}</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={s.policyAlertTitle}>June 2026: Federal Special Ed Oversight Changed</Text>
+                  <Text style={s.policyAlertBody}>The Dept. of Education transferred OSERS to HHS and OCR to DOJ. Your child's IEP rights are unchanged — but getting things in writing matters more than ever.</Text>
+                  <Text style={s.policyAlertLink}>Tap to open letter templates</Text>
+                </View>
+              </View>
+            </TouchableOpacity>
             {/* District Lookup Banner */}
             <TouchableOpacity
               style={s.districtLookupCard}
@@ -539,36 +552,6 @@ export default function IEPScreen() {
               <Text style={s.addBtnText}>+ Add New Goal</Text>
             </TouchableOpacity>
 
-            {!isPremium && (
-              <View style={s.usageBarWrap}>
-                <View style={s.usageBarRow}>
-                  <Text style={s.usageBarLabel}>
-                    {activeGoals.length} of {FREE_GOALS} free goals used
-                  </Text>
-                  {activeGoals.length >= FREE_GOALS - 1 && (
-                    <TouchableOpacity onPress={() => router.push('/paywall')}>
-                      <Text style={s.usageBarUpgrade}>Keep going with Premium →</Text>
-                    </TouchableOpacity>
-                  )}
-                </View>
-                <View style={s.usageBarTrack}>
-                  <View
-                    style={[
-                      s.usageBarFill,
-                      {
-                        width: `${Math.min((activeGoals.length / FREE_GOALS) * 100, 100)}%` as any,
-                        backgroundColor:
-                          activeGoals.length >= FREE_GOALS
-                            ? '#e74c3c'
-                            : activeGoals.length >= FREE_GOALS - 1
-                            ? '#f39c12'
-                            : COLORS.purple,
-                      },
-                    ]}
-                  />
-                </View>
-              </View>
-            )}
 
             <Text style={s.sectionLabel}>ACTIVE GOALS</Text>
             {activeGoals.length === 0 ? (
@@ -633,36 +616,6 @@ export default function IEPScreen() {
               <Text style={s.addBtnText}>+ Log IEP Meeting</Text>
             </TouchableOpacity>
 
-            {!isPremium && (
-              <View style={s.usageBarWrap}>
-                <View style={s.usageBarRow}>
-                  <Text style={s.usageBarLabel}>
-                    {meetings.length} of {FREE_MEETINGS} free meetings logged
-                  </Text>
-                  {meetings.length >= FREE_MEETINGS - 1 && (
-                    <TouchableOpacity onPress={() => router.push('/paywall')}>
-                      <Text style={s.usageBarUpgrade}>Keep going with Premium →</Text>
-                    </TouchableOpacity>
-                  )}
-                </View>
-                <View style={s.usageBarTrack}>
-                  <View
-                    style={[
-                      s.usageBarFill,
-                      {
-                        width: `${Math.min((meetings.length / FREE_MEETINGS) * 100, 100)}%` as any,
-                        backgroundColor:
-                          meetings.length >= FREE_MEETINGS
-                            ? '#e74c3c'
-                            : meetings.length >= FREE_MEETINGS - 1
-                            ? '#f39c12'
-                            : COLORS.purple,
-                      },
-                    ]}
-                  />
-                </View>
-              </View>
-            )}
 
             {meetings.length === 0 ? (
               <View style={s.emptyState}>
@@ -716,6 +669,69 @@ export default function IEPScreen() {
                 </View>
               );
             })}
+          </View>
+        )}
+
+        {/* PUT IT IN WRITING TAB */}
+        {activeTab === 'writing' && (
+          <View>
+            <Callout type="amber" label="June 2026 Policy Change" text="As of June 16, 2026, the Dept. of Education transferred civil rights enforcement (OCR) to the Dept. of Justice and special education oversight (OSERS) to HHS. Your child's IEP rights under IDEA are unchanged — but getting things in writing is MORE important than ever during this transition." />
+            <Text style={s.sectionLabel}>CHOOSE A TEMPLATE</Text>
+            {[
+              { id: 'denial', icon: '🚫', title: 'Service or Evaluation Denied', sub: 'School refused a service, evaluation, or accommodation' },
+              { id: 'delay', icon: '⏳', title: 'IEP Meeting Delayed', sub: 'School is not scheduling a required meeting in time' },
+              { id: 'pwn', icon: '📄', title: 'Request Prior Written Notice (PWN)', sub: 'Demand the school put their refusal in writing' },
+              { id: 'iee', icon: '🔍', title: 'Request Independent Educational Evaluation (IEE)', sub: "Disagree with school's evaluation — request one at their expense" },
+              { id: 'sea', icon: '🏛️', title: 'File a State Complaint (SEA)', sub: 'Escalate to your State Education Agency — free and fast' },
+              { id: 'meeting', icon: '📅', title: 'Request an IEP Meeting', sub: 'Formally request a meeting at any time' },
+            ].map(item => (
+              <TouchableOpacity
+                key={item.id}
+                style={[s.writingTemplateCard, writingType === item.id && s.writingTemplateCardActive]}
+                onPress={() => {
+                  setWritingType(item.id);
+                  setWritingCopied(false);
+                  const child = activeChild?.name || "[CHILD'S NAME]";
+                  const district = setup?.district || '[SCHOOL DISTRICT NAME]';
+                  const templates: Record<string, string> = {
+                    denial: 'Dear IEP Team,\n\nI am writing to formally document that on [DATE], the school denied my request for [DESCRIBE SERVICE/EVALUATION] for my child, ' + child + '.\n\nUnder the Individuals with Disabilities Education Act (IDEA), I am requesting Prior Written Notice (PWN) explaining:\n1. The specific action proposed or refused\n2. Why the school is refusing this request\n3. Each evaluation, procedure, assessment, record, or report used as a basis for this decision\n4. Other options considered and why they were rejected\n\nPlease provide this PWN within 10 school days. I am keeping a copy of this letter for my records.\n\nSincerely,\n[YOUR NAME]\n[DATE]\n[PHONE / EMAIL]',
+                    delay: 'Dear [PRINCIPAL / SPECIAL EDUCATION DIRECTOR],\n\nI am writing to formally document that ' + child + ''s IEP meeting has not been scheduled as required. Under IDEA, annual IEP reviews must occur within 12 months of the previous IEP date.\n\n' + child + ''s current IEP was dated [PREVIOUS IEP DATE]. A meeting should have been scheduled by [DUE DATE].\n\nI am requesting that an IEP meeting be scheduled within the next 10 school days. Please confirm the meeting date in writing.\n\nIf a meeting cannot be scheduled within this timeframe, please provide written explanation. I am prepared to file a complaint with the ' + district + ' State Education Agency if necessary.\n\nSincerely,\n[YOUR NAME]\n[DATE]',
+                    pwn: 'Dear Special Education Director,\n\nOn [DATE], the school [proposed / refused] to [DESCRIBE ACTION] for my child, ' + child + '.\n\nUnder IDEA (34 CFR §300.503), I am formally requesting Prior Written Notice (PWN) for this decision. The PWN must include:\n\n• A description of the action proposed or refused\n• An explanation of why the school proposes or refuses to take the action\n• A description of each evaluation, procedure, assessment, record, or report the school used\n• A statement that parents have protections under IDEA procedural safeguards\n• Sources for parents to obtain assistance\n• A description of other options considered and why they were rejected\n• A description of other factors relevant to the proposal or refusal\n\nPlease provide the PWN within 10 school days. Failure to provide PWN is a procedural violation of IDEA.\n\nSincerely,\n[YOUR NAME]\n[DATE]',
+                    iee: 'Dear Special Education Director,\n\nI disagree with the [TYPE OF EVALUATION] conducted by ' + district + ' on [DATE] for my child, ' + child + '.\n\nUnder IDEA (34 CFR §300.502), I am requesting an Independent Educational Evaluation (IEE) at public expense in the area of [EVALUATION AREA].\n\nPlease respond within 10 school days with either:\n1. Approval of the IEE at public expense, OR\n2. A due process hearing request to defend the school\'s evaluation\n\nIf you approve the IEE, please provide the criteria for the evaluator so I can select an appropriate professional.\n\nI am keeping a copy of this letter for my records.\n\nSincerely,\n[YOUR NAME]\n[DATE]',
+                    sea: '[YOUR STATE] Department of Education\nSpecial Education Complaint Unit\n[SEA ADDRESS — find at your state\'s DOE website]\n\nRe: Formal Complaint — ' + child + ' / ' + district + '\n\nI am filing a formal complaint under IDEA against ' + district + ' for the following violation:\n\n[DESCRIBE THE VIOLATION IN DETAIL — include dates, names, what was requested, what was denied]\n\nSpecific IDEA provision(s) violated: [e.g., 34 CFR §300.503 — Failure to provide Prior Written Notice]\n\nRelief requested:\n• [e.g., Immediate provision of the requested service]\n• [e.g., Compensatory services for the period of denial]\n• [e.g., Written confirmation of corrective action]\n\nSupporting documentation attached: [LIST DOCUMENTS]\n\nI understand the SEA must investigate and resolve this complaint within 60 days.\n\nSincerely,\n[YOUR NAME]\n[ADDRESS]\n[PHONE / EMAIL]\n[DATE]',
+                    meeting: 'Dear [SPECIAL EDUCATION COORDINATOR / PRINCIPAL],\n\nI am formally requesting an IEP meeting for my child, ' + child + ', as soon as possible.\n\nReason for request: [DESCRIBE YOUR CONCERN — e.g., I believe the current IEP is not meeting my child\'s needs / I want to discuss a change in services / I have new evaluation information to share]\n\nUnder IDEA, parents have the right to request an IEP meeting at any time. I am requesting this meeting be scheduled within 10 school days of this letter.\n\nPlease confirm the meeting date, time, and location in writing.\n\nThank you,\n[YOUR NAME]\n[DATE]\n[PHONE / EMAIL]',
+                  };
+                  setWritingText(templates[item.id] || '');
+                }}
+              >
+                <Text style={s.writingTemplateIcon}>{item.icon}</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={s.writingTemplateTitle}>{item.title}</Text>
+                  <Text style={s.writingTemplateSub}>{item.sub}</Text>
+                </View>
+                <Text style={s.writingTemplateArrow}>{writingType === item.id ? 'v' : '>'}</Text>
+              </TouchableOpacity>
+            ))}
+            {writingType && writingText ? (
+              <View style={s.writingOutputCard}>
+                <View style={s.writingOutputHeader}>
+                  <Text style={s.writingOutputTitle}>YOUR LETTER</Text>
+                  <TouchableOpacity onPress={() => { Clipboard.setString(writingText); setWritingCopied(true); Alert.alert('Copied!', 'Letter copied to clipboard. Paste it into an email or document.'); }}>
+                    <Text style={s.writingCopyBtn}>{writingCopied ? 'Copied!' : 'Copy All'}</Text>
+                  </TouchableOpacity>
+                </View>
+                <TextInput
+                  style={s.writingTextInput}
+                  value={writingText}
+                  onChangeText={setWritingText}
+                  multiline
+                  scrollEnabled={false}
+                />
+                <Callout type="green" label="How to use this" text="Fill in the [BRACKETED] fields with your specific details. Send via email so you have a timestamp. Always keep a copy. You do not need an attorney to send these letters." />
+                <Callout type="blue" label="Post-June 2026 note" text="Civil rights complaints (disability discrimination) now go to the Dept. of Justice at civilrights.justice.gov. State SEA complaints remain the fastest route for IDEA violations." />
+              </View>
+            ) : null}
+            <View style={{ height: 20 }} />
           </View>
         )}
 
@@ -1050,6 +1066,23 @@ const cs = StyleSheet.create({
   progressText: { fontSize: FONT_SIZES.lg, fontWeight: 'bold', marginRight: SPACING.lg },
   progressBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: COLORS.lavender, alignItems: 'center', justifyContent: 'center', marginHorizontal: SPACING.sm },
   progressBtnText: { fontSize: 24, fontWeight: 'bold', color: COLORS.purple },
+  // Policy alert banner
+  policyAlertCard: { backgroundColor: '#fff8e0', borderRadius: RADIUS.lg, padding: SPACING.md, marginBottom: SPACING.md, borderWidth: 1, borderColor: '#f0d080', ...SHADOWS.sm },
+  policyAlertTitle: { fontSize: FONT_SIZES.md, fontWeight: 'bold' as const, color: '#5a3a00', marginBottom: 4 },
+  policyAlertBody: { fontSize: FONT_SIZES.sm, color: '#5a3a00', lineHeight: 18 as any, marginBottom: 6 },
+  policyAlertLink: { fontSize: FONT_SIZES.sm, color: COLORS.purple, fontWeight: '600' as const },
+  // Put It In Writing tab styles
+  writingTemplateCard: { backgroundColor: 'white', borderRadius: RADIUS.lg, padding: SPACING.md, marginBottom: SPACING.sm, flexDirection: 'row' as const, alignItems: 'center' as const, gap: 12, ...SHADOWS.sm },
+  writingTemplateCardActive: { borderWidth: 2, borderColor: COLORS.purple },
+  writingTemplateIcon: { fontSize: 28 },
+  writingTemplateTitle: { fontSize: FONT_SIZES.md, fontWeight: 'bold' as const, color: COLORS.text },
+  writingTemplateSub: { fontSize: FONT_SIZES.xs, color: COLORS.textLight, marginTop: 2 },
+  writingTemplateArrow: { fontSize: 20, color: COLORS.textLight },
+  writingOutputCard: { backgroundColor: 'white', borderRadius: RADIUS.lg, padding: SPACING.md, marginTop: SPACING.md, ...SHADOWS.sm },
+  writingOutputHeader: { flexDirection: 'row' as const, justifyContent: 'space-between' as const, alignItems: 'center' as const, marginBottom: SPACING.md },
+  writingOutputTitle: { fontSize: FONT_SIZES.sm, fontWeight: 'bold' as const, color: COLORS.text, letterSpacing: 0.5 },
+  writingCopyBtn: { color: COLORS.purple, fontWeight: 'bold' as const, fontSize: FONT_SIZES.sm },
+  writingTextInput: { backgroundColor: COLORS.lavender, padding: SPACING.md, borderRadius: RADIUS.md, fontSize: FONT_SIZES.sm, color: COLORS.text, lineHeight: 20 as any, marginBottom: SPACING.md, minHeight: 300, textAlignVertical: 'top' as const },
   // Usage progress bar
   usageBarWrap: { backgroundColor: 'white', borderRadius: RADIUS.md, padding: SPACING.md, marginBottom: SPACING.md, ...SHADOWS.sm },
   usageBarRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
