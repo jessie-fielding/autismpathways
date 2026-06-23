@@ -23,7 +23,7 @@ import {
 } from 'react-native';
 import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '../lib/theme';
 
-const AP_API_BASE = 'https://autismprof-vrxcangg.manus.space';
+const AP_API_BASE = 'https://inu3nb5lrfvftfyiwprftqshpy0zcegu.lambda-url.us-east-2.on.aws';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 

@@ -13,7 +13,6 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, SPACING, RADIUS, FONT_SIZES, SHADOWS } from '../../lib/theme';
 
 const LAMBDA_BASE = 'https://inu3nb5lrfvftfyiwprftqshpy0zcegu.lambda-url.us-east-2.on.aws';
@@ -64,40 +63,23 @@ export default function HardshipApplicationScreen() {
 
     setSubmitting(true);
     try {
-      // Save locally
+      // Save to Lambda (DynamoDB) — source of truth for admin review
       const application = {
         income,
+        incomeLabel: INCOME_OPTIONS.find(o => o.value === income)?.label || income,
         state,
         waiverStatus,
         explanation,
         email,
-        submittedAt: new Date().toISOString(),
       };
-      await AsyncStorage.setItem('ap_hardship_application', JSON.stringify(application));
-
-      // Notify owner via Lambda
-      try {
-        await fetch(`${LAMBDA_BASE}/api/notify/owner`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            subject: '💜 New Hardship Application',
-            body: [
-              `New hardship application received:`,
-              ``,
-              `Income Range: ${INCOME_OPTIONS.find(o => o.value === income)?.label || income}`,
-              `State: ${state}`,
-              `Waiver Status: ${waiverStatus}`,
-              `Email: ${email}`,
-              ``,
-              explanation ? `Explanation: ${explanation}` : 'No explanation provided.',
-              ``,
-              `Submitted: ${new Date().toLocaleString()}`,
-            ].join('\n'),
-          }),
-        });
-      } catch (_) {
-        // Notification failure is non-blocking — application is saved locally
+      const res = await fetch(`${LAMBDA_BASE}/api/admin/hardship`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(application),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'Server error');
       }
 
       setSubmitted(true);

@@ -544,6 +544,21 @@ export default function SettingsScreen() {
           />
         </View>
 
+        {/* ADMIN — only visible to jessienrabe@gmail.com */}
+        {profile?.email?.toLowerCase() === 'jessienrabe@gmail.com' && (
+          <>
+            <Text style={styles.sectionLabel}>ADMIN</Text>
+            <View style={styles.card}>
+              <Row
+                icon="🛡️"
+                title="Admin Dashboard"
+                subtitle="Provider submissions, hardship apps, forum"
+                onPress={() => router.push('/admin/dashboard' as any)}
+              />
+            </View>
+          </>
+        )}
+
         {/* DONATE CALLOUT — always visible */}
         <TouchableOpacity
           style={styles.donateCallout}

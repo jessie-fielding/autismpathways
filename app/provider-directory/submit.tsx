@@ -5,7 +5,6 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '../../lib/theme';
 
 const API_BASE = 'https://inu3nb5lrfvftfyiwprftqshpy0zcegu.lambda-url.us-east-2.on.aws';
@@ -65,44 +64,16 @@ export default function SubmitProviderScreen() {
         status: 'pending_review',
       };
 
-      // Save locally with pending_review status
-      const PENDING_KEY = 'ap_provider_submissions';
-      const existing = await AsyncStorage.getItem(PENDING_KEY);
-      const pending = existing ? JSON.parse(existing) : [];
-      pending.push({
-        ...submissionData,
-        id: Date.now().toString(36) + Math.random().toString(36).slice(2),
+      // Save to Lambda (DynamoDB) — this is the source of truth for admin review
+      const res = await fetch(`${API_BASE}/api/admin/submissions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(submissionData),
       });
-      await AsyncStorage.setItem(PENDING_KEY, JSON.stringify(pending));
-
-      // Notify owner — non-blocking, submission succeeds regardless
-      try {
-        await fetch(`${API_BASE}/api/notify/owner`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            subject: '📋 New Provider Directory Submission — Action Required',
-            body: [
-              `Provider: ${submissionData.providerName}`,
-              `Type: ${submissionData.providerType}`,
-              `Specialty: ${submissionData.specialty}`,
-              `State: ${submissionData.state}`,
-              `Phone: ${submissionData.phone || 'Not provided'}`,
-              `Website: ${submissionData.website || 'Not provided'}`,
-              `Medicaid Accepted: ${submissionData.medicaidAccepted ? 'Yes' : 'No'}`,
-              `Accepting Patients: ${submissionData.acceptingPatients ? 'Yes' : 'No'}`,
-              `Submitted by: ${submissionData.submittedBy} (${submissionData.submitterRelation || 'relation not provided'})`,
-              `Submitted at: ${submissionData.submittedAt}`,
-              submissionData.description ? `\nDescription: ${submissionData.description}` : '',
-              ``,
-              `── APPROVE THIS SUBMISSION ──`,
-              `To grant the Verified badge and add this provider to the directory, open the app and go to:`,
-              `Settings → Admin → Pending Submissions`,
-              `Or tap this deep link on your device: autismpathways://admin/approve-submission?id=${pending[pending.length - 1]?.id || 'pending'}`,
-            ].filter(Boolean).join('\n'),
-          }),
-        });
-      } catch { /* non-blocking — submission still succeeds even if notify fails */ }
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'Server error');
+      }
 
       setSubmitted(true);
     } catch {

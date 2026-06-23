@@ -25,7 +25,7 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_BASE = 'https://autismprof-vrxcangg.manus.space';
+const API_BASE = 'https://inu3nb5lrfvftfyiwprftqshpy0zcegu.lambda-url.us-east-2.on.aws';
 
 // Keys that should NEVER be backed up — sensitive, ephemeral, or device-specific
 const EXCLUDED_KEYS = new Set([

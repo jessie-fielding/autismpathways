@@ -2,14 +2,15 @@
  * api.ts
  *
  * Shared REST client for the Autism Pathways backend.
- * Base URL: https://autismprof-vrxcangg.manus.space
+ * All provider endpoints now point to the Lambda for reliability.
  *
  * All calls are fire-and-forget safe — errors are caught and logged,
  * never thrown to the caller, so the app never crashes on network issues.
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getValidToken } from './useAuth';
 
-export const AP_API_BASE = 'https://autismprof-vrxcangg.manus.space';
+export const AP_API_BASE = 'https://inu3nb5lrfvftfyiwprftqshpy0zcegu.lambda-url.us-east-2.on.aws';
 
 // ── Device ID ─────────────────────────────────────────────────────────────────
 // A stable random ID generated once and persisted to AsyncStorage.
@@ -51,9 +52,13 @@ export interface ProviderRegistrationPayload {
 export async function registerProviderProfile(payload: ProviderRegistrationPayload): Promise<void> {
   try {
     const deviceId = await getDeviceId();
+    const token = await getValidToken();
     const res = await fetch(`${AP_API_BASE}/api/providers/register`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
       body: JSON.stringify({ ...payload, deviceId }),
     });
     if (!res.ok) {
@@ -69,9 +74,13 @@ export async function registerProviderProfile(payload: ProviderRegistrationPaylo
 export async function setProviderAvailability(openToConnect: boolean): Promise<void> {
   try {
     const deviceId = await getDeviceId();
+    const token = await getValidToken();
     const res = await fetch(`${AP_API_BASE}/api/providers/availability`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
       body: JSON.stringify({ deviceId, openToConnect }),
     });
     if (!res.ok) {
