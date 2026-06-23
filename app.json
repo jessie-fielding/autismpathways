@@ -2,7 +2,7 @@
   "expo": {
     "name": "AutismPathways",
     "slug": "AutismPathways",
-    "version": "1.0.6",
+    "version": "1.0.7",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "autismpathways",
@@ -12,7 +12,7 @@
       "supportsTablet": false,
       "bundleIdentifier": "app.autismpathways.app",
       "googleServicesFile": "./GoogleService-Info.plist",
-      "buildNumber": "71",
+      "buildNumber": "72",
       "infoPlist": {
         "NSFaceIDUsageDescription": "Autism Pathways uses Face ID to sign you in quickly and securely.",
         "NSPhotoLibraryUsageDescription": "Autism Pathways accesses your photo library to let you attach documents to your vault.",
@@ -85,7 +85,7 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "versionCode": 71,
+      "versionCode": 72,
       "package": "app.autismpathways.app",
       "googleServicesFile": "./google-services.json",
       "permissions": [
