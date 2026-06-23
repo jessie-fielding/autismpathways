@@ -19,6 +19,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '../lib/theme';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { storage } from '../services/storage';
 import { addChild, setActiveChildId, loadChildren } from '../services/childManager';
 
@@ -40,6 +41,7 @@ const JOURNEY_OPTIONS = [
   { id: 'sleep',      icon: '🌙', label: 'Sleep Challenges',           sub: 'Sleep studies, melatonin, bedtime routines' },
   { id: 'transition', icon: '🎓', label: 'Transition to Adulthood',    sub: 'Adult services, employment, housing' },
   { id: 'family',     icon: '❤️', label: 'Family & Self-Care',         sub: 'Sibling support, caregiver burnout, community' },
+  { id: 'profound',   icon: '🆘', label: 'Profound Autism or Extreme Behaviors', sub: 'Severe behaviors, crisis support & specialized programs', featured: true },
 ];
 
 // Provider "What brings you here?" options
@@ -230,7 +232,6 @@ export default function ProfileSetupScreen() {
           createdAt: new Date().toISOString(),
         });
         // Store provider flag and visibility for routing + badge
-        const { default: AsyncStorage } = await import('@react-native-async-storage/async-storage');
         await AsyncStorage.setItem('ap_is_provider', 'true');
         await AsyncStorage.setItem('ap_provider_visibility', providerVisibility);
         if (providerVisibility === 'connect') {
@@ -526,21 +527,37 @@ export default function ProfileSetupScreen() {
               <Text style={styles.sectionSub}>Pick all that apply — this personalises your dashboard and pathways</Text>
               {JOURNEY_OPTIONS.map((opt) => {
                 const selected = selectedJourneys.includes(opt.id);
+                const isFeatured = (opt as any).featured;
                 return (
                   <TouchableOpacity
                     key={opt.id}
-                    style={[styles.journeyRow, selected && styles.journeyRowSelected]}
+                    style={[
+                      styles.journeyRow,
+                      selected && styles.journeyRowSelected,
+                      isFeatured && styles.journeyRowFeatured,
+                      isFeatured && selected && styles.journeyRowFeaturedSelected,
+                    ]}
                     onPress={() => toggleJourney(opt.id)}
                     activeOpacity={0.8}
                   >
-                    <View style={[styles.journeyIconWrap, selected && styles.journeyIconWrapSelected]}>
-                      <Text style={styles.journeyIcon}>{opt.icon}</Text>
+                    <View style={[
+                      styles.journeyIconWrap,
+                      selected && styles.journeyIconWrapSelected,
+                      isFeatured && styles.journeyIconWrapFeatured,
+                      isFeatured && selected && styles.journeyIconWrapFeaturedSelected,
+                    ]}>
+                      <Text style={[styles.journeyIcon, isFeatured && { fontSize: 24 }]}>{opt.icon}</Text>
                     </View>
                     <View style={styles.journeyBody}>
-                      <Text style={[styles.journeyLabel, selected && styles.journeyLabelSelected]}>{opt.label}</Text>
-                      <Text style={styles.journeySub}>{opt.sub}</Text>
+                      <Text style={[
+                        styles.journeyLabel,
+                        selected && styles.journeyLabelSelected,
+                        isFeatured && styles.journeyLabelFeatured,
+                        isFeatured && selected && { color: '#C0392B' },
+                      ]}>{opt.label}</Text>
+                      <Text style={[styles.journeySub, isFeatured && { color: '#888', lineHeight: 17 }]}>{opt.sub}</Text>
                     </View>
-                    <View style={[styles.journeyCheck, selected && styles.journeyCheckSelected]}>
+                    <View style={[styles.journeyCheck, selected && styles.journeyCheckSelected, isFeatured && selected && { backgroundColor: '#C0392B', borderColor: '#C0392B' }]}>
                       {selected && <Text style={styles.journeyCheckText}>✓</Text>}
                     </View>
                   </TouchableOpacity>
@@ -686,6 +703,12 @@ const styles = StyleSheet.create({
   journeyCheck: { width: 24, height: 24, borderRadius: 12, borderWidth: 2, borderColor: COLORS.border, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.white },
   journeyCheckSelected: { backgroundColor: COLORS.purple, borderColor: COLORS.purple },
   journeyCheckText: { color: '#fff', fontSize: 13, fontWeight: '800' },
+  // Featured journey row (Profound Autism)
+  journeyRowFeatured: { borderColor: '#E8A0A0', backgroundColor: '#FFF5F5', paddingVertical: SPACING.md, marginTop: SPACING.sm, borderWidth: 2 },
+  journeyRowFeaturedSelected: { borderColor: '#C0392B', backgroundColor: '#FFF0EF' },
+  journeyIconWrapFeatured: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#FFF0EF', borderColor: '#E8A0A0' },
+  journeyIconWrapFeaturedSelected: { backgroundColor: '#C0392B', borderColor: '#C0392B' },
+  journeyLabelFeatured: { fontSize: FONT_SIZES.md, fontWeight: '800', color: '#C0392B' },
   // Visibility toggle (provider)
   visibilityOption: { flexDirection: 'row', alignItems: 'flex-start', gap: SPACING.sm, paddingVertical: SPACING.sm + 2, borderRadius: RADIUS.md, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.bg, paddingHorizontal: SPACING.sm, marginBottom: 8 },
   visibilityOptionSelected: { borderColor: COLORS.purple, backgroundColor: '#F0EDFF' },

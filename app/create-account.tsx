@@ -513,7 +513,7 @@ export default function CreateAccountScreen() {
         <TouchableOpacity style={styles.modalOverlay} onPress={() => setShowRelPicker(false)} activeOpacity={1}>
           <View style={styles.pickerSheet}>
             <Text style={styles.pickerTitle}>Your relationship to child</Text>
-            {['Parent', 'Guardian', 'Caregiver', 'Therapist', 'Teacher', 'Other'].map((r) => (
+            {['Parent', 'Guardian', 'Caregiver', 'Grandparent', 'Foster Parent', 'Provider', 'Therapist', 'Teacher', 'Other'].map((r) => (
               <TouchableOpacity
                 key={r}
                 style={styles.pickerItem}

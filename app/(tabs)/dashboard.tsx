@@ -99,6 +99,7 @@ const CONCERN_CHIPS: Record<string, { label: string; icon: string; bg: string; b
   sleep:      { label: 'Sleep',      icon: '🌙', bg: C.yellow,    border: C.yellowAccent,   textColor: '#7A6020' },
   transition: { label: 'Transition', icon: '🎓', bg: C.peach,     border: C.peachAccent,    textColor: '#8A2C4A' },
   family:     { label: 'Family',     icon: '❤️', bg: C.peach,     border: C.peachAccent,    textColor: '#8A2C4A' },
+  profound:   { label: 'Profound',   icon: '🆘', bg: '#FFF0EF',  border: '#E8A0A0',        textColor: '#C0392B' },
   // legacy keys from old start-here flow (backwards compat)
   providers:  { label: 'Providers',  icon: '🩺', bg: C.blue,      border: C.blueAccent,     textColor: '#2C5F8A' },
   denied:     { label: 'Appeals',    icon: '📁', bg: C.peach,     border: C.peachAccent,    textColor: '#8A2C4A' },
@@ -361,6 +362,18 @@ export default function DashboardScreen() {
       iconBg: C.mint,
       quickAdd: null as null,
     }] : []),
+    ...(concerns.includes('profound') ? [{
+      id: 'profound',
+      icon: '🆘',
+      name: t('Profound Autism', 'Autismo Profundo'),
+      route: '/profound-autism',
+      progress: 0,
+      total: 0,
+      sub: t('10 tools for complex needs', '10 herramientas para necesidades complejas'),
+      accent: '#E8A0A0' as const,
+      iconBg: '#FFF0EF',
+      quickAdd: null as null,
+    }] : []),
   ];
 
   // ── Pinned tool tiles ─────────────────────────────────────────────────────────
@@ -420,6 +433,8 @@ export default function DashboardScreen() {
       router.push('/safe-space' as any);
     else if (lower.includes('potty') || lower.includes('toilet'))
       router.push('/potty' as any);
+    else if (lower.includes('profound') || lower.includes('extreme') || lower.includes('severe') || lower.includes('crisis'))
+      router.push('/profound-autism' as any);
     else
       router.push('/tools' as any);
   };
