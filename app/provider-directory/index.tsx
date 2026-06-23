@@ -2,7 +2,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  TextInput, FlatList, Linking, Alert, Animated,
+  TextInput, FlatList, Linking, Alert, Animated, Modal,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -331,27 +331,42 @@ export default function ProviderDirectoryScreen() {
           {/* State picker */}
           <TouchableOpacity
             style={styles.statePickerBtn}
-            onPress={() => setShowStatePicker(!showStatePicker)}
+            onPress={() => setShowStatePicker(true)}
           >
             <Text style={styles.statePickerText}>📍 {stateName}</Text>
-            <Text style={styles.statePickerChevron}>{showStatePicker ? '▲' : '▼'}</Text>
+            <Text style={styles.statePickerChevron}>▼</Text>
           </TouchableOpacity>
 
-          {showStatePicker && (
-            <ScrollView style={styles.stateDropdown} nestedScrollEnabled showsVerticalScrollIndicator={false}>
-              {US_STATES.map(s => (
-                <TouchableOpacity
-                  key={s.code}
-                  style={[styles.stateOption, selectedState === s.code && styles.stateOptionActive]}
-                  onPress={() => { setSelectedState(s.code); setShowStatePicker(false); }}
-                >
-                  <Text style={[styles.stateOptionText, selectedState === s.code && styles.stateOptionTextActive]}>
-                    {s.name}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          )}
+          {/* State picker modal - avoids nested ScrollView glitch */}
+          <Modal
+            visible={showStatePicker}
+            transparent
+            animationType="slide"
+            onRequestClose={() => setShowStatePicker(false)}
+          >
+            <TouchableOpacity
+              style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' }}
+              activeOpacity={1}
+              onPress={() => setShowStatePicker(false)}
+            />
+            <View style={styles.stateModalSheet}>
+              <View style={styles.stateModalHandle} />
+              <Text style={styles.stateModalTitle}>Select State</Text>
+              <ScrollView showsVerticalScrollIndicator={false}>
+                {US_STATES.map(s => (
+                  <TouchableOpacity
+                    key={s.code}
+                    style={[styles.stateOption, selectedState === s.code && styles.stateOptionActive]}
+                    onPress={() => { setSelectedState(s.code); setShowStatePicker(false); }}
+                  >
+                    <Text style={[styles.stateOptionText, selectedState === s.code && styles.stateOptionTextActive]}>
+                      {s.name}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          </Modal>
 
           {/* Filter pills */}
           <View style={styles.filterRow}>
@@ -609,6 +624,24 @@ const styles = StyleSheet.create({
   stateDropdown: {
     backgroundColor: COLORS.white, borderRadius: RADIUS.sm, borderWidth: 1, borderColor: COLORS.border,
     maxHeight: 200, marginBottom: SPACING.sm,
+  },
+  stateModalSheet: {
+    backgroundColor: COLORS.white,
+    borderTopLeftRadius: RADIUS.lg,
+    borderTopRightRadius: RADIUS.lg,
+    paddingHorizontal: SPACING.lg,
+    paddingBottom: 40,
+    maxHeight: '70%',
+  },
+  stateModalHandle: {
+    width: 40, height: 4, borderRadius: 2,
+    backgroundColor: COLORS.border,
+    alignSelf: 'center',
+    marginTop: SPACING.sm, marginBottom: SPACING.md,
+  },
+  stateModalTitle: {
+    fontSize: FONT_SIZES.md, fontWeight: '700', color: COLORS.text,
+    marginBottom: SPACING.sm,
   },
   stateOption: { paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm, borderBottomWidth: 1, borderBottomColor: COLORS.border },
   stateOptionActive: { backgroundColor: COLORS.lavender },

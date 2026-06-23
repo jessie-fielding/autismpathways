@@ -92,8 +92,15 @@ export default function ProviderAdvocateHub() {
   );
 
   // Look up waiver data for the current state
+  // Handle both full name ("Colorado") and abbreviation ("CO") stored in profile
   const stateKey = Object.keys(waiverData).find(
-    (k) => (waiverData as Record<string, StateData>)[k]?.stateName?.toLowerCase() === userState.toLowerCase()
+    (k) => {
+      const sd = (waiverData as Record<string, StateData>)[k];
+      return (
+        sd?.stateName?.toLowerCase() === userState.toLowerCase() || // full name match
+        k.toLowerCase() === userState.toLowerCase() // abbreviation match
+      );
+    }
   );
   const stateData: StateData | null = stateKey ? (waiverData as Record<string, StateData>)[stateKey] : null;
 

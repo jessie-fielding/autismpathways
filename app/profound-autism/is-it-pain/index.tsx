@@ -3,7 +3,7 @@
  * 6 sections: Dental, GI, Ear/Sinus, Sleep, Skin, Medications.
  * Based on Dr. Bilder's Sources of Distress framework.
  */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -15,8 +15,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, FONT_SIZES, RADIUS, SHADOWS, SPACING } from '../../../lib/theme';
 import { logEvent, logScreenView } from '../../../lib/analytics';
-import PathwayDisclaimer from '../../../components/PathwayDisclaimer';
-import { useEffect } from 'react';
+import { PathwayDisclaimer } from '../../../components/PathwayDisclaimer';
 
 interface CheckItem {
   id: string;

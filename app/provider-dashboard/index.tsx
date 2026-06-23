@@ -83,7 +83,10 @@ export default function ProviderDashboard() {
         const raw = await AsyncStorage.getItem('profile');
         if (raw) {
           const p = JSON.parse(raw);
-          setProviderName(p.parentName || '');
+          // Build display name from title + first + last, fall back to parentName
+          const nameParts = [p.providerTitle, p.providerFirstName, p.providerLastName].filter(Boolean);
+          const displayName = nameParts.length > 0 ? nameParts.join(' ') : (p.parentName || '');
+          setProviderName(displayName);
           setSpecialty(p.providerSpecialty || '');
           setCounty(p.county || '');
         }
@@ -97,14 +100,18 @@ export default function ProviderDashboard() {
         const profileRaw = await AsyncStorage.getItem('profile');
         if (profileRaw) {
           const p = JSON.parse(profileRaw);
-          const currentRtc = rtcRaw !== null ? JSON.parse(rtcRaw) : true;
+          const nameParts2 = [p.providerTitle, p.providerFirstName, p.providerLastName].filter(Boolean);
+          const displayName2 = nameParts2.length > 0 ? nameParts2.join(' ') : (p.parentName || 'Provider');
+          // openToConnect: profile visibility setting OR the live toggle
+          const profileOpenToConnect = p.providerVisibility === 'connect';
+          const currentRtc = rtcRaw !== null ? JSON.parse(rtcRaw) : profileOpenToConnect;
           registerProviderProfile({
-            providerName: p.parentName || 'Provider',
+            providerName: displayName2,
             practiceName: p.practiceName || null,
             specialty: p.providerSpecialty || 'General',
             state: p.state || null,
             county: p.county || null,
-            openToConnect: currentRtc,
+            openToConnect: profileOpenToConnect || currentRtc,
             acceptingNew: true,
             medicaidAccepted: false,
             telehealth: false,

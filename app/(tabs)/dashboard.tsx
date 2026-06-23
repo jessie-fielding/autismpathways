@@ -755,7 +755,7 @@ export default function DashboardScreen() {
         <View style={styles.navSosWrap}>
           <TouchableOpacity
             style={styles.sosBtn}
-            onPress={() => router.push('/parenting-pathways' as any)}
+            onPress={() => router.push((concerns.includes('profound') ? '/profound-autism' : '/parenting-pathways') as any)}
             activeOpacity={0.85}
           >
             <Text style={styles.sosBtnText}>SOS</Text>

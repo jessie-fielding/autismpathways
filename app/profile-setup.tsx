@@ -9,7 +9,7 @@
  *
  * Flow: create-account → profile-setup → onboarding
  */
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView,
   KeyboardAvoidingView, Platform, StyleSheet, Image, Alert,
@@ -23,6 +23,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { storage } from '../services/storage';
 import { addChild, setActiveChildId, loadChildren } from '../services/childManager';
 import { scheduleBackup } from '../services/cloudSync';
+import CityCountyAutocomplete from '../components/CityCountyAutocomplete';
 
 const AVATAR_EMOJIS = [
   '🦋', '🌈', '🦄', '🐻',
@@ -99,12 +100,40 @@ export default function ProfileSetupScreen() {
   const [county, setCounty]               = useState('');
 
   // Provider-specific
+  const [providerTitle, setProviderTitle]         = useState('');
+  const [providerFirstName, setProviderFirstName] = useState('');
+  const [providerLastName, setProviderLastName]   = useState('');
   const [providerSpecialty, setProviderSpecialty] = useState('');
   const [providerReasons, setProviderReasons]     = useState<string[]>([]);
   const [practiceName, setPracticeName]           = useState('');
   const [practiceAddress, setPracticeAddress]     = useState('');
   // 'browse' = Browse Only, 'connect' = Open to Connections
   const [providerVisibility, setProviderVisibility] = useState<'browse' | 'connect'>('browse');
+
+  // Pre-load existing profile data when opened from Settings (update mode)
+  useEffect(() => {
+    (async () => {
+      const raw = await AsyncStorage.getItem('profile');
+      if (!raw) return;
+      try {
+        const p = JSON.parse(raw);
+        if (p.parentName) setParentName(p.parentName);
+        if (p.relationship) setRelationship(p.relationship);
+        else if (p.isProvider) setRelationship('Provider');
+        if (p.state) setState(p.state);
+        if (p.county) setCounty(p.county);
+        if (p.providerTitle) setProviderTitle(p.providerTitle);
+        if (p.providerFirstName) setProviderFirstName(p.providerFirstName);
+        if (p.providerLastName) setProviderLastName(p.providerLastName);
+        if (p.providerSpecialty) setProviderSpecialty(p.providerSpecialty);
+        if (p.providerReasons) setProviderReasons(p.providerReasons);
+        if (p.practiceName) setPracticeName(p.practiceName);
+        if (p.practiceAddress) setPracticeAddress(p.practiceAddress);
+        if (p.providerVisibility) setProviderVisibility(p.providerVisibility);
+        if (p.concerns) setSelectedJourneys(p.concerns);
+      } catch {}
+    })();
+  }, []);
   const toggleProviderReason = (id: string) => {
     setProviderReasons((prev) =>
       prev.includes(id) ? prev.filter((r) => r !== id) : [...prev, id]
@@ -137,8 +166,13 @@ export default function ProfileSetupScreen() {
     if (!state) return [];
     try {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const waiverData = require('../data/waiver-data.json') as Record<string, { counties: Record<string, { countyDisplay: string }> }>;
-      const stateData = waiverData[state];
+      const waiverData = require('../data/waiver-data.json') as Record<string, { stateName?: string; counties: Record<string, { countyDisplay: string }> }>;
+      // Support both abbreviation ("CO") and full name ("Colorado")
+      const stateKey = Object.keys(waiverData).find(
+        (k) => k.toLowerCase() === state.toLowerCase() ||
+               waiverData[k]?.stateName?.toLowerCase() === state.toLowerCase()
+      );
+      const stateData = stateKey ? waiverData[stateKey] : null;
       if (!stateData?.counties) return [];
       return Object.values(stateData.counties)
         .map((c) => c.countyDisplay)
@@ -219,12 +253,17 @@ export default function ProfileSetupScreen() {
     try {
       if (isProvider) {
         // Save provider profile
+        const existingOnboarding = await AsyncStorage.getItem('ap_onboarding_complete');
+        const isUpdate = existingOnboarding === 'true';
         await storage.setProfile({
           parentName: parentName.trim() || null,
           relationship: 'Provider',
           state: state || null,
           county: county.trim() || null,
           isProvider: true,
+          providerTitle: providerTitle.trim() || null,
+          providerFirstName: providerFirstName.trim() || null,
+          providerLastName: providerLastName.trim() || null,
           providerSpecialty: providerSpecialty || null,
           providerReasons: providerReasons.length > 0 ? providerReasons : null,
           practiceName: practiceName.trim() || null,
@@ -242,7 +281,12 @@ export default function ProfileSetupScreen() {
         // Schedule cloud backup so provider data is saved
         const userId = await AsyncStorage.getItem('authUserEmail');
         if (userId) scheduleBackup(userId);
-        router.replace('/onboarding');
+        // If updating (onboarding already done), go back to settings; otherwise go to onboarding
+        if (isUpdate) {
+          router.back();
+        } else {
+          router.replace('/onboarding');
+        }
       } else {
         // Save parent profile using first child's info for legacy compat
         const firstChild = children[0];
@@ -350,6 +394,43 @@ export default function ProfileSetupScreen() {
         {isProvider && (
           <>
             <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Your Name</Text>
+              <Text style={styles.sectionSub}>How you’ll appear to families in the directory</Text>
+              <Text style={styles.label}>Title (optional)</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="e.g. Dr., BCBA, LCSW"
+                placeholderTextColor={COLORS.textLight}
+                value={providerTitle}
+                onChangeText={setProviderTitle}
+                autoCapitalize="words"
+              />
+              <View style={{ flexDirection: 'row', gap: SPACING.sm }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.label}>First Name</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="First"
+                    placeholderTextColor={COLORS.textLight}
+                    value={providerFirstName}
+                    onChangeText={setProviderFirstName}
+                    autoCapitalize="words"
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.label}>Last Name</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Last"
+                    placeholderTextColor={COLORS.textLight}
+                    value={providerLastName}
+                    onChangeText={setProviderLastName}
+                    autoCapitalize="words"
+                  />
+                </View>
+              </View>
+            </View>
+            <View style={styles.section}>
               <Text style={styles.sectionTitle}>Your Specialty</Text>
               <Text style={styles.sectionSub}>Helps us show the most relevant resources</Text>
               <View style={styles.chipWrap}>
@@ -382,13 +463,16 @@ export default function ProfileSetupScreen() {
                 autoCapitalize="words"
               />
               <Text style={styles.label}>Practice Address (optional)</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Street, City, State"
-                placeholderTextColor={COLORS.textLight}
+              <CityCountyAutocomplete
                 value={practiceAddress}
                 onChangeText={setPracticeAddress}
-                autoCapitalize="words"
+                onSelect={({ address, city, county: selCounty, state: selState }) => {
+                  setPracticeAddress(address || '');
+                  // Auto-fill state and county from the selected address if not already set
+                  if (selState && !state) setState(selState);
+                  if (selCounty && !county) setCounty(selCounty + ' County');
+                }}
+                placeholder="Start typing your practice address…"
               />
             </View>
 

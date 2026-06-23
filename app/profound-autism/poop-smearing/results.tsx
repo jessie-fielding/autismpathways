@@ -16,7 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, FONT_SIZES, RADIUS, SHADOWS, SPACING } from '../../../lib/theme';
 import { SMEAR_RESULT_KEY } from './quiz';
-import PathwayDisclaimer from '../../../components/PathwayDisclaimer';
+import { PathwayDisclaimer } from '../../../components/PathwayDisclaimer';
 
 type CauseKey = 'sensory' | 'gi' | 'communication' | 'boredom' | 'nighttime';
 

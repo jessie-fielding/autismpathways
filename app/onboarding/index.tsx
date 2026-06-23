@@ -43,7 +43,7 @@ const VIDEO_SOURCES: Record<string, any> = {
 
 // ── Card definitions ──────────────────────────────────────────────────────────
 // headline / body support {{parentName}} and {{childName}} tokens
-const CARD_DEFS = [
+const PARENT_CARD_DEFS = [
   {
     id: '1',
     emoji: '💜',
@@ -121,7 +121,61 @@ const CARD_DEFS = [
     body: '',
     bg: ['#F5F3FF', '#FDFCFF'] as [string, string],
     video: 'card8',
-    // lottie: require('../../assets/animations/onboarding/card8.json'),
+    lottie: null,
+    isLast: true,
+  },
+];
+
+// Provider-specific onboarding cards
+const PROVIDER_CARD_DEFS = [
+  {
+    id: 'p1',
+    emoji: '💜',
+    headline: 'Welcome to Autism Pathways, {{parentName}}!',
+    body: 'You\'re now part of a community built for and by autism families. Here\'s how the app helps you support the families you work with.',
+    bg: ['#EDE9FC', '#F5F4FB'] as [string, string],
+    video: 'card1',
+    lottie: null,
+  },
+  {
+    id: 'p2',
+    emoji: '🔍',
+    headline: 'Your Provider Profile',
+    body: 'Families searching for specialists in your area can find and connect with you directly. Keep your profile updated to appear in the directory.',
+    bg: ['#E8F4FF', '#F5F4FB'] as [string, string],
+    video: 'card6',
+    lottie: null,
+  },
+  {
+    id: 'p3',
+    emoji: '🤝',
+    headline: 'Connection Requests',
+    body: 'When a family wants to connect, you\'ll get a request. Accept, decline, or message them directly. You\'re always in control of who you connect with.',
+    bg: ['#E3F7F1', '#F5F4FB'] as [string, string],
+    video: 'card3',
+    lottie: null,
+  },
+  {
+    id: 'p4',
+    emoji: '🗺️',
+    headline: 'Advocate Hub',
+    body: 'Access state-specific waiver programs, Medicaid resources, IEP guides, and more. Use these to stay current and share with the families you support.',
+    bg: ['#FFF3E8', '#F5F4FB'] as [string, string],
+    video: 'card3',
+    lottie: null,
+  },
+  {
+    id: 'p5',
+    emoji: '✨',
+    headline: 'Thank you for being here.',
+    noteLines: [
+      'Hi, I\'m Jessie, founder of Autism Pathways and an autism parent myself.',
+      'Providers like you are the reason families find their footing.',
+      'If there\'s something you need that isn\'t here yet, email me at jessie@autismpathways.app.',
+    ],
+    body: '',
+    bg: ['#F5F3FF', '#FDFCFF'] as [string, string],
+    video: 'card8',
     lottie: null,
     isLast: true,
   },
@@ -171,21 +225,32 @@ export default function OnboardingScreen() {
 
   const [parentName, setParentName] = useState('');
   const [childName, setChildName] = useState('your child');
+  const [isProvider, setIsProvider] = useState(false);
 
   useEffect(() => {
     (async () => {
       const pName = await AsyncStorage.getItem('ap_parent_first_name');
       if (pName) setParentName(pName);
 
+      const providerFlag = await AsyncStorage.getItem('ap_is_provider');
       const profileRaw = await AsyncStorage.getItem('profile');
       if (profileRaw) {
         try {
           const profile = JSON.parse(profileRaw);
           if (profile?.childName) setChildName(profile.childName);
+          if (profile?.isProvider === true || providerFlag === 'true') {
+            setIsProvider(true);
+            // Use provider first name if available
+            if (profile?.providerFirstName) setParentName(profile.providerFirstName);
+            else if (profile?.parentName) setParentName(profile.parentName);
+          }
         } catch {}
       }
     })();
   }, []);
+
+  // Pick the right card set based on account type
+  const CARDS = isProvider ? PROVIDER_CARD_DEFS : PARENT_CARD_DEFS;
 
   const completeOnboarding = async () => {
     await AsyncStorage.setItem('ap_onboarding_complete', 'true');
@@ -193,7 +258,7 @@ export default function OnboardingScreen() {
   };
 
   const goNext = () => {
-    if (currentIndex < CARD_DEFS.length - 1) {
+    if (currentIndex < CARDS.length - 1) {
       flatListRef.current?.scrollToIndex({ index: currentIndex + 1, animated: true });
     } else {
       completeOnboarding();
@@ -208,7 +273,7 @@ export default function OnboardingScreen() {
 
   const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
 
-  const renderCard = ({ item }: { item: typeof CARD_DEFS[0] }) => {
+  const renderCard = ({ item }: { item: typeof PARENT_CARD_DEFS[0] }) => {
     const headline = interpolate(item.headline, parentName || '!', childName);
     // For card 1 with no parentName yet, clean up the trailing comma+space before !
     const cleanHeadline = parentName
@@ -297,7 +362,7 @@ export default function OnboardingScreen() {
     );
   };
 
-  const isLast = currentIndex === CARD_DEFS.length - 1;
+  const isLast = currentIndex === CARDS.length - 1;
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -313,7 +378,7 @@ export default function OnboardingScreen() {
       {/* Cards */}
       <Animated.FlatList
         ref={flatListRef}
-        data={CARD_DEFS}
+        data={CARDS}
         keyExtractor={(item) => item.id}
         renderItem={renderCard}
         horizontal
@@ -333,7 +398,7 @@ export default function OnboardingScreen() {
       <View style={[styles.bottomControls, { paddingBottom: insets.bottom + SPACING.lg }]}>
         {/* Progress dots */}
         <View style={styles.dots}>
-          {CARD_DEFS.map((_, i) => {
+          {CARDS.map((_, i) => {
             const inputRange = [(i - 1) * width, i * width, (i + 1) * width];
             const dotWidth = scrollX.interpolate({
               inputRange,

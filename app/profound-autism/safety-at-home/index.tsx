@@ -16,7 +16,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, FONT_SIZES, RADIUS, SHADOWS, SPACING } from '../../../lib/theme';
 import { logEvent, logScreenView } from '../../../lib/analytics';
-import PathwayDisclaimer from '../../../components/PathwayDisclaimer';
+import { PathwayDisclaimer } from '../../../components/PathwayDisclaimer';
 
 interface SafetyItem {
   emoji: string;

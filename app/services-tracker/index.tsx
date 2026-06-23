@@ -603,7 +603,7 @@ export default function ServicesTrackerScreen() {
               <CityCountyAutocomplete
                 value={form.address ?? ''}
                 onChangeText={(v) => setForm({ ...form, address: v })}
-                onSelect={({ city, state }) => setForm({ ...form, address: `${city}, ${state}` })}
+                onSelect={({ address, city, state }) => setForm({ ...form, address: address || `${city}, ${state}` })}
                 placeholder="e.g. Columbus, OH or 123 Main St"
               />
 
@@ -739,7 +739,7 @@ export default function ServicesTrackerScreen() {
                   <CityCountyAutocomplete
                     value={form.startingAddress ?? ''}
                     onChangeText={(v) => setForm({ ...form, startingAddress: v })}
-                    onSelect={({ city, state }) => setForm({ ...form, startingAddress: `${city}, ${state}` })}
+                    onSelect={({ address, city, state }) => setForm({ ...form, startingAddress: address || `${city}, ${state}` })}
                     placeholder="e.g., 456 Oak Ave, Denver CO 80204"
                   />
                   <Text style={s.leaveBoxNote}>

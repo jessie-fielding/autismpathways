@@ -1,32 +1,68 @@
 /**
  * CityCountyAutocomplete
  *
- * A lightweight autocomplete text input for US cities and counties.
- * Uses a bundled dataset — no API key required.
+ * Real-time address autocomplete powered by Google Places API (via the
+ * Autism Pathways backend proxy). Returns full address, city, county,
+ * and state — no API key required in the app.
  *
- * Uses a MODAL OVERLAY for the suggestion list so it works correctly
- * inside ScrollViews and nested Modals without clipping or zIndex issues.
- * The suggestion list is positioned absolutely over the input using
- * onLayout + measure to find the input's screen position.
+ * Falls back to the bundled city dataset if the network request fails.
  *
  * Props:
- *   value          — current text value
+ *   value          — current text value (displayed in the input)
  *   onChangeText   — called when text changes
- *   onSelect       — called when user picks a suggestion { city, county, state }
+ *   onSelect       — called when user picks a suggestion { city, county, state, address }
  *   placeholder    — input placeholder
  *   style          — optional extra style for the input
  *   stateFilter    — optional 2-letter state code to restrict suggestions
  *   label          — optional label above the input
  */
-import React, { useState, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  Modal, FlatList, ViewStyle, TextStyle,
+  Modal, FlatList, ViewStyle, TextStyle, ActivityIndicator,
 } from 'react-native';
 import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '../lib/theme';
 
-// ── Bundled city/county dataset (top ~300 US cities + common county names) ─────
-// Format: [city, county, stateCode]
+const AP_API_BASE = 'https://autismprof-vrxcangg.manus.space';
+
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+export type AutocompleteResult = {
+  city: string;
+  county: string;
+  state: string;
+  address: string;   // full formatted address
+  display: string;   // shown in the dropdown
+};
+
+type Prediction = {
+  place_id: string;
+  description: string;
+  structured_formatting?: {
+    main_text: string;
+    secondary_text: string;
+  };
+};
+
+type AddressComponent = {
+  long_name: string;
+  short_name: string;
+  types: string[];
+};
+
+type DropdownPosition = { top: number; left: number; width: number };
+
+type Props = {
+  value: string;
+  onChangeText: (text: string) => void;
+  onSelect: (result: AutocompleteResult) => void;
+  placeholder?: string;
+  style?: ViewStyle | TextStyle | (ViewStyle | TextStyle)[];
+  stateFilter?: string;
+  label?: string;
+};
+
+// ── Fallback bundled dataset (top ~300 US cities) ─────────────────────────────
 const CITIES: [string, string, string][] = [
   ['Anchorage','Anchorage','AK'],['Fairbanks','Fairbanks North Star','AK'],
   ['Birmingham','Jefferson','AL'],['Huntsville','Madison','AL'],['Mobile','Mobile','AL'],['Montgomery','Montgomery','AL'],
@@ -78,63 +114,93 @@ const CITIES: [string, string, string][] = [
   ['Charleston','Kanawha','WV'],['Huntington','Cabell','WV'],
   ['Green Bay','Brown','WI'],['Madison','Dane','WI'],['Milwaukee','Milwaukee','WI'],
   ['Casper','Natrona','WY'],['Cheyenne','Laramie','WY'],
-  // DC
   ['Washington','District of Columbia','DC'],
 ];
 
-export type AutocompleteResult = {
-  city: string;
-  county: string;
-  state: string;
-  display: string;
-};
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
-type DropdownPosition = { top: number; left: number; width: number };
+function extractFromComponents(
+  components: AddressComponent[]
+): { city: string; county: string; state: string; stateAbbr: string } {
+  let city = '';
+  let county = '';
+  let state = '';
+  let stateAbbr = '';
+  for (const c of components) {
+    if (c.types.includes('locality')) city = c.long_name;
+    else if (c.types.includes('sublocality_level_1') && !city) city = c.long_name;
+    if (c.types.includes('administrative_area_level_2')) {
+      county = c.long_name.replace(/ County$/i, '').trim();
+    }
+    if (c.types.includes('administrative_area_level_1')) {
+      state = c.long_name;
+      stateAbbr = c.short_name;
+    }
+  }
+  return { city, county, state, stateAbbr };
+}
 
-type Props = {
-  value: string;
-  onChangeText: (text: string) => void;
-  onSelect: (result: AutocompleteResult) => void;
-  placeholder?: string;
-  style?: ViewStyle | TextStyle | (ViewStyle | TextStyle)[];
-  stateFilter?: string;
-  label?: string;
-};
+// ── Component ─────────────────────────────────────────────────────────────────
 
 export default function CityCountyAutocomplete({
   value,
   onChangeText,
   onSelect,
-  placeholder = 'e.g. Columbus, OH',
+  placeholder = 'Start typing an address…',
   style,
   stateFilter,
   label,
 }: Props) {
   const [focused, setFocused] = useState(false);
+  const [predictions, setPredictions] = useState<Prediction[]>([]);
+  const [loading, setLoading] = useState(false);
   const [dropdownPos, setDropdownPos] = useState<DropdownPosition | null>(null);
   const inputRef = useRef<View>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const suggestions = useMemo<AutocompleteResult[]>(() => {
-    const q = value.trim().toLowerCase();
-    if (q.length < 2) return [];
-    return CITIES
-      .filter(([city, county, state]) => {
-        if (stateFilter && state !== stateFilter.toUpperCase()) return false;
-        return (
-          city.toLowerCase().startsWith(q) ||
-          county.toLowerCase().startsWith(q) ||
-          `${city.toLowerCase()}, ${state.toLowerCase()}`.startsWith(q)
-        );
-      })
-      .slice(0, 6)
-      .map(([city, county, state]) => ({
-        city,
-        county,
-        state,
-        display: `${city}, ${state} — ${county} County`,
-      }));
-  }, [value, stateFilter]);
+  // ── Fetch predictions from backend proxy ──────────────────────────────────
+  const fetchPredictions = useCallback(async (text: string) => {
+    if (text.trim().length < 2) { setPredictions([]); return; }
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({ input: text.trim() });
+      if (stateFilter) params.set('components', `country:us|administrative_area:${stateFilter}`);
+      const res = await fetch(`${AP_API_BASE}/api/places/autocomplete?${params.toString()}`);
+      if (!res.ok) throw new Error('Network error');
+      const data = await res.json();
+      setPredictions(data.predictions || []);
+    } catch {
+      // Fallback to bundled dataset
+      const q = text.trim().toLowerCase();
+      const fallback: Prediction[] = CITIES
+        .filter(([city, , state]) => {
+          if (stateFilter && state !== stateFilter.toUpperCase()) return false;
+          return city.toLowerCase().startsWith(q) || `${city.toLowerCase()}, ${state.toLowerCase()}`.startsWith(q);
+        })
+        .slice(0, 6)
+        .map(([city, county, state]) => ({
+          place_id: `fallback-${city}-${state}`,
+          description: `${city}, ${state}, USA`,
+          structured_formatting: { main_text: city, secondary_text: `${state} — ${county} County` },
+          _fallback: { city, county, state },
+        } as Prediction & { _fallback?: { city: string; county: string; state: string } }));
+      setPredictions(fallback);
+    } finally {
+      setLoading(false);
+    }
+  }, [stateFilter]);
 
+  // ── Debounce input ────────────────────────────────────────────────────────
+  const handleChangeText = useCallback((text: string) => {
+    onChangeText(text);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => fetchPredictions(text), 300);
+    setTimeout(measureInput, 50);
+  }, [onChangeText, fetchPredictions]);
+
+  useEffect(() => () => { if (debounceRef.current) clearTimeout(debounceRef.current); }, []);
+
+  // ── Measure input position for dropdown ──────────────────────────────────
   const measureInput = useCallback(() => {
     if (inputRef.current) {
       inputRef.current.measureInWindow((x, y, width, height) => {
@@ -146,40 +212,70 @@ export default function CityCountyAutocomplete({
   const handleFocus = useCallback(() => {
     setFocused(true);
     measureInput();
-  }, [measureInput]);
+    if (value.trim().length >= 2) fetchPredictions(value);
+  }, [measureInput, value, fetchPredictions]);
 
   const handleBlur = useCallback(() => {
-    // Small delay so onPress on suggestion fires before blur hides the list
     setTimeout(() => setFocused(false), 200);
   }, []);
 
-  const handleSelect = useCallback((result: AutocompleteResult) => {
-    onSelect(result);
+  // ── Select a prediction — fetch details to get county ────────────────────
+  const handleSelect = useCallback(async (prediction: Prediction & { _fallback?: { city: string; county: string; state: string } }) => {
     setFocused(false);
-  }, [onSelect]);
+    onChangeText(prediction.description);
 
-  const showDropdown = focused && suggestions.length > 0 && dropdownPos !== null;
+    // Fallback prediction — no place_id to fetch
+    if (prediction._fallback) {
+      const { city, county, state } = prediction._fallback;
+      const stateAbbr = prediction.description.match(/, ([A-Z]{2}),/)?.[1] || '';
+      onSelect({ city, county, state, address: prediction.description, display: prediction.description });
+      return;
+    }
+
+    // Fetch full details to extract county
+    try {
+      const res = await fetch(`${AP_API_BASE}/api/places/details?place_id=${encodeURIComponent(prediction.place_id)}`);
+      if (!res.ok) throw new Error('Details fetch failed');
+      const data = await res.json();
+      const components: AddressComponent[] = data.result?.address_components || [];
+      const { city, county, state, stateAbbr } = extractFromComponents(components);
+      const formatted = data.result?.formatted_address || prediction.description;
+      onSelect({
+        city,
+        county,
+        state,
+        address: formatted,
+        display: formatted,
+      });
+    } catch {
+      // Best-effort parse from description
+      const parts = prediction.description.split(', ');
+      const city = parts[0] || '';
+      const stateAbbr = parts[1] || '';
+      onSelect({ city, county: '', state: stateAbbr, address: prediction.description, display: prediction.description });
+    }
+  }, [onChangeText, onSelect]);
+
+  const showDropdown = focused && predictions.length > 0 && dropdownPos !== null;
 
   return (
     <View ref={inputRef} collapsable={false} style={styles.wrapper}>
       {label ? <Text style={styles.label}>{label}</Text> : null}
-      <TextInput
-        style={[styles.input, style as any]}
-        value={value}
-        onChangeText={(text) => {
-          onChangeText(text);
-          // Re-measure on each keystroke in case layout shifted
-          setTimeout(measureInput, 50);
-        }}
-        onFocus={handleFocus}
-        onBlur={handleBlur}
-        placeholder={placeholder}
-        placeholderTextColor={COLORS.textLight}
-        autoCapitalize="words"
-        autoCorrect={false}
-      />
+      <View style={styles.inputRow}>
+        <TextInput
+          style={[styles.input, style as any]}
+          value={value}
+          onChangeText={handleChangeText}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
+          placeholder={placeholder}
+          placeholderTextColor={COLORS.textLight}
+          autoCapitalize="words"
+          autoCorrect={false}
+        />
+        {loading && <ActivityIndicator size="small" color={COLORS.purple} style={styles.spinner} />}
+      </View>
 
-      {/* Modal overlay — renders on top of everything including nested Modals */}
       {showDropdown && dropdownPos && (
         <Modal
           visible
@@ -187,41 +283,41 @@ export default function CityCountyAutocomplete({
           animationType="none"
           onRequestClose={() => setFocused(false)}
         >
-          {/* Invisible full-screen backdrop to dismiss on outside tap */}
           <TouchableOpacity
             style={styles.backdrop}
             activeOpacity={1}
             onPress={() => setFocused(false)}
           />
-          {/* Suggestion list absolutely positioned at measured input location */}
           <View
             style={[
               styles.dropdown,
-              {
-                position: 'absolute',
-                top: dropdownPos.top,
-                left: dropdownPos.left,
-                width: dropdownPos.width,
-              },
+              { position: 'absolute', top: dropdownPos.top, left: dropdownPos.left, width: dropdownPos.width },
             ]}
             pointerEvents="box-none"
           >
             <FlatList
-              data={suggestions}
-              keyExtractor={(item, i) => `${item.city}-${item.state}-${i}`}
+              data={predictions}
+              keyExtractor={(item, i) => `${item.place_id}-${i}`}
               keyboardShouldPersistTaps="always"
               scrollEnabled={false}
-              renderItem={({ item: s, index: i }) => (
+              renderItem={({ item: p, index: i }) => (
                 <TouchableOpacity
-                  style={[styles.suggestion, i < suggestions.length - 1 && styles.suggestionBorder]}
-                  onPress={() => handleSelect(s)}
+                  style={[styles.suggestion, i < predictions.length - 1 && styles.suggestionBorder]}
+                  onPress={() => handleSelect(p as any)}
                   activeOpacity={0.7}
                 >
-                  <Text style={styles.suggestionCity}>{s.city}, {s.state}</Text>
-                  <Text style={styles.suggestionCounty}>{s.county} County</Text>
+                  <Text style={styles.suggestionMain} numberOfLines={1}>
+                    {p.structured_formatting?.main_text || p.description}
+                  </Text>
+                  <Text style={styles.suggestionSub} numberOfLines={1}>
+                    {p.structured_formatting?.secondary_text || ''}
+                  </Text>
                 </TouchableOpacity>
               )}
             />
+            <View style={styles.poweredBy}>
+              <Text style={styles.poweredByText}>powered by Google</Text>
+            </View>
           </View>
         </Modal>
       )}
@@ -235,10 +331,17 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZES.sm, fontWeight: '600', color: COLORS.text,
     marginBottom: SPACING.xs,
   },
+  inputRow: {
+    flexDirection: 'row', alignItems: 'center',
+  },
   input: {
+    flex: 1,
     borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.sm,
     paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md,
     fontSize: FONT_SIZES.base, color: COLORS.text, backgroundColor: COLORS.white,
+  },
+  spinner: {
+    position: 'absolute', right: SPACING.md,
   },
   backdrop: {
     position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
@@ -258,10 +361,20 @@ const styles = StyleSheet.create({
   suggestionBorder: {
     borderBottomWidth: 1, borderBottomColor: COLORS.border,
   },
-  suggestionCity: {
-    fontSize: FONT_SIZES.sm, fontWeight: '700', color: COLORS.text,
+  suggestionMain: {
+    fontSize: FONT_SIZES.sm, fontWeight: '700', color: COLORS.purple,
   },
-  suggestionCounty: {
+  suggestionSub: {
     fontSize: FONT_SIZES.xs, color: COLORS.textMid, marginTop: 1,
+  },
+  poweredBy: {
+    alignItems: 'flex-end',
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.xs,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+  },
+  poweredByText: {
+    fontSize: 10, color: COLORS.textLight,
   },
 });
