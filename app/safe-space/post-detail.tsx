@@ -21,7 +21,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, SPACING, RADIUS, FONT_SIZES, SHADOWS } from '../../lib/theme';
 import type { ForumPost } from './community';
 
-import { getValidToken as getToken } from '../../services/useAuth';
+import { lambdaFetch, getValidToken as getToken } from '../../services/useAuth';
 const API_BASE = 'https://inu3nb5lrfvftfyiwprftqshpy0zcegu.lambda-url.us-east-2.on.aws';
 
 interface Comment {

@@ -362,13 +362,6 @@ export default function SettingsScreen() {
               />
               <View style={styles.divider} />
               <Row
-                icon="📋"
-                title="Pending Submissions"
-                subtitle="Review provider directory submissions (Admin)"
-                onPress={() => router.push('/admin/pending-submissions')}
-              />
-              <View style={styles.divider} />
-              <Row
                 icon="🚪"
                 title="Sign Out"
                 subtitle="You can sign back in anytime"

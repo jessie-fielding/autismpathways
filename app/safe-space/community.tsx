@@ -14,7 +14,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, SPACING, RADIUS, FONT_SIZES, SHADOWS } from '../../lib/theme';
-import { getValidToken as getToken } from '../../services/useAuth';
+import { lambdaFetch, getValidToken as getToken } from '../../services/useAuth';
 
 const API_BASE = 'https://inu3nb5lrfvftfyiwprftqshpy0zcegu.lambda-url.us-east-2.on.aws';
 
@@ -78,11 +78,6 @@ export default function CommunityFeedScreen() {
   }, [loadPosts]));
 
   const toggleHeart = async (post: ForumPost) => {
-    const token = await getToken();
-    if (!token) {
-      Alert.alert('Sign in required', 'Please sign in to heart posts.');
-      return;
-    }
     // Optimistic update
     const alreadyHearted = hearted.has(post.id);
     const newHearted = new Set(hearted);
@@ -95,20 +90,14 @@ export default function CommunityFeedScreen() {
         : p
     ));
     try {
-      await fetch(`${API_BASE}/api/forum/heart`, {
+      await lambdaFetch(`${API_BASE}/api/forum/heart`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ type: 'post', id: post.id }),
       });
     } catch {}
   };
 
   const reportPost = async (post: ForumPost) => {
-    const token = await getToken();
-    if (!token) {
-      Alert.alert('Sign in required', 'Please sign in to report content.');
-      return;
-    }
     Alert.alert(
       'Report this post?',
       'Our team at contact@autismpathways.app will review it.',
@@ -119,9 +108,8 @@ export default function CommunityFeedScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await fetch(`${API_BASE}/api/forum/report`, {
+              await lambdaFetch(`${API_BASE}/api/forum/report`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                 body: JSON.stringify({ type: 'post', id: post.id, reason: 'User reported' }),
               });
               showToast('Reported. Thank you for keeping our community safe. 💙');

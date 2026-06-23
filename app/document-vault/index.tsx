@@ -9,9 +9,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as DocumentPicker from 'expo-document-picker';
 import { COLORS, SPACING, RADIUS, FONT_SIZES, SHADOWS } from '../../lib/theme';
 import { useIsPremium } from '../../hooks/useIsPremium';
+import { lambdaFetch, getValidToken } from '../../services/useAuth';
 
 const API_BASE   = 'https://inu3nb5lrfvftfyiwprftqshpy0zcegu.lambda-url.us-east-2.on.aws';
-const TOKEN_KEY  = 'authToken';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type DocStatus = 'need' | 'have' | 'uploaded';
@@ -65,30 +65,15 @@ const STATUS_CONFIG: Record<DocStatus, { icon: string; label: string; bg: string
 };
 
 // ─── API helpers ──────────────────────────────────────────────────────────────
-async function getToken(): Promise<string | null> {
-  return AsyncStorage.getItem(TOKEN_KEY);
-}
-
 async function apiPost(path: string, body: object): Promise<Response> {
-  const token = await getToken();
-  return fetch(`${API_BASE}${path}`, {
+  return lambdaFetch(`${API_BASE}${path}`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
     body: JSON.stringify(body),
   });
 }
 
 async function apiGet(path: string): Promise<Response> {
-  const token = await getToken();
-  return fetch(`${API_BASE}${path}`, {
-    method: 'GET',
-    headers: {
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-  });
+  return lambdaFetch(`${API_BASE}${path}`, { method: 'GET' });
 }
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
@@ -108,7 +93,7 @@ export default function DocumentVaultScreen() {
     (async () => {
       setLoadingVault(true);
       try {
-        const token = await getToken();
+        const token = await getValidToken();
         if (token) {
           const res = await apiGet('/api/documents');
           if (res.ok) {
@@ -165,12 +150,6 @@ export default function DocumentVaultScreen() {
           { text: 'Upgrade', onPress: () => router.push('/paywall') },
         ]
       );
-      return;
-    }
-
-    const token = await getToken();
-    if (!token) {
-      Alert.alert('Sign In Required', 'Please sign in to upload documents to your secure vault.');
       return;
     }
 
@@ -260,12 +239,6 @@ export default function DocumentVaultScreen() {
       return;
     }
 
-    const token = await getToken();
-    if (!token) {
-      Alert.alert('Sign In Required', 'Please sign in to access your documents.');
-      return;
-    }
-
     try {
       setDownloading(doc.id);
 
@@ -300,10 +273,7 @@ export default function DocumentVaultScreen() {
           onPress: async () => {
             try {
               if (vaultEntry?.cloudUploaded) {
-                const token = await getToken();
-                if (token) {
-                  await apiPost('/api/documents/delete', { docId: doc.id });
-                }
+                await apiPost('/api/documents/delete', { docId: doc.id }).catch(() => {});
               }
             } catch (e) {
               console.error('Delete error:', e);

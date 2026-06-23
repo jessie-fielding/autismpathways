@@ -19,7 +19,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, SPACING, RADIUS, FONT_SIZES, SHADOWS } from '../../lib/theme';
 import { useChildChanged } from '../../hooks/useChildChanged';
-import { getValidToken } from '../../services/useAuth';
+import { lambdaFetch } from '../../services/useAuth';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const STORE_KEY = 'ap_journal_entries';
@@ -240,17 +240,10 @@ export default function SafeSpaceScreen() {
 
   // ── Share to community ─────────────────────────────────────────────────────
   const shareToForum = async (entry: JournalEntry, anonymous: boolean) => {
-    // Use getValidToken to auto-refresh Cognito token before posting
-    const token = await getValidToken();
-    if (!token) {
-      Alert.alert('Sign in required', 'Please sign in to share with the community.');
-      return;
-    }
     setSharing(true);
     try {
-      const res = await fetch(`${API_BASE}/api/forum/posts`, {
+      const res = await lambdaFetch(`${API_BASE}/api/forum/posts`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ title: entry.title || 'Untitled', body: entry.body, anonymous }),
       });
       if (res.ok) {
@@ -258,13 +251,18 @@ export default function SafeSpaceScreen() {
         setShareEntry(null);
       } else {
         const err = await res.json().catch(() => ({}));
-        const msg = err.error === 'Invalid token.'
-          ? 'Session expired. Please sign out and sign back in, then try again.'
-          : err.error || 'Could not share. Please try again.';
-        showToast(msg);
+        showToast(err.error || 'Could not share. Please try again.');
       }
-    } catch {
-      showToast('Network error. Please try again.');
+    } catch (e: any) {
+      if (e?.tokenExpired) {
+        Alert.alert(
+          'Session expired',
+          'Your session has expired. Please sign in again to share with the community.',
+          [{ text: 'OK' }]
+        );
+      } else {
+        showToast('Network error. Please try again.');
+      }
     }
     setSharing(false);
   };

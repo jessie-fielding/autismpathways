@@ -598,6 +598,10 @@ export function AuthProvider({ children }: any) {
       // Store Access Token (not ID Token) — Lambda cognitoGetUser requires Access Token
       const username = `phone_${phone.replace(/\+/g, '')}`;
       await AsyncStorage.setItem(TOKEN_KEY, data.token || data.idToken);
+      // Store refresh token so getValidToken can silently refresh later
+      if (data.refreshToken) {
+        await AsyncStorage.setItem('authRefreshToken', data.refreshToken);
+      }
       await AsyncStorage.setItem(USER_EMAIL_KEY, username);
       setUserEmail(username);
       setIsSignedIn(true);
@@ -651,7 +655,7 @@ export async function getValidToken(): Promise<string | null> {
   } catch {
     // Cognito not available (Apple/Phone user) — fall through
   }
-  // Try Lambda /api/auth/refresh endpoint using stored Cognito refresh token (all users)
+  // Try Lambda /api/auth/refresh endpoint using stored refresh token (all users)
   try {
     const refreshToken = await AsyncStorage.getItem('authRefreshToken');
     if (refreshToken) {
@@ -664,6 +668,10 @@ export async function getValidToken(): Promise<string | null> {
         const data = await res.json();
         if (data.token) {
           await AsyncStorage.setItem('authToken', data.token);
+          // Update refresh token if a new one was issued
+          if (data.refreshToken) {
+            await AsyncStorage.setItem('authRefreshToken', data.refreshToken);
+          }
           return data.token;
         }
       }
@@ -671,12 +679,64 @@ export async function getValidToken(): Promise<string | null> {
   } catch {
     // Lambda refresh failed — fall through to stored token
   }
-  // Final fallback: return stored token
+  // Final fallback: return stored token (may be expired — caller should handle 401)
   try {
     return await AsyncStorage.getItem('authToken');
   } catch {
     return null;
   }
+}
+
+/**
+ * Wrapper for Lambda API calls that auto-retries once on 401 with a fresh token.
+ * Returns the Response on success, or throws with { tokenExpired: true } if auth fails.
+ */
+export async function lambdaFetch(
+  url: string,
+  options: RequestInit = {}
+): Promise<Response> {
+  const makeRequest = async (token: string | null): Promise<Response> => {
+    return fetch(url, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(options.headers || {}),
+      },
+    });
+  };
+
+  const token = await getValidToken();
+  let res = await makeRequest(token);
+
+  // On 401 or Invalid token, try one more refresh and retry
+  if (res.status === 401 || res.status === 403) {
+    const body = await res.clone().json().catch(() => ({}));
+    if (body?.error === 'Invalid token.' || res.status === 401) {
+      // Force a fresh Cognito session attempt
+      try {
+        const session = await getCurrentSession();
+        if (session) {
+          const fresh = session.getAccessToken().getJwtToken();
+          await AsyncStorage.setItem('authToken', fresh);
+          res = await makeRequest(fresh);
+          if (!res.ok) {
+            const err: any = new Error('Token expired');
+            err.tokenExpired = true;
+            throw err;
+          }
+          return res;
+        }
+      } catch (e: any) {
+        if (e.tokenExpired) throw e;
+      }
+      const err: any = new Error('Token expired');
+      err.tokenExpired = true;
+      throw err;
+    }
+  }
+
+  return res;
 }
 
 export function useAuth() {
