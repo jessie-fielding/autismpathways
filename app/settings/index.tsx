@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
   Switch, Alert, Linking, ActivityIndicator,
@@ -11,6 +11,7 @@ import { useLanguage } from '../../lib/LanguageContext';
 import { useIsPremium } from '../../hooks/useIsPremium';
 import { useNotifications, NotifSettings } from '../../hooks/useNotifications';
 import { useAuth } from '../../services/useAuth';
+import { isImpersonatingUser, setImpersonatingUser } from '../../services/impersonation';
 import { clearCredentials } from '../../services/secureCredentials';
 import { loadChildren, getActiveChildId, type ChildProfile } from '../../services/childManager';
 
@@ -79,8 +80,14 @@ export default function SettingsScreen() {
     ap_notification_waiver: true,
   });
   const [deleting, setDeleting] = useState(false);
+  const [showAdmin, setShowAdmin] = useState(false);
+  const [impersonating, setImpersonating] = useState(false);
+  const adminTaps = useRef(0);
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => {
+    loadData();
+    isImpersonatingUser().then(setImpersonating);
+  }, []);
   useFocusEffect(React.useCallback(() => { loadData(); }, []));
 
   const loadData = async () => {
@@ -547,8 +554,8 @@ export default function SettingsScreen() {
           />
         </View>
 
-        {/* ADMIN — only visible to jessienrabe@gmail.com */}
-        {userEmail?.toLowerCase() === 'jessienrabe@gmail.com' && (
+        {/* ADMIN — visible to jessienrabe@gmail.com OR after 7-tap unlock */}
+        {(userEmail?.toLowerCase() === 'jessienrabe@gmail.com' || showAdmin) && !impersonating && (
           <>
             <Text style={styles.sectionLabel}>ADMIN</Text>
             <View style={styles.card}>
@@ -588,7 +595,19 @@ export default function SettingsScreen() {
           <Text style={styles.supportCalloutArrow}>→</Text>
         </TouchableOpacity>
 
-        <Text style={styles.version}>Autism Pathways v1.0</Text>
+        <TouchableOpacity activeOpacity={1} onPress={() => {
+          adminTaps.current += 1;
+          if (adminTaps.current >= 7) {
+            if (impersonating) {
+              // Escape hatch: exit View as User mode
+              setImpersonatingUser(false);
+            } else {
+              setShowAdmin(true);
+            }
+          }
+        }}>
+          <Text style={styles.version}>Autism Pathways v1.0</Text>
+        </TouchableOpacity>
         <Text style={styles.copyright}>© 2026 Autism Pathways LLC</Text>
 
         {deleting && (

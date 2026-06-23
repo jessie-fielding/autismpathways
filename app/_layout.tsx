@@ -6,6 +6,7 @@ import { AuthProvider } from '../services/useAuth';
 import { LanguageProvider } from '../lib/LanguageContext';
 import { PmipProviderStoreProvider } from '../lib/pmip/pmipProviderStore';
 import NotificationPermissionPrompt from '../components/NotificationPermissionPrompt';
+import ViewAsUserBanner from '../components/ViewAsUserBanner';
 import * as Notifications from 'expo-notifications';
 import { useEffect, useRef } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
@@ -56,6 +57,7 @@ export default function RootLayout() {
           </Stack>
           <StatusBar style="auto" />
           <NotificationPermissionPrompt />
+          <ViewAsUserBanner />
         </ThemeProvider>
       </PmipProviderStoreProvider>
     </AuthProvider>

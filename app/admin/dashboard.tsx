@@ -12,6 +12,7 @@ import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '../../lib/theme';
 import { getValidToken } from '../../services/useAuth';
+import { setImpersonatingUser } from '../../services/impersonation';
 
 const LAMBDA = 'https://inu3nb5lrfvftfyiwprftqshpy0zcegu.lambda-url.us-east-2.on.aws';
 
@@ -411,6 +412,23 @@ export default function AdminDashboard() {
         </View>
       </View>
 
+      {/* View as User debug button */}
+      <TouchableOpacity
+        style={styles.viewAsUserBtn}
+        onPress={() =>
+          Alert.alert(
+            '👁 View as User',
+            'This will reload the app in free-tier mode so you can debug the non-premium experience. Tap the banner at the top to exit, or tap the version label 7 times in Settings.',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Enable', onPress: () => setImpersonatingUser(true) },
+            ]
+          )
+        }
+      >
+        <Text style={styles.viewAsUserText}>👁 View as user (debug)</Text>
+      </TouchableOpacity>
+
       {/* Tab Bar */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabBar} contentContainerStyle={styles.tabBarContent}>
         {TABS.map(t => {
@@ -468,6 +486,8 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: FONT_SIZES.md, fontWeight: '800', color: '#fff' },
   refreshBtn: { padding: SPACING.xs },
   refreshText: { fontSize: 20, color: '#fff' },
+  viewAsUserBtn: { backgroundColor: '#2d2d2d', paddingVertical: 10, alignItems: 'center', borderBottomWidth: 1, borderBottomColor: '#444' },
+  viewAsUserText: { color: '#f0c040', fontSize: FONT_SIZES.sm, fontWeight: '700', letterSpacing: 0.3 },
   tabBar: { backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.border, maxHeight: 52 },
   tabBarContent: { paddingHorizontal: SPACING.sm, gap: SPACING.xs, alignItems: 'center', paddingVertical: SPACING.sm },
   tabBtn: {

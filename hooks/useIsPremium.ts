@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { isImpersonatingUser } from '../services/impersonation';
 
 const API_BASE = 'https://inu3nb5lrfvftfyiwprftqshpy0zcegu.lambda-url.us-east-2.on.aws';
 
@@ -20,6 +21,12 @@ const API_BASE = 'https://inu3nb5lrfvftfyiwprftqshpy0zcegu.lambda-url.us-east-2.
  * ─── FREE ACCESS LIST ─────────────────────────────────────────────────────────
  * Accounts in FREE_ACCESS_EMAILS always get premium access regardless of
  * subscription status. Add/remove emails here as needed.
+ * ──────────────────────────────────────────────────────────────────────────────
+ *
+ * ─── VIEW AS USER (ADMIN DEBUG) ───────────────────────────────────────────────
+ * When isImpersonatingUser() is true, this hook always returns isPremium=false
+ * so the admin can preview the free-tier experience. This is a client-only
+ * override — no backend entitlements are changed.
  * ──────────────────────────────────────────────────────────────────────────────
  */
 
@@ -60,7 +67,13 @@ export function useIsPremium(): { isPremium: boolean; loading: boolean } {
     let cancelled = false;
     (async () => {
       try {
-        // 0. Check free access list first
+        // 0a. Impersonation override — admin "View as user" debug mode
+        if (await isImpersonatingUser()) {
+          if (!cancelled) { setIsPremium(false); setLoading(false); }
+          return;
+        }
+
+        // 0b. Check free access list
         if (await isOnFreeList()) {
           if (!cancelled) { setIsPremium(true); setLoading(false); }
           return;
@@ -103,6 +116,9 @@ export function useIsPremium(): { isPremium: boolean; loading: boolean } {
  * Also returns true in BETA_MODE and for free-access emails.
  */
 export async function checkIsPremium(): Promise<boolean> {
+  // Impersonation override — always free in debug mode
+  if (await isImpersonatingUser()) return false;
+
   if (BETA_MODE) return true;
   try {
     // Check free access list first
