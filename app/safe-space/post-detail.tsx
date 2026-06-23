@@ -22,6 +22,7 @@ import { COLORS, SPACING, RADIUS, FONT_SIZES, SHADOWS } from '../../lib/theme';
 import type { ForumPost } from './community';
 
 import { lambdaFetch, getValidToken as getToken } from '../../services/useAuth';
+import { AP_API_BASE } from '../../services/api';
 const API_BASE = 'https://inu3nb5lrfvftfyiwprftqshpy0zcegu.lambda-url.us-east-2.on.aws';
 
 interface Comment {
@@ -152,6 +153,44 @@ export default function PostDetailScreen() {
         body: JSON.stringify({ type: 'comment', id: comment.id, postId }),
       });
     } catch {}
+  };
+
+  const reportPost = async () => {
+    if (!post) return;
+    const token = await getToken();
+    if (!token) {
+      Alert.alert('Sign in required', 'Please sign in to report content.');
+      return;
+    }
+    Alert.alert(
+      'Report this post?',
+      'Our team will review it.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Report',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await fetch(`${AP_API_BASE}/api/forum-reports`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                body: JSON.stringify({
+                  postId: post.id,
+                  postTitle: post.title,
+                  postBody: post.body,
+                  authorDisplay: post.authorDisplay,
+                  reason: 'User reported',
+                }),
+              });
+              showToast('Reported. Thank you 💙');
+            } catch {
+              showToast('Could not submit report. Please try again.');
+            }
+          },
+        },
+      ]
+    );
   };
 
   const reportComment = async (comment: Comment) => {
@@ -294,6 +333,9 @@ export default function PostDetailScreen() {
                 <Text style={styles.commentAuthor}>{post.authorDisplay}</Text>
                 <Text style={styles.commentDate}>{fmtDate(post.createdAt)}</Text>
               </View>
+              <TouchableOpacity onPress={reportPost} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <Text style={styles.reportBtn}>⋯</Text>
+              </TouchableOpacity>
             </View>
             <Text style={styles.postTitle}>{post.title}</Text>
             <Text style={styles.postBody}>{post.body}</Text>
