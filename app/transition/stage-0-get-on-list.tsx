@@ -8,8 +8,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, SPACING, FONT_SIZES, RADIUS } from '../../lib/theme';
 import { useIsPremium } from '../../hooks/useIsPremium';
-import {
 import { logScreenView, useScreenTime } from '../../lib/analytics';
+import {
   scheduleAdultWaitlistNudge,
   cancelAdultWaitlistNudge,
 } from '../../lib/transitionNotification';
