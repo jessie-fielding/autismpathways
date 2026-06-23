@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '../../lib/theme';
 import { PROVIDERS, MEDICAL_PROVIDERS, Provider } from '../../lib/providerData';
+import { fetchLiveProviders, LiveProvider } from '../../services/api';
 import { useIsPremium } from '../../hooks/useIsPremium';
 import NearMeButton from '../../components/NearMeButton';
 
@@ -199,6 +200,7 @@ export default function ProviderDirectoryScreen() {
   const router = useRouter();
   const { isPremium } = useIsPremium();
   const [onAppIds, setOnAppIds] = useState<Set<string>>(new Set());
+  const [liveProviders, setLiveProviders] = useState<LiveProvider[]>([]);
 
   useEffect(() => {
     AsyncStorage.getItem('ap_on_app_provider_ids').then((raw) => {
@@ -213,6 +215,15 @@ export default function ProviderDirectoryScreen() {
   const [selectedState, setSelectedState] = useState('ALL');
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
   const [selectedTab, setSelectedTab] = useState<SpecialtyTab>('All');
+
+  // Fetch live providers from shared backend
+  useEffect(() => {
+    fetchLiveProviders(
+      selectedState !== 'ALL' ? selectedState : undefined,
+      selectedTab !== 'All' ? selectedTab : undefined,
+    ).then(setLiveProviders).catch(() => {});
+  }, [selectedState, selectedTab]);
+
   const [selectedMedicalType, setSelectedMedicalType] = useState<MedicalType>('All');
   const [searchText, setSearchText] = useState('');
   const [medicaidOnly, setMedicaidOnly] = useState(false);
@@ -455,6 +466,46 @@ export default function ProviderDirectoryScreen() {
                 </TouchableOpacity>
               ))}
             </ScrollView>
+          </View>
+        )}
+
+        {/* Live providers — On the App section */}
+        {liveProviders.length > 0 && (
+          <View style={styles.liveSection}>
+            <View style={styles.liveSectionHeader}>
+              <Text style={styles.liveSectionTitle}>💜 On the App — Open to Connect</Text>
+              <Text style={styles.liveSectionSub}>These providers are actively using Autism Pathways and are ready to hear from you</Text>
+            </View>
+            {liveProviders.map((lp) => (
+              <TouchableOpacity
+                key={lp.id}
+                style={styles.liveCard}
+                onPress={() => router.push({
+                  pathname: '/request-connection',
+                  params: {
+                    providerId: String(lp.id),
+                    providerName: lp.provider_name,
+                    providerSpecialty: lp.specialty,
+                    providerCounty: lp.county || '',
+                  },
+                })}
+                activeOpacity={0.85}
+              >
+                <View style={styles.liveCardLeft}>
+                  <View style={styles.liveCardAvatar}>
+                    <Text style={styles.liveCardEmoji}>{SPECIALTY_EMOJIS[lp.specialty] || '🏥'}</Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.liveCardName}>{lp.provider_name}</Text>
+                    {lp.practice_name ? <Text style={styles.liveCardPractice}>{lp.practice_name}</Text> : null}
+                    <Text style={styles.liveCardSpecialty}>{lp.specialty}{lp.state ? ` · ${lp.state}` : ''}</Text>
+                  </View>
+                </View>
+                <View style={styles.liveCardBadge}>
+                  <Text style={styles.liveCardBadgeText}>Request →</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
           </View>
         )}
 
@@ -704,6 +755,29 @@ const styles = StyleSheet.create({
   },
   cityBadgeText: { fontSize: FONT_SIZES.xs, fontWeight: '600', color: '#0369A1' },
   cityBadgeClear: { fontSize: 12, color: '#0369A1', fontWeight: '700', paddingLeft: 2 },
+  liveSection: { marginHorizontal: SPACING.lg, marginTop: SPACING.md, marginBottom: SPACING.sm },
+  liveSectionHeader: { marginBottom: SPACING.sm },
+  liveSectionTitle: { fontSize: FONT_SIZES.base, fontWeight: '800', color: COLORS.purpleDark, marginBottom: 2 },
+  liveSectionSub: { fontSize: FONT_SIZES.xs, color: COLORS.textMid, lineHeight: 16 },
+  liveCard: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    backgroundColor: '#F5F0FF', borderRadius: RADIUS.lg, padding: SPACING.md,
+    marginBottom: SPACING.sm, borderWidth: 1.5, borderColor: COLORS.lavenderAccent, ...SHADOWS.sm,
+  },
+  liveCardLeft: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, flex: 1 },
+  liveCardAvatar: {
+    width: 40, height: 40, borderRadius: RADIUS.sm, backgroundColor: COLORS.lavender,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  liveCardEmoji: { fontSize: 20 },
+  liveCardName: { fontSize: FONT_SIZES.sm, fontWeight: '700', color: COLORS.text },
+  liveCardPractice: { fontSize: FONT_SIZES.xs, color: COLORS.textMid, marginTop: 1 },
+  liveCardSpecialty: { fontSize: FONT_SIZES.xs, color: COLORS.purple, fontWeight: '600', marginTop: 2 },
+  liveCardBadge: {
+    backgroundColor: COLORS.purple, borderRadius: RADIUS.pill,
+    paddingHorizontal: SPACING.md, paddingVertical: SPACING.xs,
+  },
+  liveCardBadgeText: { fontSize: FONT_SIZES.xs, fontWeight: '700', color: COLORS.white },
   medTypeRow: { paddingHorizontal: SPACING.lg, paddingVertical: SPACING.sm, gap: SPACING.sm },
   medTypeChip: {
     borderRadius: RADIUS.pill, paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm,

@@ -18,6 +18,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { setProviderAvailability, registerProviderProfile } from '../../services/api';
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '../../lib/theme';
@@ -92,6 +93,25 @@ export default function ProviderDashboard() {
         setRecentRequests(all.slice(0, 3));
         const rtcRaw = await AsyncStorage.getItem('provider_ready_to_connect');
         if (rtcRaw !== null) setReadyToConnect(JSON.parse(rtcRaw));
+        // Sync provider profile to backend on each focus so availability stays current
+        const profileRaw = await AsyncStorage.getItem('profile');
+        if (profileRaw) {
+          const p = JSON.parse(profileRaw);
+          const currentRtc = rtcRaw !== null ? JSON.parse(rtcRaw) : true;
+          registerProviderProfile({
+            providerName: p.parentName || 'Provider',
+            practiceName: p.practiceName || null,
+            specialty: p.providerSpecialty || 'General',
+            state: p.state || null,
+            county: p.county || null,
+            openToConnect: currentRtc,
+            acceptingNew: true,
+            medicaidAccepted: false,
+            telehealth: false,
+            bio: null,
+            tags: p.providerReasons || [],
+          }).catch(() => {});
+        }
       })();
     }, [])
   );
@@ -155,6 +175,8 @@ export default function ProviderDashboard() {
             onValueChange={async (val) => {
               setReadyToConnect(val);
               await AsyncStorage.setItem('provider_ready_to_connect', JSON.stringify(val));
+              // Sync to shared backend so parents can see live availability
+              setProviderAvailability(val).catch(() => {});
             }}
             trackColor={{ false: COLORS.border, true: COLORS.teal }}
             thumbColor={readyToConnect ? '#fff' : '#f4f3f4'}
