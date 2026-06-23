@@ -82,6 +82,25 @@ export default function AdminDashboard() {
 
   useFocusEffect(useCallback(() => { fetchAll(); }, [fetchAll]));
 
+  const registerAdmin = useCallback(async () => {
+    try {
+      const token = await getValidToken();
+      const res = await fetch(`${LAMBDA}/api/admin/setup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      });
+      const data = await res.json();
+      if (res.ok) {
+        Alert.alert('Admin Registered ✅', 'Your account is now registered as admin. The dashboard will work on any login method going forward.');
+        fetchAll();
+      } else {
+        Alert.alert('Error', data.error || 'Failed to register admin.');
+      }
+    } catch (e: any) {
+      Alert.alert('Error', e.message || 'Network error.');
+    }
+  }, [fetchAll]);
+
   const handleApproveSubmission = async (sub: any) => {
     Alert.alert('Approve Submission', `Add "${sub.providerName}" to the directory?`, [
       { text: 'Cancel', style: 'cancel' },
@@ -376,9 +395,20 @@ export default function AdminDashboard() {
           <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Admin Dashboard</Text>
-        <TouchableOpacity onPress={() => fetchAll()} style={styles.refreshBtn}>
-          <Text style={styles.refreshText}>↻</Text>
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <TouchableOpacity
+            onPress={() => Alert.alert('Register as Admin', 'Tap OK to register your current Cognito account as admin. Do this once after signing in via Apple.', [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Register', onPress: registerAdmin },
+            ])}
+            style={[styles.refreshBtn, { backgroundColor: COLORS.purpleLight, paddingHorizontal: 8 }]}
+          >
+            <Text style={[styles.refreshText, { fontSize: 12 }]}>🔑</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => fetchAll()} style={styles.refreshBtn}>
+            <Text style={styles.refreshText}>↻</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Tab Bar */}
