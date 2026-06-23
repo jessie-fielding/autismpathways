@@ -525,33 +525,22 @@ export default function SafeSpaceScreen() {
 
           <Text style={styles.readingBody}>{entry.body}</Text>
 
-          {/* Share to community */}
-          <View style={styles.shareSection}>
-            <Text style={styles.shareSectionTitle}>Share with Community</Text>
-            <Text style={styles.shareSectionSub}>
-              Share this entry with other AP parents. You can post as yourself or anonymously.
-            </Text>
-            <View style={styles.shareButtons}>
-              <TouchableOpacity
-                style={styles.shareBtn}
-                onPress={() => shareToForum(entry, false)}
-                disabled={sharing}
-              >
-                <Text style={styles.shareBtnText}>👤 Share as me</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.shareBtn, styles.shareBtnAnon]}
-                onPress={() => shareToForum(entry, true)}
-                disabled={sharing}
-              >
-                <Text style={[styles.shareBtnText, { color: COLORS.purple }]}>🙈 Share anonymously</Text>
-              </TouchableOpacity>
+          {/* Share to community — Coming Soon */}
+          <View style={[styles.shareSection, { opacity: 0.85 }]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+              <Text style={styles.shareSectionTitle}>Share with Community</Text>
+              <View style={{ backgroundColor: COLORS.purple, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 2 }}>
+                <Text style={{ color: '#fff', fontSize: 10, fontWeight: '700', letterSpacing: 0.5 }}>COMING SOON</Text>
+              </View>
             </View>
+            <Text style={styles.shareSectionSub}>
+              Community posts are coming soon! We’re building a safe, moderated space for AP parents to share wins and support each other.
+            </Text>
             <TouchableOpacity
               style={styles.viewCommunityBtn}
               onPress={() => router.push('/safe-space/community')}
             >
-              <Text style={styles.viewCommunityBtnText}>🌸 View Community Feed →</Text>
+              <Text style={styles.viewCommunityBtnText}>🌸 Preview Community Feed →</Text>
             </TouchableOpacity>
           </View>
 
