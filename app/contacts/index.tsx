@@ -12,7 +12,7 @@
  *  - Pre-loaded resource contacts (maintained by AP team)
  *  - Tap phone → calls, tap email → opens mail app
  */
-import React, { useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
   TextInput, Modal, Alert, Linking, Platform,

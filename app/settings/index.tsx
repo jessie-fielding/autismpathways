@@ -67,7 +67,7 @@ export default function SettingsScreen() {
   const { isPremium } = useIsPremium();
   const { language, setLanguage, t } = useLanguage();
   const { scheduleAll } = useNotifications();
-  const { signOut, signOutAndForget, deleteAccount } = useAuth();
+  const { signOut, signOutAndForget, deleteAccount, userEmail } = useAuth();
 
   const [profile, setProfile] = useState<{ childName?: string; state?: string; email?: string; relationship?: string; specialty?: string; county?: string } | null>(null);
   const [activeChild, setActiveChild] = useState<ChildProfile | null>(null);
@@ -548,7 +548,7 @@ export default function SettingsScreen() {
         </View>
 
         {/* ADMIN — only visible to jessienrabe@gmail.com */}
-        {profile?.email?.toLowerCase() === 'jessienrabe@gmail.com' && (
+        {userEmail?.toLowerCase() === 'jessienrabe@gmail.com' && (
           <>
             <Text style={styles.sectionLabel}>ADMIN</Text>
             <View style={styles.card}>

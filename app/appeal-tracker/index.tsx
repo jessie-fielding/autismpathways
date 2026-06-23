@@ -4,7 +4,7 @@
  * Shows a full-featured premium gate with a preview of what's inside.
  * When isPremium is true, renders the full tracker UI.
  */
-import React, { useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
   Platform, Modal, TextInput, Alert, KeyboardAvoidingView, Switch,

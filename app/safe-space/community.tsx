@@ -4,7 +4,7 @@
  * Shows all publicly shared journal entries.
  * Users can heart posts, tap to read + comment, and report content.
  */
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
   ActivityIndicator, Alert, RefreshControl,

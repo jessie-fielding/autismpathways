@@ -4,7 +4,7 @@
  * Tapping "Book" opens the Calendly booking screen (WebView).
  * Payment is Apple-safe: Stripe checkout opens in Safari (external browser).
  */
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
   Image,

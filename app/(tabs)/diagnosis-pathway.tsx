@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Redirect } from 'expo-router';
 import { trackDiagnosisPathwayOpened, logScreenView, useScreenTime } from '../../lib/analytics';
 export default function DiagnosisPathwayTab() {

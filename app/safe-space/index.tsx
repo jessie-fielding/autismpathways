@@ -8,7 +8,7 @@
  *  - editor: write / edit an entry (title, body, mood, prompts)
  *  - read:   read a saved entry with edit/delete actions
  */
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
   TextInput, Alert, Platform, Animated, KeyboardAvoidingView,
