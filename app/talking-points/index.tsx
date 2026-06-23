@@ -19,7 +19,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, SPACING, RADIUS, FONT_SIZES, SHADOWS } from '../../lib/theme';
 import { useIsPremium } from '../../hooks/useIsPremium';
 import { useChildChanged } from '../../hooks/useChildChanged';
-import {trackPaywallViewed, trackTalkingPointsOpened, logScreenView, useScreenTime} from '../../../lib/analytics';
+import {trackPaywallViewed, trackTalkingPointsOpened, logScreenView, useScreenTime} from '../../lib/analytics';
 
 // ── Freemium limits ────────────────────────────────────────────────────────────
 const FREE_AUDIENCES   = 2;  // first N audience types unlocked

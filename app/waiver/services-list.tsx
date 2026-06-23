@@ -16,7 +16,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, FONT_SIZES, RADIUS, SHADOWS, SPACING } from '../../lib/theme';
 import { useIsPremium } from '../../hooks/useIsPremium';
-import { trackPaywallViewed } from '../../../lib/analytics';
+import { trackPaywallViewed } from '../../lib/analytics';
 
 const STORAGE_KEY = 'ap_waiver_services_selected';
 const CHILD_KEY = 'ap_child_name';

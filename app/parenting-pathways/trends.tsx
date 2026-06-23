@@ -8,7 +8,7 @@ import { STRATEGIES } from '../../lib/parentingStrategies';
 import { useIsPremium } from '../../hooks/useIsPremium';
 import { useActiveChild } from '../../services/childManager';
 import type { Situation, Location, Intensity } from '../../lib/parentingStrategies';
-import { trackPaywallViewed } from '../../../lib/analytics';
+import { trackPaywallViewed } from '../../lib/analytics';
 
 const SITUATION_LABELS: Record<Situation, string> = {
   meltdown: 'Meltdown',

@@ -10,7 +10,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { COLORS, SPACING, RADIUS, FONT_SIZES, SHADOWS } from '../../lib/theme';
 import { useIsPremium } from '../../hooks/useIsPremium';
 import { lambdaFetch, getValidToken } from '../../services/useAuth';
-import {trackPaywallViewed, trackDocumentVaultOpened, logScreenView, useScreenTime} from '../../../lib/analytics';
+import {trackPaywallViewed, trackDocumentVaultOpened, logScreenView, useScreenTime} from '../../lib/analytics';
 
 const API_BASE   = 'https://inu3nb5lrfvftfyiwprftqshpy0zcegu.lambda-url.us-east-2.on.aws';
 

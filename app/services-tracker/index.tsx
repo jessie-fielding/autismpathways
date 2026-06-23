@@ -12,7 +12,8 @@ import { useChildChanged } from '../../hooks/useChildChanged';
 import { COLORS, SPACING, RADIUS, FONT_SIZES, SHADOWS } from '../../lib/theme';
 import CityCountyAutocomplete from '../../components/CityCountyAutocomplete';
 import { useIsPremium } from '../../hooks/useIsPremium';
-import {import { trackPaywallViewed, trackServicesTrackerOpened, logScreenView, useScreenTime} from '../../../lib/analytics';
+import { trackPaywallViewed, trackServicesTrackerOpened, logScreenView, useScreenTime} from '../../lib/analytics';
+import {
   scheduleServiceReminders,
   cancelServiceReminders,
   nextAppointmentDate,

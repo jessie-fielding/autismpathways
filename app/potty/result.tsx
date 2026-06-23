@@ -6,7 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '../../lib/theme';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { trackPaywallViewed } from '../../../lib/analytics';
+import { trackPaywallViewed } from '../../lib/analytics';
 type PathwayKey = 'encopresis' | 'bodySignals' | 'sensory' | 'regression';
 
 const PATHWAY_META: Record<PathwayKey, {

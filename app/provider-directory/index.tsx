@@ -11,7 +11,7 @@ import { PROVIDERS, MEDICAL_PROVIDERS, Provider } from '../../lib/providerData';
 import { fetchLiveProviders, LiveProvider } from '../../services/api';
 import { useIsPremium } from '../../hooks/useIsPremium';
 import NearMeButton from '../../components/NearMeButton';
-import {trackPaywallViewed, trackProviderDirectoryOpened, logScreenView, useScreenTime} from '../../../lib/analytics';
+import {trackPaywallViewed, trackProviderDirectoryOpened, logScreenView, useScreenTime} from '../../lib/analytics';
 
 const US_STATES = [
   { code: 'ALL', name: 'All States' },

@@ -21,7 +21,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import * as Clipboard from 'expo-clipboard';
 import { COLORS, FONT_SIZES, RADIUS, SHADOWS, SPACING } from '../../lib/theme';
 import { useIsPremium } from '../../hooks/useIsPremium';
-import { trackPaywallViewed } from '../../../lib/analytics';
+import { trackPaywallViewed } from '../../lib/analytics';
 
 const OBS_KEY = 'ap_aba_observations';
 const FREE_SCRIPTS = 3;

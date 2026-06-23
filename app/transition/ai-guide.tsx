@@ -18,7 +18,7 @@ import { useRouter } from 'expo-router';
 import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '../../lib/theme';
 import { useIsPremium } from '../../hooks/useIsPremium';
 import { useActiveChild } from '../../services/childManager';
-import { trackPaywallViewed } from '../../../lib/analytics';
+import { trackPaywallViewed } from '../../lib/analytics';
 
 const API_BASE = 'https://inu3nb5lrfvftfyiwprftqshpy0zcegu.lambda-url.us-east-2.on.aws';
 

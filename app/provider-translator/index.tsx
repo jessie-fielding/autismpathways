@@ -19,7 +19,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, SPACING, RADIUS, FONT_SIZES, SHADOWS } from '../../lib/theme';
 import { useIsPremium } from '../../hooks/useIsPremium';
-import {trackPaywallViewed, trackProviderTranslatorOpened, logScreenView, useScreenTime} from '../../../lib/analytics';
+import {trackPaywallViewed, trackProviderTranslatorOpened, logScreenView, useScreenTime} from '../../lib/analytics';
 
 const API_BASE = 'https://inu3nb5lrfvftfyiwprftqshpy0zcegu.lambda-url.us-east-2.on.aws';
 const USAGE_KEY = 'ap_provider_translator_count';

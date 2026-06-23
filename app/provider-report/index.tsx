@@ -10,7 +10,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
-import { trackPaywallViewed } from '../../../lib/analytics';
+import { trackPaywallViewed } from '../../lib/analytics';
 
 // ─── Storage Keys (must match provider-prep) ──────────────────────────────────
 const SAVED_KEY = 'ap_provider_prep_saved';

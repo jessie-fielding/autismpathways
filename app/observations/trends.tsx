@@ -13,7 +13,7 @@ import { COLORS, FONT_SIZES, RADIUS, SHADOWS, SPACING } from '../../lib/theme';
 import { useIsPremium } from '../../hooks/useIsPremium';
 import { useActiveChild } from '../../services/childManager';
 import { OBS_KEY, type Observation } from './index';
-import { trackPaywallViewed } from '../../../lib/analytics';
+import { trackPaywallViewed } from '../../lib/analytics';
 
 const MOOD_COLORS: Record<string, string> = {
   'Calm': COLORS.mintAccent,

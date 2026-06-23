@@ -17,7 +17,7 @@ import * as Notifications from 'expo-notifications';
 import { COLORS, SPACING, RADIUS, FONT_SIZES, SHADOWS } from '../../lib/theme';
 import { useIsPremium } from '../../hooks/useIsPremium';
 import { useChildChanged } from '../../hooks/useChildChanged';
-import {trackPaywallViewed, trackAppealTrackerOpened, logScreenView, useScreenTime} from '../../../lib/analytics';
+import {trackPaywallViewed, trackAppealTrackerOpened, logScreenView, useScreenTime} from '../../lib/analytics';
 
 // ── Notification helpers ──────────────────────────────────────────────────────
 async function requestNotifPermission(): Promise<boolean> {

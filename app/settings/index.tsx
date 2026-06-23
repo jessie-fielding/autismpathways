@@ -15,7 +15,7 @@ import { clearCredentials } from '../../services/secureCredentials';
 import { loadChildren, getActiveChildId, type ChildProfile } from '../../services/childManager';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import {trackPaywallViewed, trackSettingsOpened, logScreenView, useScreenTime} from '../../../lib/analytics';
+import {trackPaywallViewed, trackSettingsOpened, logScreenView, useScreenTime} from '../../lib/analytics';
 // All AsyncStorage keys used across the app
 const ALL_DATA_KEYS = [
   'ap_profile',

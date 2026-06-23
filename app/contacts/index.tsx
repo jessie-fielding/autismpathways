@@ -25,7 +25,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, SPACING, RADIUS, FONT_SIZES, SHADOWS } from '../../lib/theme';
 import { useIsPremium } from '../../hooks/useIsPremium';
-import {trackPaywallViewed, trackContactsOpened, logScreenView, useScreenTime} from '../../../lib/analytics';
+import {trackPaywallViewed, trackContactsOpened, logScreenView, useScreenTime} from '../../lib/analytics';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const STORE_KEY   = 'ap_contacts';

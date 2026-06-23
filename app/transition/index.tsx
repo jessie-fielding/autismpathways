@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, SPACING, FONT_SIZES, RADIUS } from '../../lib/theme';
 import { useIsPremium } from '../../hooks/useIsPremium';
 import { useActiveChild } from '../../services/childManager';
-import {trackPaywallViewed, trackTransitionPathwayOpened, logScreenView, useScreenTime} from '../../../lib/analytics';
+import {trackPaywallViewed, trackTransitionPathwayOpened, logScreenView, useScreenTime} from '../../lib/analytics';
 
 const STAGES = [
   {

@@ -9,7 +9,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '../../lib/theme';
 import { PROVIDERS, MEDICAL_PROVIDERS, Provider } from '../../lib/providerData';
 import { useIsPremium } from '../../hooks/useIsPremium';
-import { trackPaywallViewed } from '../../../lib/analytics';
+import { trackPaywallViewed } from '../../lib/analytics';
 const ALL_PROVIDERS_DETAIL = [...PROVIDERS, ...MEDICAL_PROVIDERS];
 
 const API_BASE = 'https://inu3nb5lrfvftfyiwprftqshpy0zcegu.lambda-url.us-east-2.on.aws';

@@ -9,7 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '../../lib/theme';
 import { EVALUATORS, Evaluator, EvaluatorType } from '../../data/evaluators';
 import NearMeButton from '../../components/NearMeButton';
-import {trackPaywallViewed, trackIEPEvaluatorSearched, logScreenView, useScreenTime} from '../../../lib/analytics';
+import {trackPaywallViewed, trackIEPEvaluatorSearched, logScreenView, useScreenTime} from '../../lib/analytics';
 
 const TYPE_CONFIG: Record<EvaluatorType, { label: string; color: string; bg: string; icon: string }> = {
   inperson: { label: 'In-Person', color: '#2E6B3E', bg: '#E3F7EC', icon: '🏥' },
