@@ -260,8 +260,11 @@ export default function SafeSpaceScreen() {
       if (e?.tokenExpired) {
         Alert.alert(
           'Session expired',
-          'Your session has expired. Please sign in again to share with the community.',
-          [{ text: 'OK' }]
+          'Your session has expired. Please sign in again to continue.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Sign In', onPress: () => router.replace('/') },
+          ]
         );
       } else {
         showToast('Network error. Please try again.');
