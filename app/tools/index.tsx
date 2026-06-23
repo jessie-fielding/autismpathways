@@ -6,6 +6,7 @@ import { useRouter } from 'expo-router';
 import { COLORS, SPACING, RADIUS, FONT_SIZES, SHADOWS } from '../../lib/theme';
 import { useIsPremium } from '../../hooks/useIsPremium';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { trackToolsTabOpened, logScreenView, useScreenTime } from '../../lib/analytics';
 
 type Tool = {
   icon: string;
@@ -209,6 +210,8 @@ const SECTIONS: { label: string; tools: Tool[] }[] = [
 ];
 
 export default function AllToolsScreen() {
+  useScreenTime('tools_tab');
+  useEffect(() => { logScreenView('tools_tab'); trackToolsTabOpened(); }, []);
   const router = useRouter();
   const { isPremium } = useIsPremium();
   const insets = useSafeAreaInsets();

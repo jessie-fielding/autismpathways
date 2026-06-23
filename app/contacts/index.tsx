@@ -25,6 +25,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, SPACING, RADIUS, FONT_SIZES, SHADOWS } from '../../lib/theme';
 import { useIsPremium } from '../../hooks/useIsPremium';
+import {trackPaywallViewed, trackContactsOpened, logScreenView, useScreenTime} from '../../../lib/analytics';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const STORE_KEY   = 'ap_contacts';
@@ -81,6 +82,8 @@ function getCategoryLabel(cat: string): string {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function ContactsScreen() {
+  useScreenTime('contacts');
+  useEffect(() => { logScreenView('contacts'); trackContactsOpened(); }, []);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { isPremium } = useIsPremium();
@@ -126,7 +129,7 @@ export default function ContactsScreen() {
   const openModal = (contact?: Contact) => {
     if (!isPremium && !contact && contacts.length >= FREE_LIMIT) {
       // Freemium gate
-      router.push('/paywall');
+      (trackPaywallViewed('contacts'), router.push('/paywall'));
       return;
     }
     if (contact) {
@@ -203,7 +206,7 @@ export default function ContactsScreen() {
 
   const savePreloaded = async (pre: typeof PRELOADED_CONTACTS[0]) => {
     if (!isPremium && contacts.length >= FREE_LIMIT) {
-      router.push('/paywall');
+      (trackPaywallViewed('contacts'), router.push('/paywall'));
       return;
     }
     const already = contacts.some(c => c.name === pre.name && c.org === pre.org);
@@ -410,7 +413,7 @@ export default function ContactsScreen() {
             <View style={styles.limitBanner}>
               <Text style={styles.limitBannerText}>
                 Free plan includes {FREE_LIMIT} contacts.{' '}
-                <Text style={styles.limitBannerLink} onPress={() => router.push('/paywall')}>
+                <Text style={styles.limitBannerLink} onPress={() => (trackPaywallViewed('contacts'), router.push('/paywall'))}>
                   Upgrade for unlimited →
                 </Text>
               </Text>

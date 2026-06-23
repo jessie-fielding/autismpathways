@@ -17,6 +17,7 @@ import * as Notifications from 'expo-notifications';
 import { COLORS, SPACING, RADIUS, FONT_SIZES, SHADOWS } from '../../lib/theme';
 import { useIsPremium } from '../../hooks/useIsPremium';
 import { useChildChanged } from '../../hooks/useChildChanged';
+import {trackPaywallViewed, trackAppealTrackerOpened, logScreenView, useScreenTime} from '../../../lib/analytics';
 
 // ── Notification helpers ──────────────────────────────────────────────────────
 async function requestNotifPermission(): Promise<boolean> {
@@ -183,7 +184,7 @@ function PremiumGateView() {
         <View style={styles.gateCTA}>
           <TouchableOpacity
             style={styles.gateUpgradeBtn}
-            onPress={() => router.push('/paywall')}
+            onPress={() => (trackPaywallViewed('appeal_tracker'), router.push('/paywall'))}
             activeOpacity={0.85}
           >
             <Text style={styles.gateUpgradeBtnText}>Unlock Appeal Tracker →</Text>
@@ -549,6 +550,8 @@ function FullTracker() {
 }
 
 export default function AppealTrackerScreen() {
+  useScreenTime('appeal_tracker');
+  useEffect(() => { logScreenView('appeal_tracker'); trackAppealTrackerOpened(); }, []);
   const { isPremium, loading } = useIsPremium();
 
   if (loading) {

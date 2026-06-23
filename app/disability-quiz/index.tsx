@@ -7,6 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
 import { COLORS, SPACING, RADIUS, FONT_SIZES, SHADOWS } from '../../lib/theme';
+import { trackDisabilityQuizOpened, logScreenView, useScreenTime } from '../../lib/analytics';
 
 // ─── Quiz Data ────────────────────────────────────────────────────────────────
 
@@ -309,6 +310,8 @@ const CONDITIONS: Record<string, ConditionResult> = {
 type Screen = 'intro' | 'quiz' | 'results';
 
 export default function DisabilityQuizScreen() {
+  useScreenTime('disability_quiz');
+  useEffect(() => { logScreenView('disability_quiz'); trackDisabilityQuizOpened(); }, []);
   const router = useRouter();
   const insets = useSafeAreaInsets();
 

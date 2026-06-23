@@ -22,6 +22,7 @@ import { useChildChanged } from '../../hooks/useChildChanged';
 import { useIsPremium } from '../../hooks/useIsPremium';
 import { PathwayDisclaimer } from '../../components/PathwayDisclaimer';
 import { useLanguage } from '../../lib/LanguageContext';
+import { trackIEPOpened, logScreenView, useScreenTime } from '../../lib/analytics';
 
 // IEP goal and meeting tracking is unlimited for all users — IEP documentation is a legal right.
 // (caps removed June 2026)
@@ -262,6 +263,8 @@ function TermCard({ item }: { item: typeof RIGHTS_TERMS[0] }) {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function IEPScreen() {
+  useScreenTime('iep_hub');
+  useEffect(() => { logScreenView('iep_hub'); trackIEPOpened(); }, []);
   const router = useRouter();
   const { t } = useLanguage();
   const { child: activeChild } = useActiveChild();

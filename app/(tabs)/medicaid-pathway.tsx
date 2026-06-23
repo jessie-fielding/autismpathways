@@ -10,6 +10,7 @@ import {
 import { COLORS, FONT_SIZES, RADIUS, SPACING } from '../../lib/theme';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { trackMedicaidPathwayOpened, logScreenView, useScreenTime } from '../../lib/analytics';
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -211,6 +212,8 @@ const styles = StyleSheet.create({
 });
 
 export default function MedicaidPathwayScreen() {
+  useScreenTime('medicaid_pathway');
+  useEffect(() => { logScreenView('medicaid_pathway'); trackMedicaidPathwayOpened(); }, []);
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const [selectedReason, setSelectedReason] = useState<string | null>(null);

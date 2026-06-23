@@ -12,6 +12,7 @@ import {
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZES, SHADOWS } from '../../lib/theme';
+import { trackSupportOpened, logScreenView, useScreenTime } from '../../lib/analytics';
 
 // ── Session types ─────────────────────────────────────────────────────────────
 const SESSIONS = [
@@ -64,6 +65,8 @@ const SESSIONS = [
 ];
 
 export default function SupportIndexScreen() {
+  useScreenTime('support');
+  useEffect(() => { logScreenView('support'); trackSupportOpened(); }, []);
   const router = useRouter();
   const insets = useSafeAreaInsets();
 

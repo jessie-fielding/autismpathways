@@ -7,6 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, SPACING, FONT_SIZES, RADIUS } from '../../lib/theme';
 import { useIsPremium } from '../../hooks/useIsPremium';
 import { scheduleStage1FollowUp, cancelStage1FollowUp } from '../../lib/transitionNotification';
+import { logScreenView, useScreenTime } from '../../lib/analytics';
 
 const CHECKLIST_KEY = 'ap_transition_stage1_checklist';
 
@@ -26,6 +27,8 @@ const TOPICS = [
 ];
 
 export default function Stage1StartConversation() {
+  useScreenTime('transition_stage_1');
+  useEffect(() => { logScreenView('transition_stage_1'); }, []);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { isPremium } = useIsPremium();

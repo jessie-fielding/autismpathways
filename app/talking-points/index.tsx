@@ -19,6 +19,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, SPACING, RADIUS, FONT_SIZES, SHADOWS } from '../../lib/theme';
 import { useIsPremium } from '../../hooks/useIsPremium';
 import { useChildChanged } from '../../hooks/useChildChanged';
+import {trackPaywallViewed, trackTalkingPointsOpened, logScreenView, useScreenTime} from '../../../lib/analytics';
 
 // ── Freemium limits ────────────────────────────────────────────────────────────
 const FREE_AUDIENCES   = 2;  // first N audience types unlocked
@@ -266,6 +267,8 @@ const TP_CONTENT: Record<string, AudienceData> = {
 
 // ── Main component ────────────────────────────────────────────────────────────
 export default function TalkingPointsScreen() {
+  useScreenTime('talking_points');
+  useEffect(() => { logScreenView('talking_points'); trackTalkingPointsOpened(); }, []);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { isPremium } = useIsPremium();
@@ -322,7 +325,7 @@ export default function TalkingPointsScreen() {
       <Text style={styles.premiumGateSub}>
         Go Premium to access all 5 audience types, unlimited scripts, pushback responses, and follow-up plans.
       </Text>
-      <TouchableOpacity style={styles.premiumGateBtn} onPress={() => router.push('/paywall')}>
+      <TouchableOpacity style={styles.premiumGateBtn} onPress={() => (trackPaywallViewed('talking_points'), router.push('/paywall'))}>
         <Text style={styles.premiumGateBtnText}>Go Premium</Text>
       </TouchableOpacity>
     </View>
@@ -464,7 +467,7 @@ export default function TalkingPointsScreen() {
                 <Text style={styles.followupTeaserSub}>
                   Go Premium to access detailed follow-up plans for every audience, ensuring you never miss a step.
                 </Text>
-                <TouchableOpacity style={styles.premiumGateBtn} onPress={() => router.push('/paywall')}>
+                <TouchableOpacity style={styles.premiumGateBtn} onPress={() => (trackPaywallViewed('talking_points'), router.push('/paywall'))}>
                   <Text style={styles.premiumGateBtnText}>Go Premium</Text>
                 </TouchableOpacity>
               </View>

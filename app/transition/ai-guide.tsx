@@ -18,6 +18,7 @@ import { useRouter } from 'expo-router';
 import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '../../lib/theme';
 import { useIsPremium } from '../../hooks/useIsPremium';
 import { useActiveChild } from '../../services/childManager';
+import { trackPaywallViewed } from '../../../lib/analytics';
 
 const API_BASE = 'https://inu3nb5lrfvftfyiwprftqshpy0zcegu.lambda-url.us-east-2.on.aws';
 
@@ -579,7 +580,7 @@ export default function TransitionAIGuideScreen() {
               {step.toolRoute && !isPremium && (
                 <TouchableOpacity
                   style={styles.stepToolLinkLocked}
-                  onPress={() => router.push('/paywall')}
+                  onPress={() => (trackPaywallViewed('transition_ai_guide'), router.push('/paywall'))}
                 >
                   <Text style={styles.stepToolLinkLockedText}>🔒 Unlock tool with Premium</Text>
                 </TouchableOpacity>
@@ -595,7 +596,7 @@ export default function TransitionAIGuideScreen() {
             <Text style={styles.premiumUpsellText}>
               Get AI-personalized steps, deep links to all 7 premium lookup tools, and follow-up reminders.
             </Text>
-            <TouchableOpacity style={styles.premiumUpsellBtn} onPress={() => router.push('/paywall')}>
+            <TouchableOpacity style={styles.premiumUpsellBtn} onPress={() => (trackPaywallViewed('transition_ai_guide'), router.push('/paywall'))}>
               <Text style={styles.premiumUpsellBtnText}>Upgrade to Premium →</Text>
             </TouchableOpacity>
           </View>

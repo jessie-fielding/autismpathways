@@ -15,6 +15,7 @@ import { clearCredentials } from '../../services/secureCredentials';
 import { loadChildren, getActiveChildId, type ChildProfile } from '../../services/childManager';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import {trackPaywallViewed, trackSettingsOpened, logScreenView, useScreenTime} from '../../../lib/analytics';
 // All AsyncStorage keys used across the app
 const ALL_DATA_KEYS = [
   'ap_profile',
@@ -59,6 +60,8 @@ const NOTIF_ITEMS: { key: NotifKey; icon: string; title: string; desc: string }[
 ];
 
 export default function SettingsScreen() {
+  useScreenTime('settings');
+  useEffect(() => { logScreenView('settings'); trackSettingsOpened(); }, []);
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { isPremium } = useIsPremium();
@@ -293,7 +296,7 @@ export default function SettingsScreen() {
             </TouchableOpacity>
           </View>
         ) : (
-          <TouchableOpacity style={[styles.premiumBanner, styles.freeBanner]} onPress={() => router.push('/paywall')} activeOpacity={0.8}>
+          <TouchableOpacity style={[styles.premiumBanner, styles.freeBanner]} onPress={() => (trackPaywallViewed('settings'), router.push('/paywall'))} activeOpacity={0.8}>
             <Text style={styles.premiumStar}>⭐</Text>
             <Text style={styles.premiumTitle}>Upgrade to Premium</Text>
             <Text style={styles.premiumSub}>

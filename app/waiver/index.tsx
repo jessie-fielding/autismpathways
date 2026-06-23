@@ -10,11 +10,14 @@ import { PathwayDisclaimer } from '../../components/PathwayDisclaimer';
 import { useLanguage } from '../../lib/LanguageContext';
 import NearMeButton from '../../components/NearMeButton';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { trackWaiverPathwayOpened, logScreenView, useScreenTime } from '../../lib/analytics';
 const ALL_STATES = Object.entries(waiverData as Record<string, { stateName: string }>)
   .map(([abbr, data]) => ({ abbr, name: data.stateName }))
   .sort((a, b) => a.name.localeCompare(b.name));
 
 export default function WaiverStatePickerScreen() {
+  useScreenTime('waiver_hub');
+  useEffect(() => { logScreenView('waiver_hub'); trackWaiverPathwayOpened(); }, []);
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { t } = useLanguage();

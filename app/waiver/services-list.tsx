@@ -16,6 +16,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, FONT_SIZES, RADIUS, SHADOWS, SPACING } from '../../lib/theme';
 import { useIsPremium } from '../../hooks/useIsPremium';
+import { trackPaywallViewed } from '../../../lib/analytics';
 
 const STORAGE_KEY = 'ap_waiver_services_selected';
 const CHILD_KEY = 'ap_child_name';
@@ -178,7 +179,7 @@ export default function WaiverServicesListScreen() {
                 <Text style={styles.emailBtnText}>✉️ Generate Caseworker Email</Text>
               </TouchableOpacity>
             ) : (
-              <TouchableOpacity style={styles.premiumBtn} onPress={() => router.push('/paywall')}>
+              <TouchableOpacity style={styles.premiumBtn} onPress={() => (trackPaywallViewed('waiver_services_list'), router.push('/paywall'))}>
                 <Text style={styles.premiumBtnText}>🔒 Unlock Email Generator — Go Premium</Text>
               </TouchableOpacity>
             )}

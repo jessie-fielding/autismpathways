@@ -20,6 +20,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, SPACING, RADIUS, FONT_SIZES, SHADOWS } from '../../lib/theme';
 import { useChildChanged } from '../../hooks/useChildChanged';
 import { lambdaFetch } from '../../services/useAuth';
+import { trackSafeSpaceOpened, logScreenView, useScreenTime } from '../../lib/analytics';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const STORE_KEY = 'ap_journal_entries';
@@ -87,6 +88,8 @@ function getMood(key: string | null) {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function SafeSpaceScreen() {
+  useScreenTime('safe_space');
+  useEffect(() => { logScreenView('safe_space'); trackSafeSpaceOpened(); }, []);
   const router = useRouter();
   const insets = useSafeAreaInsets();
 

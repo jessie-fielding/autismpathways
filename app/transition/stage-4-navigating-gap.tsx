@@ -7,6 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, SPACING, FONT_SIZES, RADIUS } from '../../lib/theme';
 import { useIsPremium } from '../../hooks/useIsPremium';
 import { scheduleStage4FollowUp, cancelStage4FollowUp } from '../../lib/transitionNotification';
+import { logScreenView, useScreenTime } from '../../lib/analytics';
 
 const CHECKLIST_KEY = 'ap_transition_stage4_checklist';
 
@@ -27,6 +28,8 @@ const TOPICS = [
 ];
 
 export default function Stage4NavigatingGap() {
+  useScreenTime('transition_stage_4');
+  useEffect(() => { logScreenView('transition_stage_4'); }, []);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { isPremium } = useIsPremium();

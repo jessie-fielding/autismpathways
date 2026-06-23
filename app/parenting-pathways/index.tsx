@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, FONT_SIZES, RADIUS, SHADOWS, SPACING } from '../../lib/theme';
 import { useIsPremium } from '../../hooks/useIsPremium';
+import { trackPaywallViewed } from '../../../lib/analytics';
 
 export default function ParentingPathwaysEntry() {
   const router = useRouter();
@@ -74,7 +75,7 @@ export default function ParentingPathwaysEntry() {
             onPress={() =>
               isPremium
                 ? router.push('/parenting-pathways/trends')
-                : router.push('/paywall')
+                : (trackPaywallViewed('parenting_pathways'), router.push('/paywall'))
             }
             activeOpacity={0.8}
           >

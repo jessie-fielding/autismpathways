@@ -10,6 +10,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '../../lib/theme';
 import { PathwayDisclaimer } from '../../components/PathwayDisclaimer';
+import { trackProviderPrepOpened, logScreenView, useScreenTime } from '../../lib/analytics';
 // ─── Storage Keys ─────────────────────────────────────────────────────────────
 const DRAFT_KEY   = 'ap_provider_prep_draft';
 const SAVED_KEY   = 'ap_provider_prep_saved';
@@ -166,6 +167,8 @@ type TabKey = typeof STEPS[number]['key'];
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function ProviderPrepScreen() {
+  useScreenTime('provider_prep');
+  useEffect(() => { logScreenView('provider_prep'); trackProviderPrepOpened(); }, []);
   const insets = useSafeAreaInsets();
   const router = useRouter();
 

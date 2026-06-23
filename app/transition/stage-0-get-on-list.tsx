@@ -9,6 +9,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, SPACING, FONT_SIZES, RADIUS } from '../../lib/theme';
 import { useIsPremium } from '../../hooks/useIsPremium';
 import {
+import { logScreenView, useScreenTime } from '../../lib/analytics';
   scheduleAdultWaitlistNudge,
   cancelAdultWaitlistNudge,
 } from '../../lib/transitionNotification';
@@ -72,6 +73,8 @@ const CHECKLIST_ITEMS = [
 const URGENCY_STATES = ['Colorado', 'California', 'Texas', 'New York', 'Illinois', 'Florida', 'Ohio', 'Georgia', 'Michigan', 'New Jersey'];
 
 export default function Stage0GetOnList() {
+  useScreenTime('transition_stage_0');
+  useEffect(() => { logScreenView('transition_stage_0'); }, []);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { isPremium } = useIsPremium();

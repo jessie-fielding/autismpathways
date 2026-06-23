@@ -7,6 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
 import { COLORS, SPACING, RADIUS, FONT_SIZES, SHADOWS } from '../../lib/theme';
+import { logScreenView, useScreenTime } from '../../lib/analytics';
 
 // ─── Quiz Data ────────────────────────────────────────────────────────────────
 
@@ -288,6 +289,8 @@ const QUESTIONS: Question[] = [
 type Screen = 'intro' | 'quiz' | 'results';
 
 export default function ICDQuizScreen() {
+  useScreenTime('icd_quiz');
+  useEffect(() => { logScreenView('icd_quiz'); }, []);
   const router = useRouter();
   const insets = useSafeAreaInsets();
 

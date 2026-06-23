@@ -22,6 +22,7 @@ import {
 } from '../../lib/parentingPathwaysData';
 import { useIsPremium } from '../../hooks/useIsPremium';
 import { useActiveChild } from '../../services/childManager';
+import { trackPaywallViewed } from '../../../lib/analytics';
 
 const SITUATION_LABELS: Record<Situation, string> = {
   meltdown: 'Meltdown',
@@ -215,7 +216,7 @@ export default function ParentingPathwaysResults() {
         {!isPremium && (
           <TouchableOpacity
             style={styles.upsellCard}
-            onPress={() => router.push('/paywall')}
+            onPress={() => (trackPaywallViewed('parenting_pathways_results'), router.push('/paywall'))}
             activeOpacity={0.85}
           >
             <Text style={styles.upsellEmoji}>📊</Text>

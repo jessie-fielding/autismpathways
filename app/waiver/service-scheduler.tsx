@@ -18,6 +18,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, FONT_SIZES, RADIUS, SHADOWS, SPACING } from '../../lib/theme';
 import { useIsPremium } from '../../hooks/useIsPremium';
+import { trackPaywallViewed } from '../../../lib/analytics';
 
 const STORAGE_KEY = 'ap_waiver_service_schedules';
 const SELECTED_KEY = 'ap_waiver_services_selected';
@@ -128,7 +129,7 @@ export default function ServiceSchedulerScreen() {
           <Text style={styles.paywallBody}>
             The Service Scheduler lets you track days, times, locations, and set reminders for each of your child's waiver services.
           </Text>
-          <TouchableOpacity style={styles.paywallBtn} onPress={() => router.push('/paywall')}>
+          <TouchableOpacity style={styles.paywallBtn} onPress={() => (trackPaywallViewed('waiver_service_scheduler'), router.push('/paywall'))}>
             <Text style={styles.paywallBtnText}>Unlock with Premium</Text>
           </TouchableOpacity>
         </View>

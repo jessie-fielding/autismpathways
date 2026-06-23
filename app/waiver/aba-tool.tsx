@@ -21,6 +21,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import * as Clipboard from 'expo-clipboard';
 import { COLORS, FONT_SIZES, RADIUS, SHADOWS, SPACING } from '../../lib/theme';
 import { useIsPremium } from '../../hooks/useIsPremium';
+import { trackPaywallViewed } from '../../../lib/analytics';
 
 const OBS_KEY = 'ap_aba_observations';
 const FREE_SCRIPTS = 3;
@@ -273,7 +274,7 @@ export default function ABAToolScreen() {
                 <TouchableOpacity
                   style={[styles.catHeader, { borderLeftColor: cat.color }]}
                   onPress={() => {
-                    if (isLocked) { router.push('/paywall'); return; }
+                    if (isLocked) { (trackPaywallViewed('waiver_aba_tool'), router.push('/paywall')); return; }
                     setExpandedCat(expandedCat === cat.id ? null : cat.id);
                   }}
                 >
@@ -297,7 +298,7 @@ export default function ABAToolScreen() {
                       return (
                         <View key={idx} style={styles.scriptCard}>
                           {isScriptLocked ? (
-                            <TouchableOpacity style={styles.lockedScript} onPress={() => router.push('/paywall')}>
+                            <TouchableOpacity style={styles.lockedScript} onPress={() => (trackPaywallViewed('waiver_aba_tool'), router.push('/paywall'))}>
                               <Text style={styles.lockedScriptText}>🔒 Unlock more scripts with Premium</Text>
                             </TouchableOpacity>
                           ) : (
@@ -349,7 +350,7 @@ export default function ABAToolScreen() {
               <Text style={styles.paywallBody}>
                 Log session observations and track trends to bring to your ABA provider meetings.
               </Text>
-              <TouchableOpacity style={styles.paywallBtn} onPress={() => router.push('/paywall')}>
+              <TouchableOpacity style={styles.paywallBtn} onPress={() => (trackPaywallViewed('waiver_aba_tool'), router.push('/paywall'))}>
                 <Text style={styles.paywallBtnText}>Unlock with Premium</Text>
               </TouchableOpacity>
             </View>

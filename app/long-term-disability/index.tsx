@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, FONT_SIZES, RADIUS, SHADOWS, SPACING } from '../../lib/theme';
 import { STATE_LTD_DATA, getWaitlistColor, getWaitlistLabel } from '../../data/longTermDisability';
 import { PathwayDisclaimer } from '../../components/PathwayDisclaimer';
+import { trackLTDPathwayOpened, logScreenView, useScreenTime } from '../../lib/analytics';
 
 const ALL_STATES = STATE_LTD_DATA.map(s => ({
   abbreviation: s.abbreviation,
@@ -22,6 +23,8 @@ const ALL_STATES = STATE_LTD_DATA.map(s => ({
 })).sort((a, b) => a.state.localeCompare(b.state));
 
 export default function LongTermDisabilityIndex() {
+  useScreenTime('ltd_hub');
+  useEffect(() => { logScreenView('ltd_hub'); trackLTDPathwayOpened(); }, []);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [search, setSearch] = useState('');

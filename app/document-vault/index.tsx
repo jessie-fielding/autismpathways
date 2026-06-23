@@ -10,6 +10,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { COLORS, SPACING, RADIUS, FONT_SIZES, SHADOWS } from '../../lib/theme';
 import { useIsPremium } from '../../hooks/useIsPremium';
 import { lambdaFetch, getValidToken } from '../../services/useAuth';
+import {trackPaywallViewed, trackDocumentVaultOpened, logScreenView, useScreenTime} from '../../../lib/analytics';
 
 const API_BASE   = 'https://inu3nb5lrfvftfyiwprftqshpy0zcegu.lambda-url.us-east-2.on.aws';
 
@@ -78,6 +79,8 @@ async function apiGet(path: string): Promise<Response> {
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 export default function DocumentVaultScreen() {
+  useScreenTime('document_vault');
+  useEffect(() => { logScreenView('document_vault'); trackDocumentVaultOpened(); }, []);
   const router   = useRouter();
   const insets   = useSafeAreaInsets();
   const { isPremium } = useIsPremium();
@@ -147,7 +150,7 @@ export default function DocumentVaultScreen() {
         'Uploading and storing documents is a premium feature. Upgrade to keep all your important files in one secure place.',
         [
           { text: 'Maybe Later', style: 'cancel' },
-          { text: 'Upgrade', onPress: () => router.push('/paywall') },
+          { text: 'Upgrade', onPress: () => (trackPaywallViewed('document_vault'), router.push('/paywall')) },
         ]
       );
       return;
@@ -454,7 +457,7 @@ export default function DocumentVaultScreen() {
 
           {/* Premium upsell */}
           {!isPremium && (
-            <TouchableOpacity style={styles.upsellCard} onPress={() => router.push('/paywall')}>
+            <TouchableOpacity style={styles.upsellCard} onPress={() => (trackPaywallViewed('document_vault'), router.push('/paywall'))}>
               <Text style={styles.upsellIcon}>⭐</Text>
               <Text style={styles.upsellTitle}>Unlock Secure Document Storage</Text>
               <Text style={styles.upsellBody}>

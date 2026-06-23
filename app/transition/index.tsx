@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, SPACING, FONT_SIZES, RADIUS } from '../../lib/theme';
 import { useIsPremium } from '../../hooks/useIsPremium';
 import { useActiveChild } from '../../services/childManager';
+import {trackPaywallViewed, trackTransitionPathwayOpened, logScreenView, useScreenTime} from '../../../lib/analytics';
 
 const STAGES = [
   {
@@ -251,6 +252,8 @@ const accordionStyles = StyleSheet.create({
 });
 
 export default function TransitionHub() {
+  useScreenTime('transition_hub');
+  useEffect(() => { logScreenView('transition_hub'); trackTransitionPathwayOpened(); }, []);
   const router = useRouter();
   const { t } = useLanguage();
   const insets = useSafeAreaInsets();
@@ -363,7 +366,7 @@ export default function TransitionHub() {
               openGroupId={openGroupId}
               setOpenGroupId={setOpenGroupId}
               onToolPress={(route) => router.push(route as any)}
-              onPaywall={() => router.push('/paywall' as any)}
+              onPaywall={() => (trackPaywallViewed('transition'), router.push('/paywall' as any))}
             />
           ))}
         </View>

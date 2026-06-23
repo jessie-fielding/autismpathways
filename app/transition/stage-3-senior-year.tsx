@@ -7,6 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, SPACING, FONT_SIZES, RADIUS } from '../../lib/theme';
 import { useIsPremium } from '../../hooks/useIsPremium';
 import { scheduleStage3FollowUp, cancelStage3FollowUp } from '../../lib/transitionNotification';
+import { logScreenView, useScreenTime } from '../../lib/analytics';
 
 const CHECKLIST_KEY = 'ap_transition_stage3_checklist';
 
@@ -27,6 +28,8 @@ const TOPICS = [
 ];
 
 export default function Stage3SeniorYear() {
+  useScreenTime('transition_stage_3');
+  useEffect(() => { logScreenView('transition_stage_3'); }, []);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { isPremium } = useIsPremium();

@@ -5,6 +5,7 @@ import {
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZES, SHADOWS } from '../../lib/theme';
+import { trackCCBToolOpened, logScreenView, useScreenTime } from '../../lib/analytics';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Section = 'what' | 'eligibility' | 'apply' | 'funds' | 'tips';
@@ -19,6 +20,8 @@ const SECTIONS: { id: Section; icon: string; title: string }[] = [
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 export default function CCBToolScreen() {
+  useScreenTime('ccb_tool');
+  useEffect(() => { logScreenView('ccb_tool'); trackCCBToolOpened(); }, []);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [active, setActive] = useState<Section>('what');

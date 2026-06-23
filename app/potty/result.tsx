@@ -6,6 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '../../lib/theme';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { trackPaywallViewed } from '../../../lib/analytics';
 type PathwayKey = 'encopresis' | 'bodySignals' | 'sensory' | 'regression';
 
 const PATHWAY_META: Record<PathwayKey, {
@@ -286,7 +287,7 @@ export default function PottyResultScreen() {
           <TouchableOpacity
             key={item.title}
             style={[styles.premiumCard, isPremium ? styles.premiumCardUnlocked : styles.premiumCardLocked]}
-            onPress={() => isPremium ? router.push(item.route as any) : router.push('/paywall')}
+            onPress={() => isPremium ? router.push(item.route as any) : (trackPaywallViewed('potty_result'), router.push('/paywall'))}
             activeOpacity={0.8}
           >
             <View style={styles.tipCardTop}>

@@ -11,6 +11,7 @@ import { PROVIDERS, MEDICAL_PROVIDERS, Provider } from '../../lib/providerData';
 import { fetchLiveProviders, LiveProvider } from '../../services/api';
 import { useIsPremium } from '../../hooks/useIsPremium';
 import NearMeButton from '../../components/NearMeButton';
+import {trackPaywallViewed, trackProviderDirectoryOpened, logScreenView, useScreenTime} from '../../../lib/analytics';
 
 const US_STATES = [
   { code: 'ALL', name: 'All States' },
@@ -196,6 +197,8 @@ function ProviderCard({
 }
 
 export default function ProviderDirectoryScreen() {
+  useScreenTime('provider_directory');
+  useEffect(() => { logScreenView('provider_directory'); trackProviderDirectoryOpened(); }, []);
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { isPremium } = useIsPremium();
@@ -303,7 +306,7 @@ export default function ProviderDirectoryScreen() {
         <Text style={styles.headerTitle}>Provider Directory</Text>
         <TouchableOpacity
           style={styles.submitBtn}
-          onPress={() => isPremium ? router.push('/provider-directory/submit') : router.push('/paywall')}
+          onPress={() => isPremium ? router.push('/provider-directory/submit') : (trackPaywallViewed('provider_directory'), router.push('/paywall'))}
         >
           <Text style={styles.submitBtnText}>+ Submit</Text>
         </TouchableOpacity>
@@ -456,7 +459,7 @@ export default function ProviderDirectoryScreen() {
                 <TouchableOpacity
                   key={provider.id}
                   style={styles.featuredCard}
-                  onPress={() => isPremium ? router.push({ pathname: '/provider-directory/detail', params: { id: provider.id } }) : router.push('/paywall')}
+                  onPress={() => isPremium ? router.push({ pathname: '/provider-directory/detail', params: { id: provider.id } }) : (trackPaywallViewed('provider_directory'), router.push('/paywall'))}
                   activeOpacity={0.8}
                 >
                   <View style={[styles.featuredCardTop, { backgroundColor: (SPECIALTY_COLORS[provider.specialty] || COLORS.purple) + '18' }]}>
@@ -564,7 +567,7 @@ export default function ProviderDirectoryScreen() {
               <Text style={styles.premiumGateText}>
                 Unlock the full directory, Caregiver Verified badges, community reviews, and provider submission with Premium.
               </Text>
-              <TouchableOpacity style={styles.premiumGateBtn} onPress={() => router.push('/paywall')}>
+              <TouchableOpacity style={styles.premiumGateBtn} onPress={() => (trackPaywallViewed('provider_directory'), router.push('/paywall'))}>
                 <Text style={styles.premiumGateBtnText}>Unlock Premium →</Text>
               </TouchableOpacity>
             </View>

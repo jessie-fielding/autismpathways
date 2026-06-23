@@ -16,7 +16,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, FONT_SIZES, RADIUS, SHADOWS, SPACING } from '../../../lib/theme';
-import { logEvent } from '../../../lib/analytics';
+import { logEvent, trackPaywallViewed} from '../../../lib/analytics';
 import { useIsPremium } from '../../../hooks/useIsPremium';
 
 const TRACKER_KEY = 'ap_smear_tracker_entries';
@@ -236,7 +236,7 @@ export default function SmearTracker() {
             style={styles.premiumCard}
             onPress={() => {
               logEvent('paywall_nudge_tapped', { location: 'smear_tracker_trends' });
-              router.push('/paywall');
+              (trackPaywallViewed('smear_tracker'), router.push('/paywall'));
             }}
             activeOpacity={0.85}
           >

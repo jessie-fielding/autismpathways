@@ -17,6 +17,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Audio } from 'expo-av';
 import { COLORS, SPACING, RADIUS, FONT_SIZES, SHADOWS } from '../../lib/theme';
 import { useIsPremium } from '../../hooks/useIsPremium';
+import {trackPaywallViewed, trackIEPMeetingRecorderOpened, logScreenView, useScreenTime} from '../../../lib/analytics';
 
 const API_BASE = 'https://inu3nb5lrfvftfyiwprftqshpy0zcegu.lambda-url.us-east-2.on.aws';
 const RECORDINGS_KEY = 'ap_iep_recordings';
@@ -40,6 +41,8 @@ interface Recording {
 type Screen = 'gate' | 'record' | 'processing' | 'summary' | 'history';
 
 export default function MeetingRecorderScreen() {
+  useScreenTime('iep_meeting_recorder');
+  useEffect(() => { logScreenView('iep_meeting_recorder'); trackIEPMeetingRecorderOpened(); }, []);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { isPremium } = useIsPremium();
@@ -258,7 +261,7 @@ export default function MeetingRecorderScreen() {
               </View>
             ))}
           </View>
-          <TouchableOpacity style={styles.gateBtn} onPress={() => router.push('/paywall')} activeOpacity={0.85}>
+          <TouchableOpacity style={styles.gateBtn} onPress={() => (trackPaywallViewed('iep_meeting_recorder'), router.push('/paywall'))} activeOpacity={0.85}>
             <Text style={styles.gateBtnText}>⭐ Unlock with Premium</Text>
           </TouchableOpacity>
         </View>

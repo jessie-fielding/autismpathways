@@ -13,6 +13,7 @@ import { COLORS, FONT_SIZES, RADIUS, SHADOWS, SPACING } from '../../lib/theme';
 import { useIsPremium } from '../../hooks/useIsPremium';
 import { useActiveChild } from '../../services/childManager';
 import { OBS_KEY, type Observation } from './index';
+import { trackPaywallViewed } from '../../../lib/analytics';
 
 const MOOD_COLORS: Record<string, string> = {
   'Calm': COLORS.mintAccent,
@@ -173,7 +174,7 @@ export default function ObservationsTrends() {
           <Text style={styles.gateBody}>
             Upgrade to Premium to see mood patterns, common triggers, and what support strategies work best for your child over time.
           </Text>
-          <TouchableOpacity style={styles.gateBtn} onPress={() => router.push('/paywall')}>
+          <TouchableOpacity style={styles.gateBtn} onPress={() => (trackPaywallViewed('observations_trends'), router.push('/paywall'))}>
             <Text style={styles.gateBtnText}>Unlock with Premium</Text>
           </TouchableOpacity>
         </View>

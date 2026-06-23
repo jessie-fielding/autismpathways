@@ -12,7 +12,7 @@ import { useChildChanged } from '../../hooks/useChildChanged';
 import { COLORS, SPACING, RADIUS, FONT_SIZES, SHADOWS } from '../../lib/theme';
 import CityCountyAutocomplete from '../../components/CityCountyAutocomplete';
 import { useIsPremium } from '../../hooks/useIsPremium';
-import {
+import {import { trackPaywallViewed, trackServicesTrackerOpened, logScreenView, useScreenTime} from '../../../lib/analytics';
   scheduleServiceReminders,
   cancelServiceReminders,
   nextAppointmentDate,
@@ -163,6 +163,8 @@ function todayDotDays(services: Service[]): Set<number> {
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
 export default function ServicesTrackerScreen() {
+  useScreenTime('services_tracker');
+  useEffect(() => { logScreenView('services_tracker'); trackServicesTrackerOpened(); }, []);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { isPremium } = useIsPremium();
@@ -195,7 +197,7 @@ export default function ServicesTrackerScreen() {
   // ── Open/close modal ──
   const openAdd = () => {
     if (!isPremium && services.length >= FREE_SERVICES) {
-      router.push('/paywall' as any);
+      (trackPaywallViewed('services_tracker'), router.push('/paywall' as any));
       return;
     }
     setEditingId(null);
@@ -413,7 +415,7 @@ export default function ServicesTrackerScreen() {
                 ? `You're tracking ${services.length} services — most families have 6+. Upgrade to track them all. 💜`
                 : `1 service slot left on the free plan — most families have 6+ services.`}
             </Text>
-            <TouchableOpacity onPress={() => router.push('/paywall' as any)} style={s.upgradeBtn}>
+            <TouchableOpacity onPress={() => (trackPaywallViewed('services_tracker'), router.push('/paywall' as any))} style={s.upgradeBtn}>
               <Text style={s.upgradeBtnText}>Upgrade for unlimited →</Text>
             </TouchableOpacity>
           </View>

@@ -9,10 +9,13 @@ import { useChildChanged } from '../../hooks/useChildChanged';
 import { PathwayDisclaimer } from '../../components/PathwayDisclaimer';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { trackDiagnosisPathwayOpened, logScreenView, useScreenTime } from '../../lib/analytics';
 const TOTAL_STEPS = 6;
 const CURRENT_STEP = 1;
 
 export default function DiagnosisIntroScreen() {
+  useScreenTime('diagnosis_hub');
+  useEffect(() => { logScreenView('diagnosis_hub'); trackDiagnosisPathwayOpened(); }, []);
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { key: childKey, child } = useActiveChild();

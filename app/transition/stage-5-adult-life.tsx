@@ -7,6 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, SPACING, FONT_SIZES, RADIUS } from '../../lib/theme';
 import { useIsPremium } from '../../hooks/useIsPremium';
 import { scheduleStage5FollowUp, cancelStage5FollowUp } from '../../lib/transitionNotification';
+import { logScreenView, useScreenTime } from '../../lib/analytics';
 
 const CHECKLIST_KEY = 'ap_transition_stage5_checklist';
 
@@ -35,6 +36,8 @@ const TOPICS = [
 ];
 
 export default function Stage5AdultLife() {
+  useScreenTime('transition_stage_5');
+  useEffect(() => { logScreenView('transition_stage_5'); }, []);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { isPremium } = useIsPremium();

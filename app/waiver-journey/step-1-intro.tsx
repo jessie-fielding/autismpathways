@@ -3,6 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-nati
 import { useRouter } from 'expo-router';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { trackWaiverJourneyOpened, logScreenView, useScreenTime } from '../../lib/analytics';
 const COLORS = {
   bg: '#F7F4FB',
   white: '#FFFFFF',
@@ -90,6 +91,8 @@ const styles = StyleSheet.create({
 });
 
 export default function Step1Intro() {
+  useScreenTime('waiver_journey_step1');
+  useEffect(() => { logScreenView('waiver_journey_step1'); trackWaiverJourneyOpened(); }, []);
   const insets = useSafeAreaInsets();
   const router = useRouter();
 

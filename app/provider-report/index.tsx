@@ -10,6 +10,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
+import { trackPaywallViewed } from '../../../lib/analytics';
 
 // ─── Storage Keys (must match provider-prep) ──────────────────────────────────
 const SAVED_KEY = 'ap_provider_prep_saved';
@@ -499,7 +500,7 @@ export default function ProviderReportScreen() {
   const checkGate = (): boolean => {
     if (isPremium) return true;
     if (reportCount < FREE_REPORTS) return true;
-    router.push('/paywall' as any);
+    (trackPaywallViewed('provider_report'), router.push('/paywall' as any));
     return false;
   };
   const handlePrint = async () => {
@@ -661,7 +662,7 @@ export default function ProviderReportScreen() {
                 }
               </Text>
               {reportCount >= FREE_REPORTS - 1 && (
-                <TouchableOpacity onPress={() => router.push('/paywall' as any)} style={styles.usageUpgradeBtn}>
+                <TouchableOpacity onPress={() => (trackPaywallViewed('provider_report'), router.push('/paywall' as any))} style={styles.usageUpgradeBtn}>
                   <Text style={styles.usageUpgradeBtnText}>Upgrade for unlimited →</Text>
                 </TouchableOpacity>
               )}

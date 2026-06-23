@@ -35,6 +35,15 @@ import {
 } from 'react-native-iap';
 import { COLORS, SPACING, RADIUS, FONT_SIZES, SHADOWS } from '../../lib/theme';
 import { BETA_MODE, IAP_PURCHASED_KEY } from '../../hooks/useIsPremium';
+import {
+  trackPaywallViewed,
+  trackPaywallDismissed,
+  trackPaywallSubscribeTapped,
+  trackPurchaseCompleted,
+  trackPurchaseFailed,
+  trackHardshipApplicationStarted,
+  useScreenTime,
+} from '../../lib/analytics';
 
 // ── Launch pricing deadline ──────────────────────────────────────────────────
 const PRICE_DEADLINE = new Date('2026-07-01T23:59:59-05:00'); // July 1 midnight CT
@@ -180,6 +189,7 @@ export default function PaywallScreen() {
 
   const onPurchaseSuccess = useCallback(async () => {
     await AsyncStorage.setItem(IAP_PURCHASED_KEY, 'true');
+    trackPurchaseCompleted(selectedPlan);
     setPurchasing(false);
     Alert.alert(
       '🎉 Welcome to Premium!',
@@ -246,12 +256,17 @@ export default function PaywallScreen() {
     };
   }, [onPurchaseSuccess]);
 
+  // Track paywall view on mount and screen time
+  useScreenTime('paywall');
+  useEffect(() => { trackPaywallViewed('paywall_screen'); }, []);
+
   const handlePurchase = async () => {
     if (!iapReady) {
       Alert.alert('Not Ready', 'Store connection is still loading. Please try again in a moment.');
       return;
     }
     const productId = selectedPlan === 'annual' ? PRODUCT_ID_ANNUAL : PRODUCT_ID_MONTHLY;
+    trackPaywallSubscribeTapped(selectedPlan);
     setPurchasing(true);
     try {
       await requestPurchase({
@@ -264,7 +279,10 @@ export default function PaywallScreen() {
     } catch (e: any) {
       setPurchasing(false);
       if (e?.code !== ErrorCode.UserCancelled && e?.code !== 'E_USER_CANCELLED') {
+        trackPurchaseFailed(selectedPlan, e?.message || 'unknown');
         Alert.alert('Error', e?.message || 'Could not start purchase. Please try again.');
+      } else {
+        trackPaywallDismissed('paywall_screen');
       }
     }
   };
@@ -295,7 +313,7 @@ export default function PaywallScreen() {
     return (
       <View style={styles.container}>
         <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
+          <TouchableOpacity onPress={() => { trackPaywallDismissed('back_button'); router.back(); }} style={styles.backBtn} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
             <Text style={styles.backText}>← Back</Text>
           </TouchableOpacity>
         </View>
@@ -314,7 +332,7 @@ export default function PaywallScreen() {
   return (
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
+        <TouchableOpacity onPress={() => { trackPaywallDismissed('back_button'); router.back(); }} style={styles.backBtn} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
           <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>
       </View>
@@ -362,7 +380,7 @@ export default function PaywallScreen() {
           {/* Hardship callout — light blue, above Get Premium in ctaSection */}
           <TouchableOpacity
             style={styles.hardshipCallout}
-            onPress={() => router.push('/paywall/hardship-application' as any)}
+            onPress={() => { trackHardshipApplicationStarted(); router.push('/paywall/hardship-application' as any); }}
             activeOpacity={0.8}
           >
             <Text style={styles.hardshipCalloutText}>

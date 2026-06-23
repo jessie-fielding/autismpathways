@@ -9,6 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '../../lib/theme';
 import { EVALUATORS, Evaluator, EvaluatorType } from '../../data/evaluators';
 import NearMeButton from '../../components/NearMeButton';
+import {trackPaywallViewed, trackIEPEvaluatorSearched, logScreenView, useScreenTime} from '../../../lib/analytics';
 
 const TYPE_CONFIG: Record<EvaluatorType, { label: string; color: string; bg: string; icon: string }> = {
   inperson: { label: 'In-Person', color: '#2E6B3E', bg: '#E3F7EC', icon: '🏥' },
@@ -28,6 +29,8 @@ const EVALUATOR_LOOKUP_KEY = 'ap_iep_evaluator_lookup_count';
 const FREE_LOOKUPS = 1;
 
 export default function EvaluatorLookupScreen() {
+  useScreenTime('iep_evaluator');
+  useEffect(() => { logScreenView('iep_evaluator'); trackIEPEvaluatorSearched(); }, []);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { isPremium } = useIsPremium();
@@ -197,7 +200,7 @@ export default function EvaluatorLookupScreen() {
                       style={s.contactBtn}
                       onPress={async () => {
                         if (!isPremium && lookupCount >= FREE_LOOKUPS) {
-                          router.push('/paywall' as any);
+                          (trackPaywallViewed('iep_evaluator'), router.push('/paywall' as any));
                           return;
                         }
                         const next = lookupCount + 1;
@@ -214,7 +217,7 @@ export default function EvaluatorLookupScreen() {
                       style={[s.contactBtn, s.contactBtnSecondary]}
                       onPress={async () => {
                         if (!isPremium && lookupCount >= FREE_LOOKUPS) {
-                          router.push('/paywall' as any);
+                          (trackPaywallViewed('iep_evaluator'), router.push('/paywall' as any));
                           return;
                         }
                         const next = lookupCount + 1;

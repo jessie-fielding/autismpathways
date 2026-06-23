@@ -8,6 +8,7 @@ import { STRATEGIES } from '../../lib/parentingStrategies';
 import { useIsPremium } from '../../hooks/useIsPremium';
 import { useActiveChild } from '../../services/childManager';
 import type { Situation, Location, Intensity } from '../../lib/parentingStrategies';
+import { trackPaywallViewed } from '../../../lib/analytics';
 
 const SITUATION_LABELS: Record<Situation, string> = {
   meltdown: 'Meltdown',
@@ -176,7 +177,7 @@ export default function ParentingPathwaysTrends() {
           </Text>
           <TouchableOpacity
             style={styles.gateBtn}
-            onPress={() => router.push('/paywall')}
+            onPress={() => (trackPaywallViewed('parenting_pathways_trends'), router.push('/paywall'))}
           >
             <Text style={styles.gateBtnText}>Unlock with Premium</Text>
           </TouchableOpacity>

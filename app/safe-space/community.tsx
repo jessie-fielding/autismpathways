@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, SPACING, RADIUS, FONT_SIZES, SHADOWS } from '../../lib/theme';
 import { lambdaFetch, getValidToken as getToken } from '../../services/useAuth';
+import { logScreenView, useScreenTime } from '../../lib/analytics';
 
 const API_BASE = 'https://inu3nb5lrfvftfyiwprftqshpy0zcegu.lambda-url.us-east-2.on.aws';
 
@@ -44,6 +45,8 @@ function fmtDate(iso: string): string {
 }
 
 export default function CommunityFeedScreen() {
+  useScreenTime('safe_space_community');
+  useEffect(() => { logScreenView('safe_space_community'); }, []);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [posts, setPosts] = useState<ForumPost[]>([]);

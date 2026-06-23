@@ -19,6 +19,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, SPACING, RADIUS, FONT_SIZES, SHADOWS } from '../../lib/theme';
 import { useIsPremium } from '../../hooks/useIsPremium';
+import {trackPaywallViewed, trackProviderTranslatorOpened, logScreenView, useScreenTime} from '../../../lib/analytics';
 
 const API_BASE = 'https://inu3nb5lrfvftfyiwprftqshpy0zcegu.lambda-url.us-east-2.on.aws';
 const USAGE_KEY = 'ap_provider_translator_count';
@@ -78,6 +79,8 @@ const EXAMPLE_PROMPTS: Record<Mode, string[]> = {
 };
 
 export default function ProviderTranslatorScreen() {
+  useScreenTime('provider_translator');
+  useEffect(() => { logScreenView('provider_translator'); trackProviderTranslatorOpened(); }, []);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { isPremium } = useIsPremium();
@@ -204,7 +207,7 @@ export default function ProviderTranslatorScreen() {
         "You've used all 5 free translations. Upgrade to decode every report, note, and IEP — unlimited, forever.",
         [
           { text: 'Not now', style: 'cancel' },
-          { text: 'See Premium', onPress: () => router.push('/paywall' as any) },
+          { text: 'See Premium', onPress: () => (trackPaywallViewed('provider_translator'), router.push('/paywall' as any)) },
         ]
       );
       return;
@@ -330,7 +333,7 @@ export default function ProviderTranslatorScreen() {
                 {usageCount} of {FREE_USES} free translations used
               </Text>
               {usageCount >= FREE_USES - 1 && (
-                <TouchableOpacity onPress={() => router.push('/paywall' as any)}>
+                <TouchableOpacity onPress={() => (trackPaywallViewed('provider_translator'), router.push('/paywall' as any))}>
                   <Text style={styles.usageBarUpgrade}>Keep going with Premium →</Text>
                 </TouchableOpacity>
               )}
