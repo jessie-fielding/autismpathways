@@ -37,7 +37,7 @@ import { COLORS, SPACING, RADIUS, FONT_SIZES, SHADOWS } from '../../lib/theme';
 import { BETA_MODE, IAP_PURCHASED_KEY } from '../../hooks/useIsPremium';
 
 // ── Launch pricing deadline ──────────────────────────────────────────────────
-const PRICE_DEADLINE = new Date('2026-06-20T23:59:59-05:00'); // June 20 midnight CT
+const PRICE_DEADLINE = new Date('2026-07-01T23:59:59-05:00'); // July 1 midnight CT
 
 function useCountdown(target: Date) {
   const calc = () => {
@@ -66,7 +66,7 @@ function CountdownBanner() {
       <Text style={countdownStyles.lockIcon}>🔒</Text>
       <View style={countdownStyles.textBlock}>
         <Text style={countdownStyles.headline}>
-          🎉 Launch pricing ends June 20th
+          🎉 Launch pricing ends July 1st
         </Text>
         <Text style={countdownStyles.sub}>
           Lock in today's rate forever · Try free for 7 days
@@ -168,7 +168,7 @@ export default function PaywallScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  const [selectedPlan, setSelectedPlan] = useState<'annual' | 'monthly'>('annual');
+  const [selectedPlan, setSelectedPlan] = useState<'annual' | 'monthly'>('monthly');
   const [annualPrice, setAnnualPrice]   = useState<string | null>(null);
   const [monthlyPrice, setMonthlyPrice] = useState<string | null>(null);
   const [purchasing, setPurchasing]     = useState(false);
@@ -219,13 +219,13 @@ export default function PaywallScreen() {
         (subs ?? []).forEach((sub: any) => {
           const price = sub.localizedPrice ?? sub.displayPrice ?? null;
           if (sub.productId === PRODUCT_ID_ANNUAL)  setAnnualPrice(price  ?? '$79.99');
-          if (sub.productId === PRODUCT_ID_MONTHLY) setMonthlyPrice(price ?? '$9.99');
+          if (sub.productId === PRODUCT_ID_MONTHLY) setMonthlyPrice(price ?? '$14.99');
         });
         setIapReady(true);
       } catch (e) {
         console.log('IAP setup error', e);
         setAnnualPrice('$79.99');
-        setMonthlyPrice('$9.99');
+        setMonthlyPrice('$14.99');
         setIapReady(true);
       }
     };
@@ -234,7 +234,7 @@ export default function PaywallScreen() {
 
     const fallbackTimer = setTimeout(() => {
       setAnnualPrice(prev => prev ?? '$79.99');
-      setMonthlyPrice(prev => prev ?? '$9.99');
+      setMonthlyPrice(prev => prev ?? '$14.99');
       setIapReady(true);
     }, 4000);
 
@@ -322,29 +322,17 @@ export default function PaywallScreen() {
         <CountdownBanner />
         <View style={styles.hero}>
           <Text style={styles.heroIcon}>🌟</Text>
-          <Text style={styles.heroTitle}>Autism Pathways Premium</Text>
-          <Text style={styles.heroSub}>Everything you need to navigate the system — diagnosis, Medicaid, IEP, and beyond.</Text>
+          <Text style={styles.heroTitle}>Try Free for 7 Days</Text>
+          <Text style={styles.heroSub}>Full access to everything — diagnosis, Medicaid, IEP, providers, and beyond. Cancel anytime.</Text>
 
-          <View style={styles.planToggle}>
-            <TouchableOpacity style={[styles.planOption, selectedPlan === 'monthly' && styles.planOptionActive]} onPress={() => setSelectedPlan('monthly')} activeOpacity={0.8}>
-              <Text style={[styles.planLabel, selectedPlan === 'monthly' && styles.planLabelActive]}>Monthly</Text>
-              <Text style={[styles.planPrice, selectedPlan === 'monthly' && styles.planPriceActive]}>{monthlyPrice ?? '$9.99'}</Text>
-              <Text style={[styles.planSub, selectedPlan === 'monthly' && styles.planSubActive]}>per month</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={[styles.planOption, selectedPlan === 'annual' && styles.planOptionActive]} onPress={() => setSelectedPlan('annual')} activeOpacity={0.8}>
-              <View style={styles.planBadgeRow}>
-                <Text style={[styles.planLabel, selectedPlan === 'annual' && styles.planLabelActive]}>Annual</Text>
-                <View style={styles.saveBadge}><Text style={styles.saveBadgeText}>BEST VALUE</Text></View>
-              </View>
-              <Text style={[styles.planPrice, selectedPlan === 'annual' && styles.planPriceActive]}>{annualPrice ?? '$79.99'}</Text>
-              <Text style={[styles.planSub, selectedPlan === 'annual' && styles.planSubActive]}>~$9.99/mo</Text>
-            </TouchableOpacity>
+          {/* Trial price pill */}
+          <View style={styles.trialPill}>
+            <Text style={styles.trialPillText}>7 days free · then {monthlyPrice ?? '$14.99'}/month</Text>
           </View>
 
           <TouchableOpacity
             style={[styles.purchaseBtn, (purchasing || !iapReady) && styles.purchaseBtnDisabled]}
-            onPress={handlePurchase}
+            onPress={() => { setSelectedPlan('monthly'); handlePurchase(); }}
             activeOpacity={0.85}
             disabled={purchasing || !iapReady}
           >
@@ -353,10 +341,23 @@ export default function PaywallScreen() {
             ) : !iapReady ? (
               <Text style={styles.purchaseBtnText}>Connecting…</Text>
             ) : (
-              <Text style={styles.purchaseBtnText}>{priceLoaded ? `Get Premium — ${currentPrice}` : 'Get Premium'}</Text>
+              <Text style={styles.purchaseBtnText}>Start Free Trial</Text>
             )}
           </TouchableOpacity>
-          <Text style={styles.priceNote}>{selectedPlan === 'annual' ? `Billed annually at ${annualPrice ?? '$79.99'} · ~$9.99/mo · cancel anytime` : `Billed monthly at ${monthlyPrice ?? '$9.99'} · cancel anytime`}</Text>
+          <Text style={styles.priceNote}>No charge today · cancel before day 7 and pay nothing</Text>
+
+          {/* Annual option — fine print */}
+          <TouchableOpacity
+            style={styles.annualFineprint}
+            onPress={() => setSelectedPlan(p => p === 'annual' ? 'monthly' : 'annual')}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.annualFineprintText}>
+              {selectedPlan === 'annual'
+                ? `✓ Annual plan selected — ${annualPrice ?? '$79.99'}/yr (~$6.67/mo) · tap to switch to monthly`
+                : `Save with annual — ${annualPrice ?? '$79.99'}/yr (~$6.67/mo) · tap to select`}
+            </Text>
+          </TouchableOpacity>
 
           {/* Hardship callout — light blue, above Get Premium in ctaSection */}
           <TouchableOpacity
@@ -413,7 +414,7 @@ export default function PaywallScreen() {
             ) : !iapReady ? (
               <Text style={styles.purchaseBtnText}>Connecting…</Text>
             ) : (
-              <Text style={styles.purchaseBtnText}>{priceLoaded ? `Get Premium — ${currentPrice}` : 'Get Premium'}</Text>
+              <Text style={styles.purchaseBtnText}>Start Free Trial</Text>
             )}
           </TouchableOpacity>
 
@@ -450,8 +451,8 @@ export default function PaywallScreen() {
 
           <Text style={styles.legalText}>
             {selectedPlan === 'annual'
-              ? `Subscription auto-renews annually at ${annualPrice ?? '$79.99'} unless cancelled at least 24 hours before the renewal date.`
-              : `Subscription auto-renews monthly at ${monthlyPrice ?? '$9.99'} unless cancelled at least 24 hours before the renewal date.`}
+              ? `After your 7-day free trial, subscription auto-renews annually at ${annualPrice ?? '$79.99'} unless cancelled at least 24 hours before the renewal date.`
+              : `After your 7-day free trial, subscription auto-renews monthly at ${monthlyPrice ?? '$14.99'} unless cancelled at least 24 hours before the renewal date.`}
           </Text>
           <View style={styles.legalLinks}>
             <TouchableOpacity onPress={() => Linking.openURL('https://info.autismpathways.app/privacy-policy/')}><Text style={styles.legalLink}>Privacy Policy</Text></TouchableOpacity>
@@ -534,6 +535,10 @@ const styles = StyleSheet.create({
   legalLinks: { flexDirection: 'row', gap: SPACING.sm, alignItems: 'center' },
   legalLink: { fontSize: 11, color: COLORS.purple, fontWeight: '600' },
   legalSep: { fontSize: 11, color: COLORS.textLight },
+  trialPill: { backgroundColor: 'rgba(255,255,255,0.18)', borderRadius: 20, paddingHorizontal: SPACING.lg, paddingVertical: SPACING.sm, marginBottom: SPACING.lg, marginTop: SPACING.xs },
+  trialPillText: { fontSize: FONT_SIZES.md, fontWeight: '700', color: COLORS.white, textAlign: 'center' },
+  annualFineprint: { marginTop: SPACING.md, paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm },
+  annualFineprintText: { fontSize: 11, color: 'rgba(255,255,255,0.5)', textAlign: 'center', lineHeight: 16, textDecorationLine: 'underline' },
   betaContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: SPACING.xl },
   betaIcon: { fontSize: 56, marginBottom: SPACING.lg },
   betaTitle: { fontSize: FONT_SIZES.xxl, fontWeight: '800', color: COLORS.text, textAlign: 'center', marginBottom: SPACING.md },
