@@ -16,6 +16,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useState, useEffect, useCallback } from 'react';
 import { emitChildChanged, onChildChanged } from './childEvents';
+import { scheduleBackup } from './cloudSync';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -94,6 +95,9 @@ export async function loadChildren(): Promise<ChildProfile[]> {
 /** Save children array to storage */
 export async function saveChildren(children: ChildProfile[]): Promise<void> {
   await AsyncStorage.setItem(CHILDREN_KEY, JSON.stringify(children));
+  // Trigger a debounced cloud backup whenever child data changes
+  const userId = await AsyncStorage.getItem('authUserEmail').catch(() => null);
+  if (userId) scheduleBackup(userId);
 }
 
 /** Get the active child ID */

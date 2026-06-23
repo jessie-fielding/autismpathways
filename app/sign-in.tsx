@@ -29,6 +29,7 @@ import {
 import { useBiometrics } from '../hooks/useBiometrics';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { trackSignIn } from '../lib/analytics';
+import { restoreFromCloud, hasLocalData, scheduleBackup } from '../services/cloudSync';
 
 export default function SignInScreen() {
   const router    = useRouter();
@@ -142,6 +143,15 @@ export default function SignInScreen() {
         biometrics.available && rememberMe // enable biometric if available + remember me on
       );
 
+      // Cloud restore: if this is a fresh install (no local data), pull backup from server
+      const localDataExists = await hasLocalData();
+      if (!localDataExists) {
+        await restoreFromCloud(emailVal.toLowerCase().trim());
+      } else {
+        // Local data exists — schedule a fresh backup in the background
+        scheduleBackup(emailVal.toLowerCase().trim());
+      }
+
       const profile = await storage.getProfile();
       trackSignIn('email');
       if (profile) {
@@ -165,6 +175,14 @@ export default function SignInScreen() {
     setError('');
     const result = await signInWithGoogle();
     if (result.success) {
+      // Cloud restore on fresh install
+      const localDataExists = await hasLocalData();
+      const userId = await AsyncStorage.getItem('authUserEmail');
+      if (!localDataExists && userId) {
+        await restoreFromCloud(userId);
+      } else if (userId) {
+        scheduleBackup(userId);
+      }
       const profile = await storage.getProfile();
       trackSignIn('google');
       router.replace(profile ? '/(tabs)/dashboard' : '/profile-setup');
@@ -182,6 +200,14 @@ export default function SignInScreen() {
     setError('');
     const result = await signInWithApple();
     if (result.success) {
+      // Cloud restore on fresh install
+      const localDataExists = await hasLocalData();
+      const userId = await AsyncStorage.getItem('authUserEmail');
+      if (!localDataExists && userId) {
+        await restoreFromCloud(userId);
+      } else if (userId) {
+        scheduleBackup(userId);
+      }
       const profile = await storage.getProfile();
       trackSignIn('apple');
       router.replace(profile ? '/(tabs)/dashboard' : '/profile-setup');

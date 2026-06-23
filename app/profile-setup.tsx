@@ -22,6 +22,7 @@ import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '../lib/theme';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { storage } from '../services/storage';
 import { addChild, setActiveChildId, loadChildren } from '../services/childManager';
+import { scheduleBackup } from '../services/cloudSync';
 
 const AVATAR_EMOJIS = [
   '🦋', '🌈', '🦄', '🐻',
@@ -238,6 +239,9 @@ export default function ProfileSetupScreen() {
           // Flag for On the App! badge — admin will review and activate listing
           await AsyncStorage.setItem('ap_provider_connect_requested', 'true');
         }
+        // Schedule cloud backup so provider data is saved
+        const userId = await AsyncStorage.getItem('authUserEmail');
+        if (userId) scheduleBackup(userId);
         router.replace('/onboarding');
       } else {
         // Save parent profile using first child's info for legacy compat
@@ -276,6 +280,9 @@ export default function ProfileSetupScreen() {
         ]);
 
         await seedDefaults();
+        // Schedule cloud backup so parent/child data is saved
+        const userId = await AsyncStorage.getItem('authUserEmail');
+        if (userId) scheduleBackup(userId);
         router.replace('/onboarding');
       }
     } catch (err) {

@@ -9,6 +9,7 @@ import { useAuth } from '../services/useAuth';
 import { storage } from '../services/storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '../lib/theme';
+import { restoreFromCloud, hasLocalData, scheduleBackup } from '../services/cloudSync';
 
 export default function CreateAccountScreen() {
   const router = useRouter();
@@ -147,6 +148,16 @@ export default function CreateAccountScreen() {
     const result = await verifyPhoneOtp(phone, phoneCode, firstName || undefined, lastName || undefined);
     setPhoneLoading(false);
     if (result.success) {
+      // Cloud restore: returning user on fresh install
+      if (!result.isNewUser) {
+        const localDataExists = await hasLocalData();
+        const phoneUserId = `phone_${phone.replace(/\+/g, '')}`;
+        if (!localDataExists) {
+          await restoreFromCloud(phoneUserId);
+        } else {
+          scheduleBackup(phoneUserId);
+        }
+      }
       if (result.isNewUser) {
         router.replace('/profile-setup');
       } else {
