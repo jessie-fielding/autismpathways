@@ -421,7 +421,10 @@ export default function AdminDashboard() {
             'This will reload the app in free-tier mode so you can debug the non-premium experience. Tap the banner at the top to exit, or tap the version label 7 times in Settings.',
             [
               { text: 'Cancel', style: 'cancel' },
-              { text: 'Enable', onPress: () => setImpersonatingUser(true) },
+              { text: 'Enable', onPress: async () => {
+                await setImpersonatingUser(true);
+                Alert.alert('👁 View as User Enabled', 'Free-tier mode is ON. Navigate back to the home screen — a purple banner will appear at the top. Tap it to exit.');
+              }},
             ]
           )
         }

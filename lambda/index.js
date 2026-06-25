@@ -1316,8 +1316,57 @@ exports.handler = async (event) => {
       const data = dbParse(item) || { submissions: [] };
       const idx = data.submissions.findIndex(s => s.id === subId);
       if (idx === -1) return respond(404, { error: 'Submission not found.' });
-      data.submissions[idx] = { ...data.submissions[idx], status, adminNote: adminNote || null, reviewedAt: new Date().toISOString() };
+      const updatedSub = { ...data.submissions[idx], status, adminNote: adminNote || null, reviewedAt: new Date().toISOString() };
+      data.submissions[idx] = updatedSub;
       await dbPut('admin_provider_submissions', data);
+
+      // If approved, add to the public provider directory
+      if (status === 'approved') {
+        try {
+          const provItem = await dbGet('admin_registered_providers');
+          const provData = dbParse(provItem) || { providers: [] };
+          // Remove any existing entry for this submission to avoid duplicates
+          provData.providers = provData.providers.filter(p => p.submissionId !== subId);
+          provData.providers.unshift({
+            id: `prov_${Date.now()}_${Math.random().toString(36).slice(2,8)}`,
+            submissionId: subId,
+            providerName: updatedSub.providerName,
+            providerType: updatedSub.providerType || 'Provider',
+            specialty: updatedSub.specialty,
+            state: updatedSub.state || '',
+            phone: updatedSub.phone || '',
+            website: updatedSub.website || '',
+            description: updatedSub.description || '',
+            medicaidAccepted: updatedSub.medicaidAccepted || false,
+            acceptingNew: updatedSub.acceptingPatients !== false,
+            openToConnect: false, // provider must opt in via their own account
+            tags: updatedSub.tags || [],
+            approvedAt: new Date().toISOString(),
+          });
+          await dbPut('admin_registered_providers', provData);
+          console.log('[admin/submissions] Approved and added to directory:', updatedSub.providerName);
+        } catch(provErr) {
+          console.error('[admin/submissions] Failed to add to directory:', provErr?.message);
+          // Don't fail the whole request — submission status is already updated
+        }
+      }
+
+      // If declined, remove from directory if it was previously approved
+      if (status === 'declined') {
+        try {
+          const provItem = await dbGet('admin_registered_providers');
+          const provData = dbParse(provItem) || { providers: [] };
+          const before = provData.providers.length;
+          provData.providers = provData.providers.filter(p => p.submissionId !== subId);
+          if (provData.providers.length !== before) {
+            await dbPut('admin_registered_providers', provData);
+            console.log('[admin/submissions] Removed declined provider from directory:', subId);
+          }
+        } catch(provErr) {
+          console.error('[admin/submissions] Failed to remove from directory:', provErr?.message);
+        }
+      }
+
       return respond(200, { success: true });
     } catch(e) { return respond(500, { error: 'Failed to update submission.' }); }
   }
@@ -1672,11 +1721,41 @@ exports.handler = async (event) => {
       const qs = event.queryStringParameters || {};
       const filterState = qs.state;
       const filterSpecialty = qs.specialty;
-      const item = await dbGet('admin_registered_providers');
-      const data = dbParse(item) || { providers: [] };
-      let providers = Array.isArray(data.providers) ? data.providers : [];
-      // Only show providers who are open to connect
-      providers = providers.filter(p => p.openToConnect);
+
+      // Self-registered providers who are open to connect
+      const regItem = await dbGet('admin_registered_providers');
+      const regData = dbParse(regItem) || { providers: [] };
+      const selfRegistered = (Array.isArray(regData.providers) ? regData.providers : []).filter(p => p.openToConnect);
+
+      // Admin-approved submissions (always shown in directory)
+      const subItem = await dbGet('admin_provider_submissions');
+      const subData = dbParse(subItem) || { submissions: [] };
+      const approvedSubs = (Array.isArray(subData.submissions) ? subData.submissions : [])
+        .filter(s => s.status === 'approved')
+        .map(s => ({
+          id: s.id,
+          submissionId: s.id,
+          providerName: s.providerName,
+          providerType: s.providerType || 'Provider',
+          specialty: s.specialty,
+          state: s.state || '',
+          phone: s.phone || '',
+          website: s.website || '',
+          description: s.description || '',
+          medicaidAccepted: s.medicaidAccepted || false,
+          acceptingNew: s.acceptingPatients !== false,
+          openToConnect: false,
+          tags: s.tags || [],
+          approvedAt: s.reviewedAt || s.submittedAt,
+          source: 'admin_approved',
+        }));
+
+      // Merge: approved submissions first, then self-registered open-to-connect
+      // Deduplicate by submissionId to avoid double-listing
+      const approvedIds = new Set(approvedSubs.map(s => s.submissionId));
+      const filteredSelf = selfRegistered.filter(p => !approvedIds.has(p.submissionId));
+      let providers = [...approvedSubs, ...filteredSelf];
+
       if (filterState) providers = providers.filter(p => p.state === filterState);
       if (filterSpecialty) providers = providers.filter(p => p.specialty === filterSpecialty);
       return respond(200, providers);
