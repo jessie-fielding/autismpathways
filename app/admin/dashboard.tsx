@@ -370,18 +370,30 @@ export default function AdminDashboard() {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => fetchAll(true)} tintColor={COLORS.purple} />}
     >
       <Text style={styles.tabTitle}>Registered Providers</Text>
-      <Text style={styles.tabSub}>{providers.length} self-registered on the app</Text>
-      {providers.length === 0 && <Text style={styles.empty}>No self-registered providers yet.</Text>}
+      <Text style={styles.tabSub}>
+        {providers.length} registered · {providers.filter(p => p.openToConnect).length} open to connect
+      </Text>
+      {providers.length === 0 && <Text style={styles.empty}>No self-registered providers yet.{"\n"}Providers appear here after they sign in and open their Provider Dashboard.</Text>}
       {providers.map((prov, idx) => (
         <View key={prov.id || idx} style={styles.card}>
-          <Text style={styles.cardName}>{prov.providerName || prov.provider_name || '—'}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+            <Text style={[styles.cardName, { flex: 1 }]}>{prov.providerName || prov.provider_name || '—'}</Text>
+            <View style={[styles.statusBadge, { backgroundColor: prov.openToConnect ? COLORS.successBg : '#eee' }]}>
+              <Text style={[styles.statusText, { color: prov.openToConnect ? COLORS.successText : '#888' }]}>
+                {prov.openToConnect ? '🟢 Open to Connect' : '⚪ Not Connecting'}
+              </Text>
+            </View>
+          </View>
           <Text style={styles.cardMeta}>{prov.specialty} · {prov.state || prov.city || '—'}</Text>
           {prov.bio ? <Text style={styles.cardDesc} numberOfLines={2}>{prov.bio}</Text> : null}
           <Text style={styles.cardDetail}>
             💳 Medicaid: {prov.medicaidAccepted ? 'Yes' : 'No'} · 📡 Telehealth: {prov.telehealth ? 'Yes' : 'No'}
           </Text>
           <Text style={styles.cardDetail}>
-            👥 Accepting: {prov.acceptingNew ? 'Yes' : 'No'} · 🕐 Last seen: {prov.lastSeenAt ? new Date(prov.lastSeenAt).toLocaleDateString() : '—'}
+            👥 Accepting: {prov.acceptingNew ? 'Yes' : 'No'} · 📧 {prov.userEmail || '—'}
+          </Text>
+          <Text style={styles.cardDetail}>
+            🕐 Last seen: {prov.lastSeenAt ? new Date(prov.lastSeenAt).toLocaleDateString() : '—'}
           </Text>
         </View>
       ))}
