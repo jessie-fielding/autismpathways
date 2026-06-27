@@ -14,10 +14,10 @@
  *      (Card 1 is already wired — just add the file!)
  *   3. The emoji placeholder disappears automatically when lottie is non-null
  */
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, Dimensions,
-  FlatList, Animated, Platform, ScrollView, Linking,
+  FlatList, Animated, Platform, ScrollView, Linking, Modal,
 } from 'react-native';
 import LottieView from 'lottie-react-native';
 import { VideoView, useVideoPlayer } from 'expo-video';
@@ -226,6 +226,8 @@ export default function OnboardingScreen() {
   const [parentName, setParentName] = useState('');
   const [childName, setChildName] = useState('your child');
   const [isProvider, setIsProvider] = useState(false);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const premiumModalShown = useRef(false);
 
   useEffect(() => {
     (async () => {
@@ -267,7 +269,13 @@ export default function OnboardingScreen() {
 
   const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
     if (viewableItems.length > 0) {
-      setCurrentIndex(viewableItems[0].index ?? 0);
+      const idx = viewableItems[0].index ?? 0;
+      setCurrentIndex(idx);
+      // Show premium modal once when user reaches the last card
+      if (idx === CARDS.length - 1 && !premiumModalShown.current) {
+        premiumModalShown.current = true;
+        setTimeout(() => setShowPremiumModal(true), 600);
+      }
     }
   }).current;
 
@@ -394,42 +402,96 @@ export default function OnboardingScreen() {
         style={styles.flatList}
       />
 
-      {/* ── Premium + Donate banner (shown on last card) ── */}
-      {isLast && (
-        <View style={styles.lastCardBanners}>
-          {/* Premium perks banner */}
-          <TouchableOpacity
-            style={styles.premiumBanner}
-            onPress={() => { completeOnboarding(); router.push('/paywall/premium-features' as any); }}
-            activeOpacity={0.9}
-          >
+      {/* ── Premium / Donate Modal ── */}
+      <Modal
+        visible={showPremiumModal}
+        transparent
+        animationType="slide"
+        statusBarTranslucent
+        onRequestClose={() => setShowPremiumModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalSheet}>
+            {/* Handle bar */}
+            <View style={styles.modalHandle} />
+
+            {/* Header */}
             <LinearGradient
               colors={['#6C5CE7', '#9B8FF5']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
-              style={styles.premiumBannerInner}
+              style={styles.modalHeader}
             >
-              <View style={{ flex: 1 }}>
-                <Text style={styles.premiumBannerTitle}>⭐ Unlock Premium Access</Text>
-                <Text style={styles.premiumBannerSub}>
-                  Provider directory · AI Transition Guide · IEP Recorder · Trends · Reminders
-                </Text>
-                <Text style={styles.premiumBannerPrice}>From $9.99 / month</Text>
-              </View>
-              <Text style={styles.premiumBannerArrow}>→</Text>
+              <Text style={styles.modalHeaderTitle}>⭐ Unlock Premium Access</Text>
+              <Text style={styles.modalHeaderSub}>Everything you need — in one place</Text>
             </LinearGradient>
-          </TouchableOpacity>
 
-          {/* Donate banner */}
-          <TouchableOpacity
-            style={styles.donateBanner}
-            onPress={() => Linking.openURL('https://info.autismpathways.app/donate')}
-            activeOpacity={0.9}
-          >
-            <Text style={styles.donateBannerText}>🫶 Help keep this free for every family — <Text style={styles.donateBannerLink}>Donate</Text></Text>
-          </TouchableOpacity>
+            {/* Perks list */}
+            <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+              {[
+                { icon: '🗺️', title: 'All Pathways', desc: 'Diagnosis, Medicaid, Waiver, IEP, Potty & Transition — fully unlocked' },
+                { icon: '🤖', title: 'AI Transition Guide', desc: 'Personalised step-by-step guidance powered by AI' },
+                { icon: '🎙️', title: 'IEP Meeting Recorder', desc: 'Record, transcribe & summarise your IEP meetings' },
+                { icon: '📈', title: 'Trends & Insights', desc: 'Spot patterns in your daily observations over time' },
+                { icon: '🔔', title: 'Smart Reminders', desc: 'Never miss a waiver renewal, IEP date, or deadline' },
+                { icon: '📁', title: 'Document Vault', desc: 'Store & organise all your child's important documents' },
+                { icon: '🔍', title: 'Full Provider Directory', desc: '891+ curated ASD-specialised providers near you' },
+              ].map((perk) => (
+                <View key={perk.title} style={styles.perkRow}>
+                  <Text style={styles.perkIcon}>{perk.icon}</Text>
+                  <View style={styles.perkText}>
+                    <Text style={styles.perkTitle}>{perk.title}</Text>
+                    <Text style={styles.perkDesc}>{perk.desc}</Text>
+                  </View>
+                </View>
+              ))}
+
+              {/* Pricing note */}
+              <View style={styles.pricingNote}>
+                <Text style={styles.pricingNoteText}>From <Text style={styles.pricingNotePrice}>$9.99 / month</Text> · Cancel anytime</Text>
+              </View>
+
+              {/* CTA */}
+              <TouchableOpacity
+                style={styles.modalCTA}
+                onPress={() => {
+                  setShowPremiumModal(false);
+                  completeOnboarding();
+                  router.push('/paywall/premium-features' as any);
+                }}
+                activeOpacity={0.88}
+              >
+                <LinearGradient
+                  colors={['#6C5CE7', '#9B8FF5']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.modalCTAInner}
+                >
+                  <Text style={styles.modalCTAText}>View Plans →</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+
+              {/* Donate link */}
+              <TouchableOpacity
+                style={styles.modalDonateBtn}
+                onPress={() => Linking.openURL('https://info.autismpathways.app/donate')}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.modalDonateText}>🫶 Help keep this free — <Text style={styles.modalDonateLink}>Donate</Text></Text>
+              </TouchableOpacity>
+
+              {/* Dismiss */}
+              <TouchableOpacity
+                style={styles.modalDismiss}
+                onPress={() => setShowPremiumModal(false)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.modalDismissText}>Maybe later</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
         </View>
-      )}
+      </Modal>
 
       {/* Bottom controls */}
       <View style={[styles.bottomControls, { paddingBottom: insets.bottom + SPACING.lg }]}>
@@ -594,64 +656,97 @@ const styles = StyleSheet.create({
     fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif',
   },
 
-  // ── Last-card premium + donate banners ─────────────────────────────────────
-  lastCardBanners: {
-    paddingHorizontal: SPACING.lg,
-    paddingBottom: SPACING.sm,
-    gap: SPACING.xs,
+  // ── Premium / Donate Modal ─────────────────────────────────────────────────
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'flex-end',
+  },
+  modalSheet: {
     backgroundColor: COLORS.bg,
-  },
-  premiumBanner: {
-    borderRadius: RADIUS.lg,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '88%',
     overflow: 'hidden',
-    shadowColor: '#6C5CE7',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.18,
-    shadowRadius: 8,
-    elevation: 4,
   },
-  premiumBannerInner: {
-    flexDirection: 'row',
+  modalHandle: {
+    width: 40, height: 4,
+    backgroundColor: 'rgba(0,0,0,0.15)',
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginTop: SPACING.sm,
+    marginBottom: SPACING.xs,
+  },
+  modalHeader: {
+    paddingHorizontal: SPACING.xl,
+    paddingVertical: SPACING.lg,
     alignItems: 'center',
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.md,
-    gap: SPACING.sm,
   },
-  premiumBannerTitle: {
+  modalHeaderTitle: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: '#fff',
+    marginBottom: 4,
+  },
+  modalHeaderSub: {
     fontSize: FONT_SIZES.sm,
-    fontWeight: '800',
-    color: '#fff',
-    marginBottom: 2,
-  },
-  premiumBannerSub: {
-    fontSize: 11,
     color: 'rgba(255,255,255,0.85)',
-    lineHeight: 16,
-    marginBottom: 3,
   },
-  premiumBannerPrice: {
-    fontSize: 11,
-    color: 'rgba(255,255,255,0.7)',
-    fontWeight: '600',
+  modalBody: {
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.md,
   },
-  premiumBannerArrow: {
-    fontSize: 22,
-    color: '#fff',
-    fontWeight: '700',
+  perkRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(212,208,239,0.35)',
   },
-  donateBanner: {
+  perkIcon: { fontSize: 22, width: 28, textAlign: 'center', marginTop: 1 },
+  perkText: { flex: 1 },
+  perkTitle: { fontSize: FONT_SIZES.sm, fontWeight: '700', color: COLORS.text, marginBottom: 2 },
+  perkDesc: { fontSize: 12, color: COLORS.textMid, lineHeight: 17 },
+  pricingNote: {
+    alignItems: 'center',
+    paddingVertical: SPACING.md,
+  },
+  pricingNoteText: { fontSize: FONT_SIZES.sm, color: COLORS.textMid },
+  pricingNotePrice: { fontWeight: '800', color: COLORS.purple },
+  modalCTA: {
+    borderRadius: RADIUS.sm,
+    overflow: 'hidden',
+    marginBottom: SPACING.sm,
+  },
+  modalCTAInner: {
+    paddingVertical: SPACING.lg,
+    alignItems: 'center',
+  },
+  modalCTAText: { color: '#fff', fontSize: FONT_SIZES.md, fontWeight: '800' },
+  modalDonateBtn: {
     alignItems: 'center',
     paddingVertical: SPACING.sm,
   },
-  donateBannerText: {
+  modalDonateText: {
     fontSize: FONT_SIZES.sm,
     color: COLORS.textMid,
     textAlign: 'center',
   },
-  donateBannerLink: {
+  modalDonateLink: {
     color: COLORS.purple,
     fontWeight: '700',
     textDecorationLine: 'underline',
+  },
+  modalDismiss: {
+    alignItems: 'center',
+    paddingVertical: SPACING.md,
+    marginBottom: SPACING.lg,
+  },
+  modalDismissText: {
+    fontSize: FONT_SIZES.sm,
+    color: COLORS.textLight,
+    fontWeight: '600',
   },
 
   signature: {
