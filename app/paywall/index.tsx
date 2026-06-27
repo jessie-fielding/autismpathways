@@ -45,115 +45,6 @@ import {
   useScreenTime,
 } from '../../lib/analytics';
 
-// ── Launch pricing deadline ──────────────────────────────────────────────────
-const PRICE_DEADLINE = new Date('2026-07-01T23:59:59-05:00'); // July 1 midnight CT
-
-function useCountdown(target: Date) {
-  const calc = () => {
-    const diff = target.getTime() - Date.now();
-    if (diff <= 0) return { days: 0, hours: 0, minutes: 0, seconds: 0, expired: true };
-    const days    = Math.floor(diff / 86_400_000);
-    const hours   = Math.floor((diff % 86_400_000) / 3_600_000);
-    const minutes = Math.floor((diff % 3_600_000)  / 60_000);
-    const seconds = Math.floor((diff % 60_000)      / 1_000);
-    return { days, hours, minutes, seconds, expired: false };
-  };
-  const [time, setTime] = useState(calc);
-  useEffect(() => {
-    const id = setInterval(() => setTime(calc()), 1000);
-    return () => clearInterval(id);
-  }, []);
-  return time;
-}
-
-function CountdownBanner() {
-  const { days, hours, minutes, seconds, expired } = useCountdown(PRICE_DEADLINE);
-  if (expired) return null;
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return (
-    <View style={countdownStyles.banner}>
-      <Text style={countdownStyles.lockIcon}>🔒</Text>
-      <View style={countdownStyles.textBlock}>
-        <Text style={countdownStyles.headline}>
-          🎉 Launch pricing ends July 1st
-        </Text>
-        <Text style={countdownStyles.sub}>
-          Lock in today's rate forever · Try free for 7 days
-        </Text>
-      </View>
-      <View style={countdownStyles.timerBlock}>
-        <View style={countdownStyles.timerUnit}>
-          <Text style={countdownStyles.timerNum}>{days}</Text>
-          <Text style={countdownStyles.timerLabel}>d</Text>
-        </View>
-        <Text style={countdownStyles.timerColon}>:</Text>
-        <View style={countdownStyles.timerUnit}>
-          <Text style={countdownStyles.timerNum}>{pad(hours)}</Text>
-          <Text style={countdownStyles.timerLabel}>h</Text>
-        </View>
-        <Text style={countdownStyles.timerColon}>:</Text>
-        <View style={countdownStyles.timerUnit}>
-          <Text style={countdownStyles.timerNum}>{pad(minutes)}</Text>
-          <Text style={countdownStyles.timerLabel}>m</Text>
-        </View>
-        <Text style={countdownStyles.timerColon}>:</Text>
-        <View style={countdownStyles.timerUnit}>
-          <Text style={countdownStyles.timerNum}>{pad(seconds)}</Text>
-          <Text style={countdownStyles.timerLabel}>s</Text>
-        </View>
-      </View>
-    </View>
-  );
-}
-
-const countdownStyles = StyleSheet.create({
-  banner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#2D1B69',
-    marginTop: 0,
-    marginBottom: 0,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.md,
-    gap: SPACING.sm,
-  },
-  lockIcon: { fontSize: 22 },
-  textBlock: { flex: 1 },
-  headline: {
-    fontSize: FONT_SIZES.sm,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    marginBottom: 2,
-  },
-  sub: {
-    fontSize: 11,
-    color: 'rgba(255,255,255,0.7)',
-    lineHeight: 15,
-  },
-  timerBlock: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 2,
-  },
-  timerUnit: { alignItems: 'center', minWidth: 22 },
-  timerNum: {
-    fontSize: FONT_SIZES.md,
-    fontWeight: '900',
-    color: '#C5B8F0',
-    lineHeight: 20,
-  },
-  timerLabel: {
-    fontSize: 9,
-    color: 'rgba(255,255,255,0.5)',
-    fontWeight: '600',
-  },
-  timerColon: {
-    fontSize: FONT_SIZES.md,
-    fontWeight: '900',
-    color: '#C5B8F0',
-    marginBottom: 8,
-  },
-});
 
 const PRODUCT_ID_ANNUAL  = 'app.autismpathways.premium.sub.annual';
 const PRODUCT_ID_MONTHLY = 'app.autismpathways.premium.sub.monthly';
@@ -337,7 +228,6 @@ export default function PaywallScreen() {
         </TouchableOpacity>
       </View>
       <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-        <CountdownBanner />
         <View style={styles.hero}>
           <Text style={styles.heroIcon}>🌟</Text>
           <Text style={styles.heroTitle}>Try Free for 7 Days</Text>

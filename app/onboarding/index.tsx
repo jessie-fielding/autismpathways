@@ -448,7 +448,7 @@ export default function OnboardingScreen() {
 
               {/* Pricing note */}
               <View style={styles.pricingNote}>
-                <Text style={styles.pricingNoteText}>From <Text style={styles.pricingNotePrice}>$9.99 / month</Text> · Cancel anytime</Text>
+                <Text style={styles.pricingNoteText}>From <Text style={styles.pricingNotePrice}>$14.99 / month</Text> · Cancel anytime</Text>
               </View>
 
               {/* CTA */}
