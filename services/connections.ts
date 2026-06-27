@@ -1,25 +1,29 @@
 /**
  * connections.ts
  *
- * Manages "Request a Connection" data locally via AsyncStorage.
- * No PHI is stored — only name, contact preference, optional message,
- * and the provider's listing ID.
+ * Manages "Request a Connection" data via Lambda/DynamoDB so requests are
+ * visible cross-device (parent on one device, provider on another).
  *
  * Connection request lifecycle:
  *   pending  → provider has not yet responded
  *   accepted → provider accepted; contact info shared
  *   declined → provider declined; no contact info shared
+ *
+ * Falls back gracefully if the user is not signed in or network is unavailable.
  */
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { AP_API_BASE } from './api';
+import { getValidToken } from './useAuth';
 
 export type ConnectionStatus = 'pending' | 'accepted' | 'declined';
 
 export interface ConnectionRequest {
   id: string;
-  providerId: string;       // evaluator or provider-directory ID
+  providerId: string;
   providerName: string;
   providerSpecialty: string;
   providerCounty: string;
+  senderSub?: string;
+  senderEmail?: string;
   requesterName: string;
   shareEmail: boolean;
   sharePhone: boolean;
@@ -29,56 +33,96 @@ export interface ConnectionRequest {
   respondedAt?: string;
 }
 
-const KEY_SENT     = 'ap_connections_sent';     // requests this user sent (parent view)
-const KEY_RECEIVED = 'ap_connections_received'; // requests this provider received (provider view)
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
-// ── Sent requests (parent side) ──────────────────────────────────────────────
+async function authHeaders(): Promise<Record<string, string>> {
+  const token = await getValidToken();
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+}
+
+// ── Send a connection request (parent → provider) ─────────────────────────────
+
+export async function addSentRequest(
+  req: Omit<ConnectionRequest, 'id' | 'status' | 'createdAt' | 'senderSub' | 'senderEmail'>
+): Promise<ConnectionRequest> {
+  const headers = await authHeaders();
+  const res = await fetch(`${AP_API_BASE}/api/connections/send`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(req),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `Failed to send request (${res.status})`);
+  }
+  const data = await res.json();
+  return data.request as ConnectionRequest;
+}
+
+// ── Get sent requests (parent side) ──────────────────────────────────────────
 
 export async function getSentRequests(): Promise<ConnectionRequest[]> {
-  const raw = await AsyncStorage.getItem(KEY_SENT);
-  return raw ? JSON.parse(raw) : [];
+  try {
+    const headers = await authHeaders();
+    const res = await fetch(`${AP_API_BASE}/api/connections/sent`, { headers });
+    if (!res.ok) return [];
+    return (await res.json()) as ConnectionRequest[];
+  } catch {
+    return [];
+  }
 }
 
-export async function addSentRequest(req: Omit<ConnectionRequest, 'id' | 'status' | 'createdAt'>): Promise<ConnectionRequest> {
-  const existing = await getSentRequests();
-  const newReq: ConnectionRequest = {
-    ...req,
-    id: `cr_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-    status: 'pending',
-    createdAt: new Date().toISOString(),
-  };
-  await AsyncStorage.setItem(KEY_SENT, JSON.stringify([newReq, ...existing]));
-  return newReq;
+// ── Get received requests (provider side) ────────────────────────────────────
+
+export async function getReceivedRequests(providerId?: string): Promise<ConnectionRequest[]> {
+  try {
+    const headers = await authHeaders();
+    // providerId is the provider's deviceId or listing id
+    const pid = providerId || (await import('./api').then(m => m.getDeviceId()));
+    const res = await fetch(
+      `${AP_API_BASE}/api/connections/received?providerId=${encodeURIComponent(pid)}`,
+      { headers }
+    );
+    if (!res.ok) return [];
+    return (await res.json()) as ConnectionRequest[];
+  } catch {
+    return [];
+  }
 }
 
-// ── Received requests (provider side) ────────────────────────────────────────
-
-export async function getReceivedRequests(): Promise<ConnectionRequest[]> {
-  const raw = await AsyncStorage.getItem(KEY_RECEIVED);
-  return raw ? JSON.parse(raw) : [];
-}
-
-export async function addReceivedRequest(req: ConnectionRequest): Promise<void> {
-  const existing = await getReceivedRequests();
-  // Avoid duplicates
-  if (existing.some((r) => r.id === req.id)) return;
-  await AsyncStorage.setItem(KEY_RECEIVED, JSON.stringify([req, ...existing]));
-}
+// ── Respond to a request (provider side) ─────────────────────────────────────
 
 export async function respondToRequest(
   requestId: string,
-  status: 'accepted' | 'declined'
+  status: 'accepted' | 'declined',
+  providerId?: string
 ): Promise<void> {
-  const requests = await getReceivedRequests();
-  const updated = requests.map((r) =>
-    r.id === requestId
-      ? { ...r, status, respondedAt: new Date().toISOString() }
-      : r
-  );
-  await AsyncStorage.setItem(KEY_RECEIVED, JSON.stringify(updated));
+  const headers = await authHeaders();
+  const pid = providerId || (await import('./api').then(m => m.getDeviceId()));
+  const res = await fetch(`${AP_API_BASE}/api/connections/respond`, {
+    method: 'PUT',
+    headers,
+    body: JSON.stringify({ requestId, providerId: pid, status }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `Failed to respond (${res.status})`);
+  }
 }
 
-export async function getPendingCount(): Promise<number> {
-  const requests = await getReceivedRequests();
+// ── Pending count (provider dashboard badge) ─────────────────────────────────
+
+export async function getPendingCount(providerId?: string): Promise<number> {
+  const requests = await getReceivedRequests(providerId);
   return requests.filter((r) => r.status === 'pending').length;
+}
+
+// ── Legacy no-op kept for backward compat (no longer needed) ─────────────────
+// addReceivedRequest was used when both sides wrote to the same device.
+// With the backend approach, the server stores it — nothing to do client-side.
+export async function addReceivedRequest(_req: ConnectionRequest): Promise<void> {
+  // no-op: server handles storage
 }

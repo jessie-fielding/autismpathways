@@ -113,7 +113,7 @@ export default function ProviderDashboard() {
             county: p.county || null,
             openToConnect: profileOpenToConnect || currentRtc,
             acceptingNew: true,
-            medicaidAccepted: false,
+            medicaidAccepted: !!p.medicaidAccepted,
             telehealth: false,
             bio: null,
             tags: p.providerReasons || [],

@@ -94,8 +94,9 @@ export async function setProviderAvailability(openToConnect: boolean): Promise<v
 
 // ── Live provider directory ───────────────────────────────────────────────────
 export interface LiveProvider {
-  id: number;
-  deviceId: string;
+  id: string | number;
+  deviceId?: string;
+  submissionId?: string;
   providerName: string;
   practiceName: string | null;
   specialty: string;
@@ -108,19 +109,41 @@ export interface LiveProvider {
   bio: string | null;
   tags: string[];
   lastSeenAt: string | null;
+  openToConnect: boolean;
+  source?: 'self_registered' | 'admin_approved';
 }
 
-export async function fetchLiveProviders(state?: string, specialty?: string): Promise<LiveProvider[]> {
+export interface LiveProvidersResponse {
+  openToConnect: LiveProvider[];
+  adminApproved: LiveProvider[];
+}
+
+export async function fetchLiveProviders(
+  state?: string,
+  specialty?: string
+): Promise<LiveProvidersResponse> {
   try {
     const params = new URLSearchParams();
     if (state && state !== 'ALL') params.set('state', state);
     if (specialty && specialty !== 'All') params.set('specialty', specialty);
     const url = `${AP_API_BASE}/api/providers/available${params.toString() ? '?' + params.toString() : ''}`;
     const res = await fetch(url);
-    if (!res.ok) return [];
-    return await res.json();
+    if (!res.ok) return { openToConnect: [], adminApproved: [] };
+    const data = await res.json();
+    // Handle both old array format (legacy) and new object format
+    if (Array.isArray(data)) {
+      // Legacy: split by openToConnect flag
+      return {
+        openToConnect: data.filter((p: LiveProvider) => p.openToConnect),
+        adminApproved: data.filter((p: LiveProvider) => !p.openToConnect),
+      };
+    }
+    return {
+      openToConnect: data.openToConnect || [],
+      adminApproved: data.adminApproved || [],
+    };
   } catch (e) {
     console.warn('[API] Fetch live providers error:', e);
-    return [];
+    return { openToConnect: [], adminApproved: [] };
   }
 }

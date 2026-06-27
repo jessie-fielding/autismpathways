@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '../../lib/theme';
+import { getDeviceId } from '../../services/api';
 import {
   getReceivedRequests,
   respondToRequest,
@@ -32,8 +33,12 @@ export default function ProviderConnections() {
   const [activeTab, setActiveTab]   = useState<Tab>('pending');
   const [requests, setRequests]     = useState<ConnectionRequest[]>([]);
 
+  const [providerId, setProviderId] = useState<string | null>(null);
+
   const load = useCallback(async () => {
-    const all = await getReceivedRequests();
+    const pid = await getDeviceId();
+    setProviderId(pid);
+    const all = await getReceivedRequests(pid);
     setRequests(all);
   }, []);
 
@@ -54,7 +59,7 @@ export default function ProviderConnections() {
           text: status === 'accepted' ? 'Accept' : 'Decline',
           style: status === 'declined' ? 'destructive' : 'default',
           onPress: async () => {
-            await respondToRequest(req.id, status);
+            await respondToRequest(req.id, status, providerId ?? undefined);
             await load();
 
             if (status === 'accepted') {

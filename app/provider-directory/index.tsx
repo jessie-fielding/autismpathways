@@ -8,7 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '../../lib/theme';
 import { PROVIDERS, MEDICAL_PROVIDERS, Provider } from '../../lib/providerData';
-import { fetchLiveProviders, LiveProvider } from '../../services/api';
+import { fetchLiveProviders, LiveProvider, LiveProvidersResponse } from '../../services/api';
 import { useIsPremium } from '../../hooks/useIsPremium';
 import NearMeButton from '../../components/NearMeButton';
 import {trackPaywallViewed, trackProviderDirectoryOpened, logScreenView, useScreenTime} from '../../lib/analytics';
@@ -204,6 +204,7 @@ export default function ProviderDirectoryScreen() {
   const { isPremium } = useIsPremium();
   const [onAppIds, setOnAppIds] = useState<Set<string>>(new Set());
   const [liveProviders, setLiveProviders] = useState<LiveProvider[]>([]);
+  const [adminApprovedProviders, setAdminApprovedProviders] = useState<LiveProvider[]>([]);
 
   useEffect(() => {
     AsyncStorage.getItem('ap_on_app_provider_ids').then((raw) => {
@@ -224,7 +225,10 @@ export default function ProviderDirectoryScreen() {
     fetchLiveProviders(
       selectedState !== 'ALL' ? selectedState : undefined,
       selectedTab !== 'All' ? selectedTab : undefined,
-    ).then(setLiveProviders).catch(() => {});
+    ).then((resp: LiveProvidersResponse) => {
+      setLiveProviders(resp.openToConnect);
+      setAdminApprovedProviders(resp.adminApproved);
+    }).catch(() => {});
   }, [selectedState, selectedTab]);
 
   const [selectedMedicalType, setSelectedMedicalType] = useState<MedicalType>('All');
@@ -496,13 +500,13 @@ export default function ProviderDirectoryScreen() {
             </View>
             {liveProviders.map((lp) => (
               <TouchableOpacity
-                key={lp.id}
+                key={String(lp.id)}
                 style={styles.liveCard}
                 onPress={() => router.push({
                   pathname: '/request-connection',
                   params: {
-                    providerId: String(lp.id),
-                    providerName: lp.provider_name,
+                    providerId: String(lp.deviceId || lp.id),
+                    providerName: lp.practiceName || lp.providerName,
                     providerSpecialty: lp.specialty,
                     providerCounty: lp.county || '',
                   },
@@ -514,9 +518,12 @@ export default function ProviderDirectoryScreen() {
                     <Text style={styles.liveCardEmoji}>{SPECIALTY_EMOJIS[lp.specialty] || '🏥'}</Text>
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.liveCardName}>{lp.provider_name}</Text>
-                    {lp.practice_name ? <Text style={styles.liveCardPractice}>{lp.practice_name}</Text> : null}
+                    <Text style={styles.liveCardName}>{lp.practiceName || lp.providerName}</Text>
+                    {lp.practiceName ? <Text style={styles.liveCardPractice}>{lp.providerName}</Text> : null}
                     <Text style={styles.liveCardSpecialty}>{lp.specialty}{lp.state ? ` · ${lp.state}` : ''}</Text>
+                    {lp.medicaidAccepted && (
+                      <Text style={styles.liveCardMedicaid}>✓ Medicaid Accepted</Text>
+                    )}
                   </View>
                 </View>
                 <View style={styles.liveCardBadge}>
@@ -809,6 +816,7 @@ const styles = StyleSheet.create({
   liveCardName: { fontSize: FONT_SIZES.sm, fontWeight: '700', color: COLORS.text },
   liveCardPractice: { fontSize: FONT_SIZES.xs, color: COLORS.textMid, marginTop: 1 },
   liveCardSpecialty: { fontSize: FONT_SIZES.xs, color: COLORS.purple, fontWeight: '600', marginTop: 2 },
+  liveCardMedicaid: { fontSize: 10, color: COLORS.teal, fontWeight: '700', marginTop: 2 },
   liveCardBadge: {
     backgroundColor: COLORS.purple, borderRadius: RADIUS.pill,
     paddingHorizontal: SPACING.md, paddingVertical: SPACING.xs,

@@ -13,7 +13,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView,
   KeyboardAvoidingView, Platform, StyleSheet, Image, Alert,
-  Modal, FlatList,
+  Modal, FlatList, Switch,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -109,6 +109,7 @@ export default function ProfileSetupScreen() {
   const [practiceAddress, setPracticeAddress]     = useState('');
   // 'browse' = Browse Only, 'connect' = Open to Connections
   const [providerVisibility, setProviderVisibility] = useState<'browse' | 'connect'>('browse');
+  const [medicaidAccepted, setMedicaidAccepted] = useState(false);
 
   // Pre-load existing profile data when opened from Settings (update mode)
   useEffect(() => {
@@ -130,6 +131,7 @@ export default function ProfileSetupScreen() {
         if (p.practiceName) setPracticeName(p.practiceName);
         if (p.practiceAddress) setPracticeAddress(p.practiceAddress);
         if (p.providerVisibility) setProviderVisibility(p.providerVisibility);
+        if (p.medicaidAccepted !== undefined) setMedicaidAccepted(!!p.medicaidAccepted);
         if (p.concerns) setSelectedJourneys(p.concerns);
       } catch {}
     })();
@@ -269,6 +271,7 @@ export default function ProfileSetupScreen() {
           practiceName: practiceName.trim() || null,
           practiceAddress: practiceAddress.trim() || null,
           providerVisibility,
+          medicaidAccepted,
           createdAt: new Date().toISOString(),
         });
         // Store provider flag and visibility for routing + badge
@@ -474,6 +477,19 @@ export default function ProfileSetupScreen() {
                 }}
                 placeholder="Start typing your practice address…"
               />
+              {/* Medicaid toggle */}
+              <View style={styles.toggleRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.label}>Medicaid Accepted</Text>
+                  <Text style={styles.toggleSub}>Show families you accept Medicaid</Text>
+                </View>
+                <Switch
+                  value={medicaidAccepted}
+                  onValueChange={setMedicaidAccepted}
+                  trackColor={{ false: COLORS.border, true: COLORS.teal }}
+                  thumbColor={medicaidAccepted ? '#fff' : '#fff'}
+                />
+              </View>
             </View>
 
             <View style={styles.section}>
@@ -800,6 +816,9 @@ const styles = StyleSheet.create({
   journeyIconWrapFeatured: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#FFF0EF', borderColor: '#E8A0A0' },
   journeyIconWrapFeaturedSelected: { backgroundColor: '#C0392B', borderColor: '#C0392B' },
   journeyLabelFeatured: { fontSize: FONT_SIZES.md, fontWeight: '800', color: '#C0392B' },
+  // Medicaid toggle row
+  toggleRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, paddingVertical: SPACING.sm, marginTop: SPACING.xs },
+  toggleSub: { fontSize: FONT_SIZES.xs, color: COLORS.textLight, marginTop: 1 },
   // Visibility toggle (provider)
   visibilityOption: { flexDirection: 'row', alignItems: 'flex-start', gap: SPACING.sm, paddingVertical: SPACING.sm + 2, borderRadius: RADIUS.md, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.bg, paddingHorizontal: SPACING.sm, marginBottom: 8 },
   visibilityOptionSelected: { borderColor: COLORS.purple, backgroundColor: '#F0EDFF' },

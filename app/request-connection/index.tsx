@@ -21,8 +21,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '../../lib/theme';
-import { addSentRequest, addReceivedRequest } from '../../services/connections';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { addSentRequest } from '../../services/connections';
 
 type ShareOption = 'email' | 'phone' | 'neither';
 
@@ -48,7 +47,7 @@ export default function RequestConnection() {
     }
     setSubmitting(true);
     try {
-      const req = await addSentRequest({
+      await addSentRequest({
         providerId:       params.providerId ?? 'unknown',
         providerName:     params.providerName ?? 'Provider',
         providerSpecialty: params.providerSpecialty ?? '',
@@ -58,10 +57,6 @@ export default function RequestConnection() {
         sharePhone:       shareOption === 'phone',
         message:          message.trim(),
       });
-
-      // Also add to received queue so providers can see it in their dashboard
-      // (in a real build this would go through a backend/push notification)
-      await addReceivedRequest(req);
 
       Alert.alert(
         'Request Sent! 🎉',
