@@ -17,7 +17,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, Dimensions,
-  FlatList, Animated, Platform, ScrollView,
+  FlatList, Animated, Platform, ScrollView, Linking,
 } from 'react-native';
 import LottieView from 'lottie-react-native';
 import { VideoView, useVideoPlayer } from 'expo-video';
@@ -394,6 +394,43 @@ export default function OnboardingScreen() {
         style={styles.flatList}
       />
 
+      {/* ── Premium + Donate banner (shown on last card) ── */}
+      {isLast && (
+        <View style={styles.lastCardBanners}>
+          {/* Premium perks banner */}
+          <TouchableOpacity
+            style={styles.premiumBanner}
+            onPress={() => { completeOnboarding(); router.push('/paywall/premium-features' as any); }}
+            activeOpacity={0.9}
+          >
+            <LinearGradient
+              colors={['#6C5CE7', '#9B8FF5']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.premiumBannerInner}
+            >
+              <View style={{ flex: 1 }}>
+                <Text style={styles.premiumBannerTitle}>⭐ Unlock Premium Access</Text>
+                <Text style={styles.premiumBannerSub}>
+                  Provider directory · AI Transition Guide · IEP Recorder · Trends · Reminders
+                </Text>
+                <Text style={styles.premiumBannerPrice}>From $9.99 / month</Text>
+              </View>
+              <Text style={styles.premiumBannerArrow}>→</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+
+          {/* Donate banner */}
+          <TouchableOpacity
+            style={styles.donateBanner}
+            onPress={() => Linking.openURL('https://info.autismpathways.app/donate')}
+            activeOpacity={0.9}
+          >
+            <Text style={styles.donateBannerText}>🫶 Help keep this free for every family — <Text style={styles.donateBannerLink}>Donate</Text></Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
       {/* Bottom controls */}
       <View style={[styles.bottomControls, { paddingBottom: insets.bottom + SPACING.lg }]}>
         {/* Progress dots */}
@@ -555,6 +592,66 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     marginBottom: SPACING.xs,
     fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif',
+  },
+
+  // ── Last-card premium + donate banners ─────────────────────────────────────
+  lastCardBanners: {
+    paddingHorizontal: SPACING.lg,
+    paddingBottom: SPACING.sm,
+    gap: SPACING.xs,
+    backgroundColor: COLORS.bg,
+  },
+  premiumBanner: {
+    borderRadius: RADIUS.lg,
+    overflow: 'hidden',
+    shadowColor: '#6C5CE7',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.18,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  premiumBannerInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.md,
+    gap: SPACING.sm,
+  },
+  premiumBannerTitle: {
+    fontSize: FONT_SIZES.sm,
+    fontWeight: '800',
+    color: '#fff',
+    marginBottom: 2,
+  },
+  premiumBannerSub: {
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.85)',
+    lineHeight: 16,
+    marginBottom: 3,
+  },
+  premiumBannerPrice: {
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.7)',
+    fontWeight: '600',
+  },
+  premiumBannerArrow: {
+    fontSize: 22,
+    color: '#fff',
+    fontWeight: '700',
+  },
+  donateBanner: {
+    alignItems: 'center',
+    paddingVertical: SPACING.sm,
+  },
+  donateBannerText: {
+    fontSize: FONT_SIZES.sm,
+    color: COLORS.textMid,
+    textAlign: 'center',
+  },
+  donateBannerLink: {
+    color: COLORS.purple,
+    fontWeight: '700',
+    textDecorationLine: 'underline',
   },
 
   signature: {
