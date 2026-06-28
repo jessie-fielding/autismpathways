@@ -228,10 +228,21 @@ export default function PaywallScreen() {
         </TouchableOpacity>
       </View>
       <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+
+        {/* ── FREE-FIRST PROMISE BANNER ── */}
+        <View style={styles.freePromiseBanner}>
+          <Text style={styles.freePromiseText}>
+            💜 Everything you need to work through the process is{' '}
+            <Text style={styles.freePromiseBold}>free — that’s a promise.</Text>
+          </Text>
+        </View>
+
         <View style={styles.hero}>
-          <Text style={styles.heroIcon}>🌟</Text>
-          <Text style={styles.heroTitle}>Try Free for 7 Days</Text>
-          <Text style={styles.heroSub}>Full access to everything — diagnosis, Medicaid, IEP, providers, and beyond. Cancel anytime.</Text>
+          <Text style={styles.heroIcon}>✨</Text>
+          <Text style={styles.heroTitle}>Make the journey easier</Text>
+          <Text style={styles.heroSub}>
+            The pathways, guides, and provider directory are always free. Premium gives you the tools that save you time and keep you organised.
+          </Text>
 
           {/* Trial price pill */}
           <View style={styles.trialPill}>
@@ -249,7 +260,7 @@ export default function PaywallScreen() {
             ) : !iapReady ? (
               <Text style={styles.purchaseBtnText}>Connecting…</Text>
             ) : (
-              <Text style={styles.purchaseBtnText}>Start Free Trial</Text>
+              <Text style={styles.purchaseBtnText}>Try Premium Free for 7 Days</Text>
             )}
           </TouchableOpacity>
           <Text style={styles.priceNote}>No charge today · cancel before day 7 and pay nothing</Text>
@@ -267,21 +278,33 @@ export default function PaywallScreen() {
             </Text>
           </TouchableOpacity>
 
-          {/* Hardship callout — light blue, above Get Premium in ctaSection */}
+          {/* Hardship callout */}
           <TouchableOpacity
             style={styles.hardshipCallout}
             onPress={() => { trackHardshipApplicationStarted(); router.push('/paywall/hardship-application' as any); }}
             activeOpacity={0.8}
           >
             <Text style={styles.hardshipCalloutText}>
-              💙 I believe everyone deserves affordable access — if you're experiencing difficulty paying,{' '}
+              💙 I believe everyone deserves affordable access — if you’re experiencing difficulty paying,{' '}
               <Text style={styles.hardshipCalloutLink}>there are options for you.</Text>
+            </Text>
+          </TouchableOpacity>
+
+          {/* Donate link */}
+          <TouchableOpacity
+            style={styles.donateLink}
+            onPress={() => Linking.openURL('https://info.autismpathways.app/donate/')}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.donateLinkText}>
+              🫶 Want to help keep this free for every family?{' '}
+              <Text style={styles.donateLinkUnderline}>Donate here.</Text>
             </Text>
           </TouchableOpacity>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Everything included</Text>
+          <Text style={styles.sectionTitle}>What premium unlocks</Text>
           {FEATURES.map((f, i) => (
             <View key={i} style={styles.featureRow}>
               <View style={styles.featureIconBox}><Text style={styles.featureIcon}>{f.icon}</Text></View>
@@ -381,6 +404,40 @@ const styles = StyleSheet.create({
   header: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.sm, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.border },
   backBtn: { paddingVertical: 6 },
   backText: { color: COLORS.purple, fontSize: FONT_SIZES.sm, fontWeight: '600' },
+  freePromiseBanner: {
+    backgroundColor: '#F0FDF4',
+    borderBottomWidth: 1,
+    borderBottomColor: '#BBF7D0',
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.md,
+    alignItems: 'center',
+  },
+  freePromiseText: {
+    fontSize: 13,
+    color: '#166534',
+    textAlign: 'center',
+    lineHeight: 19,
+  },
+  freePromiseBold: {
+    fontWeight: '800',
+    color: '#15803D',
+  },
+  donateLink: {
+    marginTop: SPACING.md,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+  },
+  donateLinkText: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.6)',
+    textAlign: 'center',
+    lineHeight: 18,
+  },
+  donateLinkUnderline: {
+    color: 'rgba(255,255,255,0.85)',
+    fontWeight: '700',
+    textDecorationLine: 'underline',
+  },
   hardshipCallout: {
     backgroundColor: '#E8F4FD',
     borderRadius: RADIUS.sm,

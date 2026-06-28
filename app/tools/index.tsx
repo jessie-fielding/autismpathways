@@ -24,14 +24,6 @@ const SECTIONS: { label: string; tools: Tool[] }[] = [
     label: 'CORE PATHWAYS',
     tools: [
       {
-        icon: '🚀',
-        title: 'Start Here',
-        description: "Enter your child's information to personalize your experience.",
-        cta: 'Open',
-        route: '/(tabs)/start-here',
-        accentColor: COLORS.lavenderAccent,
-      },
-      {
         icon: '🧠',
         title: 'Diagnosis Pathway',
         description: 'Step-by-step guide from referral to official diagnosis.',
