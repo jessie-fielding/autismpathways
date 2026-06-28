@@ -587,6 +587,68 @@ export default function DashboardScreen() {
             </TouchableOpacity>
           </View>
 
+          {/* ── First-time welcome card (only when no pathways started yet) ── */}
+          {PATHWAY_CARDS.length === 1 && (
+            <View style={styles.firstTimeCard}>
+              <LinearGradient
+                colors={['#F3F0FF', '#EDE8FF']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.firstTimeCardInner}
+              >
+                <Text style={styles.firstTimeTitle}>
+                  👋 {t("You're all set — here's where to start!", '¡Todo listo — aquí es donde empezar!')}
+                </Text>
+                <Text style={styles.firstTimeSub}>
+                  {t(
+                    'Autism Pathways is your free guide through every step of the journey. Pick one to begin:',
+                    'Autism Pathways es tu guía gratuita en cada paso del camino. Elige uno para comenzar:',
+                  )}
+                </Text>
+
+                {/* Action row */}
+                <View style={styles.firstTimeActions}>
+                  <TouchableOpacity
+                    style={styles.firstTimeAction}
+                    onPress={() => router.push('/tools' as any)}
+                    activeOpacity={0.82}
+                  >
+                    <View style={[styles.firstTimeActionIcon, { backgroundColor: C.blue }]}>
+                      <Text style={styles.firstTimeActionEmoji}>🗺️</Text>
+                    </View>
+                    <Text style={styles.firstTimeActionLabel}>{t('Start a\nPathway', 'Iniciar un\nCamino')}</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.firstTimeAction}
+                    onPress={() => router.push('/observations/new-entry' as any)}
+                    activeOpacity={0.82}
+                  >
+                    <View style={[styles.firstTimeActionIcon, { backgroundColor: C.lavender }]}>
+                      <Text style={styles.firstTimeActionEmoji}>📓</Text>
+                    </View>
+                    <Text style={styles.firstTimeActionLabel}>{t('Log an\nObservation', 'Registrar una\nObservación')}</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.firstTimeAction}
+                    onPress={() => router.push('/provider-directory' as any)}
+                    activeOpacity={0.82}
+                  >
+                    <View style={[styles.firstTimeActionIcon, { backgroundColor: C.mint }]}>
+                      <Text style={styles.firstTimeActionEmoji}>🩺</Text>
+                    </View>
+                    <Text style={styles.firstTimeActionLabel}>{t('Find a\nProvider', 'Buscar un\nProveedor')}</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <Text style={styles.firstTimeNote}>
+                  {t('Everything above is free — no credit card needed.', 'Todo lo de arriba es gratis — sin tarjeta de crédito.')}
+                </Text>
+              </LinearGradient>
+            </View>
+          )}
+
           {PATHWAY_CARDS.map((p) => {
             const pct = p.total > 0 ? Math.round((p.progress / p.total) * 100) : 0;
             return (
@@ -649,67 +711,6 @@ export default function DashboardScreen() {
             );
           })}
 
-          {/* ── First-time welcome card (only when no pathways started yet) ── */}
-          {PATHWAY_CARDS.length === 1 && (
-            <View style={styles.firstTimeCard}>
-              <LinearGradient
-                colors={['#F3F0FF', '#EDE8FF']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.firstTimeCardInner}
-              >
-                <Text style={styles.firstTimeTitle}>
-                  👋 {t("You're all set — here's where to start!", '¡Todo listo — aquí es donde empezar!')}
-                </Text>
-                <Text style={styles.firstTimeSub}>
-                  {t(
-                    'Autism Pathways is your free guide through every step of the journey. Pick one to begin:',
-                    'Autism Pathways es tu guía gratuita en cada paso del camino. Elige uno para comenzar:',
-                  )}
-                </Text>
-
-                {/* Action row */}
-                <View style={styles.firstTimeActions}>
-                  <TouchableOpacity
-                    style={styles.firstTimeAction}
-                    onPress={() => router.push('/tools' as any)}
-                    activeOpacity={0.82}
-                  >
-                    <View style={[styles.firstTimeActionIcon, { backgroundColor: C.blue }]}>
-                      <Text style={styles.firstTimeActionEmoji}>🗺️</Text>
-                    </View>
-                    <Text style={styles.firstTimeActionLabel}>{t('Start a\nPathway', 'Iniciar un\nCamino')}</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={styles.firstTimeAction}
-                    onPress={() => router.push('/observations/new-entry' as any)}
-                    activeOpacity={0.82}
-                  >
-                    <View style={[styles.firstTimeActionIcon, { backgroundColor: C.lavender }]}>
-                      <Text style={styles.firstTimeActionEmoji}>📓</Text>
-                    </View>
-                    <Text style={styles.firstTimeActionLabel}>{t('Log an\nObservation', 'Registrar una\nObservación')}</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={styles.firstTimeAction}
-                    onPress={() => router.push('/provider-directory' as any)}
-                    activeOpacity={0.82}
-                  >
-                    <View style={[styles.firstTimeActionIcon, { backgroundColor: C.mint }]}>
-                      <Text style={styles.firstTimeActionEmoji}>🩺</Text>
-                    </View>
-                    <Text style={styles.firstTimeActionLabel}>{t('Find a\nProvider', 'Buscar un\nProveedor')}</Text>
-                  </TouchableOpacity>
-                </View>
-
-                <Text style={styles.firstTimeNote}>
-                  {t('Everything above is free — no credit card needed.', 'Todo lo de arriba es gratis — sin tarjeta de crédito.')}
-                </Text>
-              </LinearGradient>
-            </View>
-          )}
         </View>
 
         {/* ── PINNED TOOLS ───────────────────────────────────────────────── */}

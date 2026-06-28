@@ -122,7 +122,25 @@ const PARENT_CARD_DEFS = [
     bg: ['#F5F3FF', '#FDFCFF'] as [string, string],
     video: 'card8',
     lottie: null,
+  },
+  {
+    id: '9',
+    emoji: '⭐',
+    headline: 'Make the journey easier',
+    body: 'Everything in this app is free — that\'s a promise. But if you want tools that save you time and keep you organised, Premium has you covered.',
+    bg: ['#EDE9FC', '#DDD5F7'] as [string, string],
+    video: null,
+    lottie: null,
+    isPremiumCard: true,
     isLast: true,
+    perks: [
+      { icon: '🗺️', text: 'All Pathways fully unlocked' },
+      { icon: '🤖', text: 'AI Transition Guide' },
+      { icon: '🎙️', text: 'IEP Meeting Recorder' },
+      { icon: '📈', text: 'Trends & Insights' },
+      { icon: '🔔', text: 'Smart Reminders' },
+      { icon: '📁', text: 'Document Vault' },
+    ],
   },
 ];
 
@@ -260,11 +278,6 @@ export default function OnboardingScreen() {
     if (viewableItems.length > 0) {
       const idx = viewableItems[0].index ?? 0;
       setCurrentIndex(idx);
-      // Show premium modal once when user reaches the last card
-      if (idx === CARDS.length - 1 && !premiumModalShown.current) {
-        premiumModalShown.current = true;
-        setTimeout(() => setShowPremiumModal(true), 600);
-      }
     }
   }).current;
 
@@ -386,6 +399,9 @@ export default function OnboardingScreen() {
                     <Text style={styles.modalCTAText}>View Plans →</Text>
                   </LinearGradient>
                 </TouchableOpacity>
+                <TouchableOpacity style={styles.modalHardshipBtn} onPress={() => { setShowPremiumModal(false); completeOnboarding(); setTimeout(() => router.push('/paywall/hardship-application' as any), 300); }} activeOpacity={0.7}>
+                  <Text style={styles.modalHardshipText}>💙 Can't afford it? Apply for hardship access</Text>
+                </TouchableOpacity>
                 <TouchableOpacity style={styles.modalDonateBtn} onPress={() => Linking.openURL('https://info.autismpathways.app/donate')} activeOpacity={0.7}>
                   <Text style={styles.modalDonateText}>🫶 Help keep this free — <Text style={styles.modalDonateLink}>Donate</Text></Text>
                 </TouchableOpacity>
@@ -407,10 +423,62 @@ export default function OnboardingScreen() {
       ? headline
       : headline.replace(', !', '!');
     const body = interpolate(item.body, parentName || 'you', childName);
-    const isLastCard = item.id === '8';
+    const isJessieCard = item.id === '8';
+    const isPremiumCard = (item as any).isPremiumCard === true;
+
+    // Card 9 — premium card
+    if (isPremiumCard) {
+      return (
+        <LinearGradient
+          colors={item.bg}
+          style={[styles.card, styles.card8]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+        >
+          <ScrollView contentContainerStyle={[styles.card8ScrollContent, { justifyContent: 'center', paddingTop: 32 }]} showsVerticalScrollIndicator={false} bounces={false}>
+            <Text style={{ fontSize: 48, textAlign: 'center', marginBottom: 8 }}>⭐</Text>
+            <Text style={[styles.headline8, { fontSize: 26, marginBottom: 8 }]}>{cleanHeadline}</Text>
+            <Text style={{ fontSize: 15, color: '#5A4E8C', textAlign: 'center', marginBottom: 24, lineHeight: 22, paddingHorizontal: 8 }}>{body}</Text>
+            {/* Perks list */}
+            <View style={{ backgroundColor: 'rgba(255,255,255,0.55)', borderRadius: 16, padding: 16, marginBottom: 20 }}>
+              {((item as any).perks as {icon: string; text: string}[]).map((p) => (
+                <View key={p.text} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
+                  <Text style={{ fontSize: 20, marginRight: 10 }}>{p.icon}</Text>
+                  <Text style={{ fontSize: 14, color: '#3D3270', fontWeight: '500', flex: 1 }}>{p.text}</Text>
+                </View>
+              ))}
+            </View>
+            {/* Pricing */}
+            <Text style={{ fontSize: 13, color: '#7C6FD4', textAlign: 'center', marginBottom: 16 }}>From <Text style={{ fontWeight: '700' }}>$14.99 / month</Text> · Cancel anytime</Text>
+            {/* CTA */}
+            <TouchableOpacity
+              onPress={() => { completeOnboarding(); setTimeout(() => router.push('/paywall'), 300); }}
+              activeOpacity={0.88}
+              style={{ borderRadius: 14, overflow: 'hidden', marginBottom: 12 }}
+            >
+              <LinearGradient colors={['#6C5CE7', '#9B8FF5']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ paddingVertical: 14, alignItems: 'center', borderRadius: 14 }}>
+                <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>View Plans →</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+            {/* Hardship */}
+            <TouchableOpacity onPress={() => { completeOnboarding(); setTimeout(() => router.push('/paywall/hardship-application' as any), 300); }} activeOpacity={0.7} style={{ marginBottom: 6 }}>
+              <Text style={{ color: '#5A4E8C', fontSize: 13, textAlign: 'center' }}>💙 Can't afford it? <Text style={{ textDecorationLine: 'underline' }}>Apply for hardship access</Text></Text>
+            </TouchableOpacity>
+            {/* Donate */}
+            <TouchableOpacity onPress={() => Linking.openURL('https://info.autismpathways.app/donate')} activeOpacity={0.7} style={{ marginBottom: 8 }}>
+              <Text style={{ color: '#7C6FD4', fontSize: 14, textAlign: 'center' }}>🫶 Help keep this free — <Text style={{ textDecorationLine: 'underline' }}>Donate</Text></Text>
+            </TouchableOpacity>
+            {/* Maybe later */}
+            <TouchableOpacity onPress={completeOnboarding} activeOpacity={0.7} style={{ paddingVertical: 8 }}>
+              <Text style={{ color: '#9B8FF5', fontSize: 13, textAlign: 'center' }}>Maybe later</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </LinearGradient>
+      );
+    }
 
     // Card 8 gets a special layout — large headline + handwritten-note card + signature
-    if (isLastCard) {
+    if (isJessieCard) {
       return (
         <LinearGradient
           colors={item.bg}
@@ -921,6 +989,17 @@ const styles = StyleSheet.create({
   modalDonateBtn: {
     alignItems: 'center',
     paddingVertical: SPACING.sm,
+  },
+  modalHardshipBtn: {
+    alignItems: 'center',
+    paddingVertical: SPACING.sm,
+    marginBottom: 2,
+  },
+  modalHardshipText: {
+    fontSize: FONT_SIZES.sm,
+    color: '#5A4E8C',
+    textAlign: 'center',
+    textDecorationLine: 'underline',
   },
   modalDonateText: {
     fontSize: FONT_SIZES.sm,
