@@ -35,11 +35,23 @@ const KEY_PERM_ASKED   = 'ap_notif_permission_asked';
 
 // ── Notification identifiers (must be stable so we can cancel by id) ──────────
 export const NOTIF_IDS = {
-  APPEAL:      'ap-notif-appeal',
-  APPOINTMENT: 'ap-notif-appointment',
-  WEEKLY:      'ap-notif-weekly',
-  WAIVER:      'ap-notif-waiver',
+  APPEAL:        'ap-notif-appeal',
+  APPOINTMENT:   'ap-notif-appointment',
+  WEEKLY:        'ap-notif-weekly',
+  WAIVER:        'ap-notif-waiver',
+  DAILY_OBS:     'ap-notif-daily-obs',
 } as const;
+
+// ── Daily observation prompt messages (rotate by day of week) ────────────────
+const DAILY_OBS_MESSAGES = [
+  { title: '📓 How was today?', body: "Jot down something you noticed about your child today — even one line helps track progress over time." },
+  { title: '✏️ Quick observation?', body: "Did anything stand out today? Log it in Autism Pathways — it only takes 30 seconds." },
+  { title: '🧠 What did you notice today?', body: "Small observations add up. Tap to log a note about your child's day." },
+  { title: '📋 Daily log reminder', body: "Tracking patterns helps at IEP meetings and evaluations. Add today's observation now." },
+  { title: '💜 You're doing great', body: "Take 30 seconds to log something you noticed today — future you will thank you." },
+  { title: '🌟 One thing from today?', body: "Log a quick observation — a win, a challenge, or anything worth remembering." },
+  { title: '📓 End-of-day check-in', body: "Before the day slips away — tap to log an observation about your child." },
+];
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 export type NotifSettings = {
@@ -47,6 +59,7 @@ export type NotifSettings = {
   ap_notification_appointment: boolean;
   ap_notification_weekly:      boolean;
   ap_notification_waiver:      boolean;
+  ap_notification_daily_obs:   boolean;
 };
 
 // ── Hook ──────────────────────────────────────────────────────────────────────
@@ -157,11 +170,41 @@ export function useNotifications() {
       });
     }
 
+    if (settings.ap_notification_daily_obs) {
+      // Schedule 7 daily notifications (one per day of week) at 7pm, each with a different message
+      // Expo local notifications can't truly rotate, so we schedule repeating weekly triggers
+      // for each day of the week with a different message — effectively rotating every day
+      for (let weekday = 1; weekday <= 7; weekday++) {
+        const msg = DAILY_OBS_MESSAGES[weekday - 1];
+        await Notifications.scheduleNotificationAsync({
+          identifier: `${NOTIF_IDS.DAILY_OBS}-${weekday}`,
+          content: {
+            title: msg.title,
+            body: msg.body,
+            data: { route: '/observations/new-entry' },
+            sound: true,
+          },
+          trigger: {
+            weekday,   // 1=Sunday, 2=Monday, …, 7=Saturday
+            hour: 19,  // 7pm local time
+            minute: 0,
+            repeats: true,
+          },
+        });
+      }
+    } else {
+      // Cancel all daily obs notifications if toggled off
+      for (let weekday = 1; weekday <= 7; weekday++) {
+        await Notifications.cancelScheduledNotificationAsync(`${NOTIF_IDS.DAILY_OBS}-${weekday}`);
+      }
+    }
+
     // Appeal and appointment notifications are event-driven (set when user saves a date).
     // The toggles just control whether to send them when a date is saved.
     // Store the preference so other screens can read it.
     await AsyncStorage.setItem('ap_notification_appeal', String(settings.ap_notification_appeal));
     await AsyncStorage.setItem('ap_notification_appointment', String(settings.ap_notification_appointment));
+    await AsyncStorage.setItem('ap_notification_daily_obs', String(settings.ap_notification_daily_obs));
   };
 
   /**

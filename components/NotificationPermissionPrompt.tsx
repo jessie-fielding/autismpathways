@@ -19,16 +19,16 @@ import { useNotifications } from '../hooks/useNotifications';
 const KEY_PROMPT_SHOWN = 'ap_notif_prompt_shown';
 
 const BENEFITS = [
+  { icon: '📓', text: 'Daily nudge to log an observation about your child’s day' },
   { icon: '⚖️', text: 'Appeal deadline reminders so you never miss a hearing' },
   { icon: '📅', text: 'Appointment reminders 24 hours in advance' },
   { icon: '✅', text: 'Weekly check-ins to keep your journey on track' },
-  { icon: '🗺️', text: 'Annual waiver waitlist reminders' },
 ];
 
 export default function NotificationPermissionPrompt() {
   const [visible, setVisible] = useState(false);
   const slideAnim = React.useRef(new Animated.Value(300)).current;
-  const { requestPermission } = useNotifications();
+  const { requestPermission, scheduleAll } = useNotifications();
 
   useEffect(() => {
     checkShouldShow();
@@ -59,7 +59,17 @@ export default function NotificationPermissionPrompt() {
       setVisible(false);
       await AsyncStorage.setItem(KEY_PROMPT_SHOWN, 'true');
       if (allow) {
-        await requestPermission();
+        const granted = await requestPermission();
+        if (granted) {
+          // Schedule daily observation reminders by default for all users
+          await scheduleAll({
+            ap_notification_daily_obs:   true,
+            ap_notification_appeal:      true,
+            ap_notification_appointment: true,
+            ap_notification_weekly:      true,
+            ap_notification_waiver:      true,
+          });
+        }
       }
     });
   };

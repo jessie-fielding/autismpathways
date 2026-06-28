@@ -41,6 +41,7 @@ const ALL_DATA_KEYS = [
   'ap_diagnosis_outcome',
   'ap_medicaid_progress',
   'ap_waiver_saved_agencies',
+  'ap_notification_daily_obs',
   'ap_notification_appeal',
   'ap_notification_appointment',
   'ap_notification_weekly',
@@ -51,9 +52,10 @@ const ALL_DATA_KEYS = [
   'eval_type_filter',
 ];
 
-type NotifKey = 'ap_notification_appeal' | 'ap_notification_appointment' | 'ap_notification_weekly' | 'ap_notification_waiver';
+type NotifKey = 'ap_notification_appeal' | 'ap_notification_appointment' | 'ap_notification_weekly' | 'ap_notification_waiver' | 'ap_notification_daily_obs';
 
 const NOTIF_ITEMS: { key: NotifKey; icon: string; title: string; desc: string }[] = [
+  { key: 'ap_notification_daily_obs', icon: '📓', title: 'Daily observation reminder', desc: 'Nudge me each evening to log something about my child’s day' },
   { key: 'ap_notification_appeal', icon: '🔔', title: 'Appeal deadlines', desc: 'Remind me before hearing dates' },
   { key: 'ap_notification_appointment', icon: '📅', title: 'Appointment reminders', desc: '24 hours before saved appointments' },
   { key: 'ap_notification_weekly', icon: '✅', title: 'Weekly check-in', desc: 'Sunday reminder to update your journey' },
@@ -74,6 +76,7 @@ export default function SettingsScreen() {
   const [activeChild, setActiveChild] = useState<ChildProfile | null>(null);
   const [isProvider, setIsProvider] = useState(false);
   const [notifs, setNotifs] = useState<Record<NotifKey, boolean>>({
+    ap_notification_daily_obs: true,
     ap_notification_appeal: true,
     ap_notification_appointment: true,
     ap_notification_weekly: true,
