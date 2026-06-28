@@ -228,6 +228,7 @@ export default function OnboardingScreen() {
   const [isProvider, setIsProvider] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const premiumModalShown = useRef(false);
+  const [showCards, setShowCards] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -266,6 +267,52 @@ export default function OnboardingScreen() {
       completeOnboarding();
     }
   };
+
+  // ── Opt-in welcome splash (shown before cards) ───────────────────────────────
+  if (!showCards) {
+    return (
+      <LinearGradient
+        colors={['#F3F0FF', '#EDE8FF', '#F8F6FF']}
+        style={[styles.splashContainer, { paddingTop: insets.top + SPACING.xl, paddingBottom: insets.bottom + SPACING.xl }]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+      >
+        <View style={styles.splashIconWrap}>
+          <Text style={styles.splashEmoji}>💜</Text>
+        </View>
+        <Text style={styles.splashHeadline}>
+          {parentName ? `Welcome, ${parentName}!` : 'Welcome to Autism Pathways!'}
+        </Text>
+        <Text style={styles.splashSub}>
+          {isProvider
+            ? 'Your provider profile is ready. Dive straight in or take a quick tour.'
+            : `Your family's guide to navigating autism — one step at a time.`}
+        </Text>
+        <TouchableOpacity
+          style={styles.splashPrimaryBtn}
+          onPress={completeOnboarding}
+          activeOpacity={0.88}
+        >
+          <LinearGradient
+            colors={['#7C6FD4', '#9B8FF5']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.splashPrimaryBtnInner}
+          >
+            <Text style={styles.splashPrimaryBtnText}>Take me straight in →</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.splashSecondaryBtn}
+          onPress={() => setShowCards(true)}
+          activeOpacity={0.75}
+        >
+          <Text style={styles.splashSecondaryBtnText}>Show me about Autism Pathways</Text>
+        </TouchableOpacity>
+        <Text style={styles.splashNote}>No pressure — you can explore anytime from the menu</Text>
+      </LinearGradient>
+    );
+  }
 
   const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
     if (viewableItems.length > 0) {
@@ -542,6 +589,81 @@ export default function OnboardingScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
+
+  // ── Opt-in welcome splash styles ─────────────────────────────────────────────
+  splashContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: SPACING.xl,
+  },
+  splashIconWrap: {
+    width: 96, height: 96,
+    borderRadius: 48,
+    backgroundColor: 'rgba(124,111,212,0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: SPACING.xl,
+  },
+  splashEmoji: { fontSize: 48 },
+  splashHeadline: {
+    fontSize: 26,
+    fontWeight: '900',
+    color: COLORS.text,
+    textAlign: 'center',
+    marginBottom: SPACING.md,
+    lineHeight: 32,
+  },
+  splashSub: {
+    fontSize: FONT_SIZES.md,
+    color: COLORS.textMid,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: SPACING.xxl,
+    paddingHorizontal: SPACING.md,
+  },
+  splashPrimaryBtn: {
+    width: '100%',
+    borderRadius: RADIUS.sm,
+    overflow: 'hidden',
+    marginBottom: SPACING.md,
+    shadowColor: '#7C6FD4',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  splashPrimaryBtnInner: {
+    paddingVertical: SPACING.lg,
+    alignItems: 'center',
+  },
+  splashPrimaryBtnText: {
+    color: '#fff',
+    fontSize: FONT_SIZES.md,
+    fontWeight: '800',
+  },
+  splashSecondaryBtn: {
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.lg,
+    borderRadius: RADIUS.sm,
+    borderWidth: 1.5,
+    borderColor: 'rgba(124,111,212,0.35)',
+    width: '100%',
+    alignItems: 'center',
+    marginBottom: SPACING.lg,
+    backgroundColor: 'rgba(255,255,255,0.7)',
+  },
+  splashSecondaryBtnText: {
+    color: COLORS.purple,
+    fontSize: FONT_SIZES.md,
+    fontWeight: '700',
+  },
+  splashNote: {
+    fontSize: 12,
+    color: COLORS.textLight,
+    textAlign: 'center',
+    marginTop: SPACING.xs,
+  },
 
   skipBtn: {
     position: 'absolute', top: 0, right: SPACING.lg,
