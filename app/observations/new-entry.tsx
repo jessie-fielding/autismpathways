@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
   Alert, ScrollView, StyleSheet, Text, TextInput,
-  TouchableOpacity, View, KeyboardAvoidingView, Platform} from 'react-native';
+  TouchableOpacity, View, KeyboardAvoidingView, Platform, Modal} from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, FONT_SIZES, RADIUS, SHADOWS, SPACING } from '../../lib/theme';
@@ -69,9 +69,12 @@ export default function NewEntryScreen() {
   const router = useRouter();
   const { childId } = useActiveChild();
 
-  const [date] = useState(todayISO());
+  const [date, setDate] = useState(todayISO());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [dateInput, setDateInput] = useState(todayISO());
   const [mood, setMood] = useState('');
   const [summary, setSummary] = useState('');
+  const [whatWorked, setWhatWorked] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [environment, setEnvironment] = useState('');
   const [showDetails, setShowDetails] = useState(false);
@@ -100,6 +103,7 @@ export default function NewEntryScreen() {
         date,
         mood,
         summary: summary.trim(),
+        whatWorked: whatWorked.trim(),
         tags,
         environment,
         triggers,
@@ -159,17 +163,61 @@ export default function NewEntryScreen() {
           </Text>
         </View>
 
-        {/* Date (display only) */}
+        {/* Date — tappable to change for retroactive logging */}
         <View style={styles.field}>
           <Text style={styles.fieldLabel}>Date</Text>
-          <View style={styles.dateDisplay}>
+          <TouchableOpacity
+            style={styles.dateDisplay}
+            onPress={() => { setDateInput(date); setShowDatePicker(true); }}
+            activeOpacity={0.75}
+          >
             <Text style={styles.dateText}>
               {new Date(date + 'T12:00:00').toLocaleDateString('en-US', {
                 weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
               })}
             </Text>
-          </View>
+            <Text style={styles.dateEditHint}>✏️ tap to change</Text>
+          </TouchableOpacity>
         </View>
+
+        {/* Date picker modal */}
+        <Modal transparent animationType="fade" visible={showDatePicker} onRequestClose={() => setShowDatePicker(false)}>
+          <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowDatePicker(false)} />
+          <View style={styles.datePickerSheet}>
+            <Text style={styles.datePickerTitle}>Change date</Text>
+            <Text style={styles.datePickerHint}>Enter the date this happened (YYYY-MM-DD)</Text>
+            <TextInput
+              style={styles.datePickerInput}
+              value={dateInput}
+              onChangeText={setDateInput}
+              placeholder="YYYY-MM-DD"
+              placeholderTextColor={COLORS.textLight}
+              keyboardType="numbers-and-punctuation"
+              maxLength={10}
+              autoFocus
+            />
+            <View style={styles.datePickerBtns}>
+              <TouchableOpacity style={styles.datePickerCancel} onPress={() => setShowDatePicker(false)}>
+                <Text style={styles.datePickerCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.datePickerConfirm}
+                onPress={() => {
+                  // Validate YYYY-MM-DD format
+                  const valid = /^\d{4}-\d{2}-\d{2}$/.test(dateInput) && !isNaN(new Date(dateInput + 'T12:00:00').getTime());
+                  if (!valid) {
+                    Alert.alert('Invalid date', 'Please enter a date in YYYY-MM-DD format, e.g. 2025-06-15');
+                    return;
+                  }
+                  setDate(dateInput);
+                  setShowDatePicker(false);
+                }}
+              >
+                <Text style={styles.datePickerConfirmText}>Set Date</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
 
         {/* Mood */}
         <View style={styles.field}>
@@ -200,6 +248,26 @@ export default function NewEntryScreen() {
             placeholderTextColor={COLORS.textLight}
             value={summary}
             onChangeText={setSummary}
+          />
+        </View>
+
+        {/* What worked today */}
+        <View style={[styles.field, styles.whatWorkedField]}>
+          <View style={styles.whatWorkedHeader}>
+            <Text style={styles.whatWorkedIcon}>⭐</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.whatWorkedLabel}>What worked today? <Text style={styles.optional}>(optional)</Text></Text>
+              <Text style={styles.whatWorkedHint}>A strategy, reward, or approach that helped — great to share with therapists.</Text>
+            </View>
+          </View>
+          <TextInput
+            style={styles.textarea}
+            multiline
+            numberOfLines={2}
+            placeholder="e.g. Used a reward chart — she cleaned her room without reminders!"
+            placeholderTextColor={COLORS.textLight}
+            value={whatWorked}
+            onChangeText={setWhatWorked}
           />
         </View>
 
@@ -458,6 +526,71 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.md,
   },
   dateText: { fontSize: FONT_SIZES.base, color: COLORS.text },
+  dateEditHint: { fontSize: FONT_SIZES.xs, color: COLORS.purple, marginTop: 4, fontWeight: '500' },
+
+  // Date picker modal
+  modalOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.45)' },
+  datePickerSheet: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: COLORS.white,
+    borderTopLeftRadius: RADIUS.lg,
+    borderTopRightRadius: RADIUS.lg,
+    paddingHorizontal: SPACING.xl,
+    paddingTop: SPACING.lg,
+    paddingBottom: 40,
+    ...SHADOWS.lg,
+  },
+  datePickerTitle: { fontSize: FONT_SIZES.lg, fontWeight: '700', color: COLORS.text, marginBottom: SPACING.xs },
+  datePickerHint: { fontSize: FONT_SIZES.sm, color: COLORS.textMid, marginBottom: SPACING.md },
+  datePickerInput: {
+    backgroundColor: COLORS.bg,
+    borderRadius: RADIUS.sm,
+    borderWidth: 1.5,
+    borderColor: COLORS.lavenderAccent,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.md,
+    fontSize: FONT_SIZES.lg,
+    color: COLORS.text,
+    letterSpacing: 2,
+    marginBottom: SPACING.lg,
+  },
+  datePickerBtns: { flexDirection: 'row', gap: SPACING.md },
+  datePickerCancel: {
+    flex: 1,
+    paddingVertical: SPACING.md,
+    borderRadius: RADIUS.sm,
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+    alignItems: 'center',
+  },
+  datePickerCancelText: { fontSize: FONT_SIZES.base, color: COLORS.textMid, fontWeight: '600' },
+  datePickerConfirm: {
+    flex: 1,
+    paddingVertical: SPACING.md,
+    borderRadius: RADIUS.sm,
+    backgroundColor: COLORS.purple,
+    alignItems: 'center',
+  },
+  datePickerConfirmText: { fontSize: FONT_SIZES.base, color: COLORS.white, fontWeight: '700' },
+
+  // What worked field
+  whatWorkedField: {
+    backgroundColor: COLORS.white,
+    borderRadius: RADIUS.md,
+    borderWidth: 1.5,
+    borderColor: '#E8D87A',
+    padding: SPACING.md,
+    marginHorizontal: SPACING.md,
+    marginBottom: SPACING.md,
+    ...SHADOWS.sm,
+  },
+  whatWorkedHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: SPACING.sm, marginBottom: SPACING.sm },
+  whatWorkedIcon: { fontSize: 22, marginTop: 1 },
+  whatWorkedLabel: { fontSize: FONT_SIZES.sm, fontWeight: '700', color: COLORS.text },
+  whatWorkedHint: { fontSize: FONT_SIZES.xs, color: COLORS.textMid, marginTop: 2, lineHeight: 17 },
 
   // Chips
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm },

@@ -11,6 +11,7 @@ import * as Notifications from 'expo-notifications';
 import { useEffect, useRef } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
 import { initAnalytics, trackAppOpened } from '../lib/analytics';
+import { markAppOpenedAndSuppressTodayNotif } from '../hooks/useNotifications';
 
 // Initialize Mixpanel + session replay on cold start
 initAnalytics();
@@ -34,12 +35,14 @@ export default function RootLayout() {
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
 
   useEffect(() => {
-    // Track cold start
+    // Track cold start + suppress today's obs notification if app was opened
     trackAppOpened('cold_start');
+    markAppOpenedAndSuppressTodayNotif();
     // Track foreground resume
     const sub = AppState.addEventListener('change', (nextState: AppStateStatus) => {
       if (appStateRef.current !== 'active' && nextState === 'active') {
         trackAppOpened('foreground');
+        markAppOpenedAndSuppressTodayNotif();
       }
       appStateRef.current = nextState;
     });

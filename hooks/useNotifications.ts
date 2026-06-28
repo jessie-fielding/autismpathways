@@ -30,10 +30,11 @@ try {
 }
 
 // ── Storage keys ──────────────────────────────────────────────────────────────
-const KEY_PUSH_TOKEN   = 'ap_push_token';
-const KEY_PERM_ASKED   = 'ap_notif_permission_asked';
+const KEY_PUSH_TOKEN        = 'ap_push_token';
+const KEY_PERM_ASKED        = 'ap_notif_permission_asked';
+const KEY_LAST_OPEN_DATE    = 'ap_last_open_date';
 
-// ── Notification identifiers (must be stable so we can cancel by id) ──────────
+// ── Notification identifiers (must be stable so we can cancel by id) ────────────
 export const NOTIF_IDS = {
   APPEAL:        'ap-notif-appeal',
   APPOINTMENT:   'ap-notif-appointment',
@@ -48,10 +49,67 @@ const DAILY_OBS_MESSAGES = [
   { title: '✏️ Quick observation?', body: "Did anything stand out today? Log it in Autism Pathways — it only takes 30 seconds." },
   { title: '🧠 What did you notice today?', body: "Small observations add up. Tap to log a note about your child's day." },
   { title: '📋 Daily log reminder', body: "Tracking patterns helps at IEP meetings and evaluations. Add today's observation now." },
-  { title: '💜 You're doing great', body: "Take 30 seconds to log something you noticed today — future you will thank you." },
+  { title: '💜 You’re doing great', body: "Take 30 seconds to log something you noticed today — future you will thank you." },
   { title: '🌟 One thing from today?', body: "Log a quick observation — a win, a challenge, or anything worth remembering." },
   { title: '📓 End-of-day check-in', body: "Before the day slips away — tap to log an observation about your child." },
 ];
+
+/**
+ * Called on every app open (cold start + foreground resume).
+ * Records today's date and cancels the daily observation notification
+ * for today — so users who already opened the app don't get nudged.
+ */
+export async function markAppOpenedAndSuppressTodayNotif(): Promise<void> {
+  let Notifs: typeof import('expo-notifications') | null = null;
+  try { Notifs = require('expo-notifications'); } catch { return; }
+  if (!Notifs || Platform.OS === 'web') return;
+
+  const today = new Date().toISOString().split('T')[0]; // 'YYYY-MM-DD'
+  const lastOpen = await AsyncStorage.getItem(KEY_LAST_OPEN_DATE);
+
+  // Always update the last-open date
+  await AsyncStorage.setItem(KEY_LAST_OPEN_DATE, today);
+
+  // If this is the first open today, cancel today's daily obs notification
+  if (lastOpen !== today) {
+    // The daily obs notifications are keyed by weekday (1-7).
+    // Cancel today's weekday notification so it doesn't fire tonight.
+    const todayWeekday = new Date().getDay() + 1; // JS getDay(): 0=Sun, so +1 → 1=Sun…7=Sat
+    const identifier = `${NOTIF_IDS.DAILY_OBS}-${todayWeekday}`;
+    try {
+      await Notifs.cancelScheduledNotificationAsync(identifier);
+      // Reschedule it for next week (it's a weekly repeating trigger,
+      // but cancelling removes it entirely — we need to put it back).
+      // We do this by re-reading the user's preference and rescheduling.
+      const prefRaw = await AsyncStorage.getItem('ap_notification_daily_obs');
+      const enabled = prefRaw === null ? true : prefRaw === 'true';
+      if (enabled) {
+        const msg = DAILY_OBS_MESSAGES[todayWeekday - 1];
+        await Notifs.scheduleNotificationAsync({
+          identifier,
+          content: {
+            title: msg.title,
+            body: msg.body,
+            data: { route: '/observations/new-entry' },
+            sound: true,
+          },
+          trigger: {
+            weekday: todayWeekday,
+            hour: 19,
+            minute: 0,
+            repeats: true,
+          },
+        });
+      }
+    } catch {
+      // Silently ignore — notification may not exist yet
+    }
+  }
+}
+
+// ── Notification identifiers (must be stable so we can cancel by id) ──────────
+
+// ── Daily observation prompt messages (rotate by day of week) ────────────────
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 export type NotifSettings = {

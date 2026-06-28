@@ -13,6 +13,7 @@ export interface Observation {
   date: string;
   mood: string;
   summary: string;
+  whatWorked?: string;
   tags: string[];
   environment: string;
   triggers: string[];
@@ -235,6 +236,11 @@ export default function ObservationsHomeScreen() {
                   <Text style={styles.entryText} numberOfLines={2}>
                     {entry.summary || <Text style={{ fontStyle: 'italic', color: COLORS.textLight }}>No description</Text>}
                   </Text>
+                  {entry.whatWorked ? (
+                    <View style={styles.whatWorkedBadge}>
+                      <Text style={styles.whatWorkedBadgeText}>⭐ {entry.whatWorked}</Text>
+                    </View>
+                  ) : null}
                   {entry.tags.length > 0 && (
                     <View style={styles.entryTags}>
                       {entry.tags.map((tag) => (
@@ -465,6 +471,17 @@ const styles = StyleSheet.create({
   },
   entryMoodText: { fontSize: 11, fontWeight: '600', color: COLORS.purpleDark },
   entryText: { fontSize: FONT_SIZES.sm, color: COLORS.text, lineHeight: 19 },
+  whatWorkedBadge: {
+    backgroundColor: '#FFFBEA',
+    borderRadius: RADIUS.sm,
+    borderWidth: 1,
+    borderColor: '#E8D87A',
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 3,
+    marginTop: SPACING.xs,
+    alignSelf: 'flex-start',
+  },
+  whatWorkedBadgeText: { fontSize: 11, color: '#7A6A00', fontWeight: '600', lineHeight: 16 },
   entryTags: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.xs, marginTop: SPACING.xs },
   entryTag: {
     backgroundColor: COLORS.border,
