@@ -534,9 +534,20 @@ export default function DashboardScreen() {
           </View>
           {upcomingReminders.length === 0 ? (
             <View style={styles.upcomingEmptyCard}>
-              <Text style={styles.upcomingEmptyIcon}>✅</Text>
-              <Text style={styles.upcomingEmptyTitle}>{t("You're all caught up!", '¡Estás al día!')}</Text>
-              <Text style={styles.upcomingEmptySub}>{t('No events in the next 30 days.', 'Sin eventos en los próximos 30 días.')}</Text>
+              <Text style={styles.upcomingEmptyIcon}>📅</Text>
+              <Text style={styles.upcomingEmptyTitle}>
+                {PATHWAY_CARDS.length === 1
+                  ? t('Track your appointments here', 'Registra tus citas aquí')
+                  : t("You're all caught up!", '¡Estás al día!')}
+              </Text>
+              <Text style={styles.upcomingEmptySub}>
+                {PATHWAY_CARDS.length === 1
+                  ? t(
+                      'Add therapy sessions, evaluations, or IEP meetings to stay organised.',
+                      'Agrega sesiones de terapia, evaluaciones o reuniones IEP para mantenerte organizado.',
+                    )
+                  : t('No events in the next 30 days.', 'Sin eventos en los próximos 30 días.')}
+              </Text>
               <TouchableOpacity
                 style={styles.upcomingAddBtn}
                 onPress={() => router.push('/services-tracker' as any)}
@@ -638,17 +649,66 @@ export default function DashboardScreen() {
             );
           })}
 
-          {/* Prompt to start a pathway if only Observations is showing */}
+          {/* ── First-time welcome card (only when no pathways started yet) ── */}
           {PATHWAY_CARDS.length === 1 && (
-            <TouchableOpacity
-              style={styles.startPathwayPrompt}
-              onPress={() => router.push('/tools' as any)}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.startPathwayText}>
-                🗺️ {t('Start a pathway — tap to explore', 'Comienza un camino — toca para explorar')}
-              </Text>
-            </TouchableOpacity>
+            <View style={styles.firstTimeCard}>
+              <LinearGradient
+                colors={['#F3F0FF', '#EDE8FF']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.firstTimeCardInner}
+              >
+                <Text style={styles.firstTimeTitle}>
+                  👋 {t("You're all set — here's where to start!", '¡Todo listo — aquí es donde empezar!')}
+                </Text>
+                <Text style={styles.firstTimeSub}>
+                  {t(
+                    'Autism Pathways is your free guide through every step of the journey. Pick one to begin:',
+                    'Autism Pathways es tu guía gratuita en cada paso del camino. Elige uno para comenzar:',
+                  )}
+                </Text>
+
+                {/* Action row */}
+                <View style={styles.firstTimeActions}>
+                  <TouchableOpacity
+                    style={styles.firstTimeAction}
+                    onPress={() => router.push('/tools' as any)}
+                    activeOpacity={0.82}
+                  >
+                    <View style={[styles.firstTimeActionIcon, { backgroundColor: C.blue }]}>
+                      <Text style={styles.firstTimeActionEmoji}>🗺️</Text>
+                    </View>
+                    <Text style={styles.firstTimeActionLabel}>{t('Start a\nPathway', 'Iniciar un\nCamino')}</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.firstTimeAction}
+                    onPress={() => router.push('/observations/new-entry' as any)}
+                    activeOpacity={0.82}
+                  >
+                    <View style={[styles.firstTimeActionIcon, { backgroundColor: C.lavender }]}>
+                      <Text style={styles.firstTimeActionEmoji}>📓</Text>
+                    </View>
+                    <Text style={styles.firstTimeActionLabel}>{t('Log an\nObservation', 'Registrar una\nObservación')}</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.firstTimeAction}
+                    onPress={() => router.push('/provider-directory' as any)}
+                    activeOpacity={0.82}
+                  >
+                    <View style={[styles.firstTimeActionIcon, { backgroundColor: C.mint }]}>
+                      <Text style={styles.firstTimeActionEmoji}>🩺</Text>
+                    </View>
+                    <Text style={styles.firstTimeActionLabel}>{t('Find a\nProvider', 'Buscar un\nProveedor')}</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <Text style={styles.firstTimeNote}>
+                  {t('Everything above is free — no credit card needed.', 'Todo lo de arriba es gratis — sin tarjeta de crédito.')}
+                </Text>
+              </LinearGradient>
+            </View>
           )}
         </View>
 
@@ -1020,6 +1080,67 @@ const styles = StyleSheet.create({
     borderColor: C.lavenderAccent,
   },
   startPathwayText: { fontSize: 14, color: C.purpleDark, fontWeight: '600' },
+
+  // First-time welcome card
+  firstTimeCard: {
+    borderRadius: R.lg,
+    overflow: 'hidden',
+    marginTop: SP.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(124,111,212,0.2)',
+    shadowColor: C.purple,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  firstTimeCardInner: {
+    padding: SP.xl,
+  },
+  firstTimeTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: C.purpleDark,
+    marginBottom: SP.sm,
+    lineHeight: 22,
+  },
+  firstTimeSub: {
+    fontSize: 13,
+    color: C.textMid,
+    lineHeight: 19,
+    marginBottom: SP.xl,
+  },
+  firstTimeActions: {
+    flexDirection: 'row',
+    gap: SP.md,
+    marginBottom: SP.lg,
+  },
+  firstTimeAction: {
+    flex: 1,
+    alignItems: 'center',
+    gap: SP.sm,
+  },
+  firstTimeActionIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: R.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  firstTimeActionEmoji: { fontSize: 26 },
+  firstTimeActionLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: C.text,
+    textAlign: 'center',
+    lineHeight: 16,
+  },
+  firstTimeNote: {
+    fontSize: 11,
+    color: C.textLight,
+    textAlign: 'center',
+    fontStyle: 'italic',
+  },
 
   // Pinned tools
   pinnedRow: { flexDirection: 'row', gap: SP.sm },
