@@ -70,37 +70,16 @@ export async function markAppOpenedAndSuppressTodayNotif(): Promise<void> {
   // Always update the last-open date
   await AsyncStorage.setItem(KEY_LAST_OPEN_DATE, today);
 
-  // If this is the first open today, cancel today's daily obs notification
+  // If this is the first open today, cancel today's daily obs notification.
+  // We do NOT reschedule it — the weekly repeating trigger means it will
+  // automatically fire again next week on the same weekday at 7pm.
+  // The next call to scheduleAll() (e.g. when user visits Settings) will
+  // restore it if it was removed.
   if (lastOpen !== today) {
-    // The daily obs notifications are keyed by weekday (1-7).
-    // Cancel today's weekday notification so it doesn't fire tonight.
-    const todayWeekday = new Date().getDay() + 1; // JS getDay(): 0=Sun, so +1 → 1=Sun…7=Sat
+    const todayWeekday = new Date().getDay() + 1; // JS getDay(): 0=Sun → +1 = 1…7
     const identifier = `${NOTIF_IDS.DAILY_OBS}-${todayWeekday}`;
     try {
       await Notifs.cancelScheduledNotificationAsync(identifier);
-      // Reschedule it for next week (it's a weekly repeating trigger,
-      // but cancelling removes it entirely — we need to put it back).
-      // We do this by re-reading the user's preference and rescheduling.
-      const prefRaw = await AsyncStorage.getItem('ap_notification_daily_obs');
-      const enabled = prefRaw === null ? true : prefRaw === 'true';
-      if (enabled) {
-        const msg = DAILY_OBS_MESSAGES[todayWeekday - 1];
-        await Notifs.scheduleNotificationAsync({
-          identifier,
-          content: {
-            title: msg.title,
-            body: msg.body,
-            data: { route: '/observations/new-entry' },
-            sound: true,
-          },
-          trigger: {
-            weekday: todayWeekday,
-            hour: 19,
-            minute: 0,
-            repeats: true,
-          },
-        });
-      }
     } catch {
       // Silently ignore — notification may not exist yet
     }

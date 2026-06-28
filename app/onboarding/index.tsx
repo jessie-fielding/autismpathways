@@ -255,9 +255,34 @@ export default function OnboardingScreen() {
   // Pick the right card set based on account type
   const CARDS = isProvider ? PROVIDER_CARD_DEFS : PARENT_CARD_DEFS;
 
+  // These refs MUST be declared before any conditional return (Rules of Hooks)
+  const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
+    if (viewableItems.length > 0) {
+      const idx = viewableItems[0].index ?? 0;
+      setCurrentIndex(idx);
+      // Show premium modal once when user reaches the last card
+      if (idx === CARDS.length - 1 && !premiumModalShown.current) {
+        premiumModalShown.current = true;
+        setTimeout(() => setShowPremiumModal(true), 600);
+      }
+    }
+  }).current;
+
+  const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
+
   const completeOnboarding = async () => {
     await AsyncStorage.setItem('ap_onboarding_complete', 'true');
     router.replace('/(tabs)/dashboard');
+  };
+
+  // Show premium modal before going straight in (for users who skip the cards)
+  const completeOnboardingWithModal = async () => {
+    if (!premiumModalShown.current) {
+      premiumModalShown.current = true;
+      setShowPremiumModal(true);
+    } else {
+      await completeOnboarding();
+    }
   };
 
   const goNext = () => {
@@ -290,7 +315,7 @@ export default function OnboardingScreen() {
         </Text>
         <TouchableOpacity
           style={styles.splashPrimaryBtn}
-          onPress={completeOnboarding}
+          onPress={completeOnboardingWithModal}
           activeOpacity={0.88}
         >
           <LinearGradient
@@ -310,23 +335,70 @@ export default function OnboardingScreen() {
           <Text style={styles.splashSecondaryBtnText}>Show me about Autism Pathways</Text>
         </TouchableOpacity>
         <Text style={styles.splashNote}>No pressure — you can explore anytime from the menu</Text>
+
+        {/* Premium modal — rendered here so it works from the splash path too */}
+        <Modal
+          visible={showPremiumModal}
+          transparent
+          animationType="slide"
+          statusBarTranslucent
+          onRequestClose={async () => { setShowPremiumModal(false); await completeOnboarding(); }}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalSheet}>
+              <View style={styles.modalHandle} />
+              <LinearGradient
+                colors={['#6C5CE7', '#9B8FF5']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.modalHeader}
+              >
+                <Text style={styles.modalHeaderTitle}>⭐ Unlock Premium Access</Text>
+                <Text style={styles.modalHeaderSub}>Everything you need — in one place</Text>
+              </LinearGradient>
+              <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+                {[
+                  { icon: '🗺️', title: 'All Pathways', desc: 'Diagnosis, Medicaid, Waiver, IEP, Potty & Transition — fully unlocked' },
+                  { icon: '🤖', title: 'AI Transition Guide', desc: 'Personalised step-by-step guidance powered by AI' },
+                  { icon: '🎙️', title: 'IEP Meeting Recorder', desc: 'Record, transcribe & summarise your IEP meetings' },
+                  { icon: '📈', title: 'Trends & Insights', desc: 'Spot patterns in your daily observations over time' },
+                  { icon: '🔔', title: 'Smart Reminders', desc: 'Never miss a waiver renewal, IEP date, or deadline' },
+                  { icon: '📁', title: 'Document Vault', desc: `Store & organise all your child's important documents` },
+                  { icon: '🔍', title: 'Full Provider Directory', desc: '891+ curated ASD-specialised providers near you' },
+                ].map((perk) => (
+                  <View key={perk.title} style={styles.perkRow}>
+                    <Text style={styles.perkIcon}>{perk.icon}</Text>
+                    <View style={styles.perkText}>
+                      <Text style={styles.perkTitle}>{perk.title}</Text>
+                      <Text style={styles.perkDesc}>{perk.desc}</Text>
+                    </View>
+                  </View>
+                ))}
+                <View style={styles.pricingNote}>
+                  <Text style={styles.pricingNoteText}>From <Text style={styles.pricingNotePrice}>$14.99 / month</Text> · Cancel anytime</Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.modalCTA}
+                  onPress={() => { setShowPremiumModal(false); completeOnboarding(); setTimeout(() => router.push('/paywall'), 300); }}
+                  activeOpacity={0.88}
+                >
+                  <LinearGradient colors={['#6C5CE7', '#9B8FF5']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.modalCTAInner}>
+                    <Text style={styles.modalCTAText}>View Plans →</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.modalDonateBtn} onPress={() => Linking.openURL('https://info.autismpathways.app/donate')} activeOpacity={0.7}>
+                  <Text style={styles.modalDonateText}>🫶 Help keep this free — <Text style={styles.modalDonateLink}>Donate</Text></Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.modalDismiss} onPress={async () => { setShowPremiumModal(false); await completeOnboarding(); }} activeOpacity={0.7}>
+                  <Text style={styles.modalDismissText}>Maybe later</Text>
+                </TouchableOpacity>
+              </ScrollView>
+            </View>
+          </View>
+        </Modal>
       </LinearGradient>
     );
   }
-
-  const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
-    if (viewableItems.length > 0) {
-      const idx = viewableItems[0].index ?? 0;
-      setCurrentIndex(idx);
-      // Show premium modal once when user reaches the last card
-      if (idx === CARDS.length - 1 && !premiumModalShown.current) {
-        premiumModalShown.current = true;
-        setTimeout(() => setShowPremiumModal(true), 600);
-      }
-    }
-  }).current;
-
-  const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
 
   const renderCard = ({ item }: { item: typeof PARENT_CARD_DEFS[0] }) => {
     const headline = interpolate(item.headline, parentName || '!', childName);
@@ -504,7 +576,7 @@ export default function OnboardingScreen() {
                 onPress={() => {
                   setShowPremiumModal(false);
                   completeOnboarding();
-                  router.push('/paywall/premium-features' as any);
+                  setTimeout(() => router.push('/paywall'), 300);
                 }}
                 activeOpacity={0.88}
               >

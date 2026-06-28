@@ -534,6 +534,44 @@ export default function ProviderDirectoryScreen() {
           </View>
         )}
 
+        {/* Admin-approved / Selected Listings section */}
+        {adminApprovedProviders.length > 0 && (
+          <View style={styles.liveSection}>
+            <View style={styles.liveSectionHeader}>
+              <Text style={styles.liveSectionTitle}>✅ Selected Listings</Text>
+              <Text style={styles.liveSectionSub}>Providers verified and approved by the Autism Pathways team</Text>
+            </View>
+            {adminApprovedProviders.map((lp) => (
+              <TouchableOpacity
+                key={String(lp.id)}
+                style={[styles.liveCard, { borderLeftColor: '#10B981', borderLeftWidth: 3 }]}
+                onPress={() => {
+                  if (lp.website) Linking.openURL(lp.website);
+                  else if (lp.phone) Linking.openURL(`tel:${lp.phone}`);
+                }}
+                activeOpacity={0.85}
+              >
+                <View style={styles.liveCardLeft}>
+                  <View style={[styles.liveCardAvatar, { backgroundColor: '#10B98118' }]}>
+                    <Text style={styles.liveCardEmoji}>{SPECIALTY_EMOJIS[lp.specialty] || '🏥'}</Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.liveCardName}>{lp.practiceName || lp.providerName}</Text>
+                    {lp.practiceName ? <Text style={styles.liveCardPractice}>{lp.providerName}</Text> : null}
+                    <Text style={styles.liveCardSpecialty}>{lp.specialty}{lp.state ? ` · ${lp.state}` : ''}</Text>
+                    {lp.medicaidAccepted && (
+                      <Text style={styles.liveCardMedicaid}>✓ Medicaid Accepted</Text>
+                    )}
+                  </View>
+                </View>
+                <View style={[styles.liveCardBadge, { backgroundColor: '#10B98118' }]}>
+                  <Text style={[styles.liveCardBadgeText, { color: '#10B981' }]}>View →</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
         {/* Results count */}
         <View style={styles.resultsHeader}>
           <Text style={styles.resultsCount}>
