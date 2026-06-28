@@ -434,7 +434,7 @@ export default function OnboardingScreen() {
                 { icon: '🎙️', title: 'IEP Meeting Recorder', desc: 'Record, transcribe & summarise your IEP meetings' },
                 { icon: '📈', title: 'Trends & Insights', desc: 'Spot patterns in your daily observations over time' },
                 { icon: '🔔', title: 'Smart Reminders', desc: 'Never miss a waiver renewal, IEP date, or deadline' },
-                { icon: '📁', title: 'Document Vault', desc: 'Store & organise all your child's important documents' },
+                { icon: '📁', title: 'Document Vault', desc: `Store & organise all your child's important documents` },
                 { icon: '🔍', title: 'Full Provider Directory', desc: '891+ curated ASD-specialised providers near you' },
               ].map((perk) => (
                 <View key={perk.title} style={styles.perkRow}>
