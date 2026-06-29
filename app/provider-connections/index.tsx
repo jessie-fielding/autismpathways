@@ -221,13 +221,29 @@ export default function ProviderConnections() {
                 <>
                   <View style={styles.contactBox}>
                     <Ionicons name="checkmark-circle" size={16} color={COLORS.teal} />
-                    <Text style={styles.contactText}>
-                      {req.shareEmail
-                        ? 'Prefers to be contacted by email'
-                        : req.sharePhone
-                        ? 'Prefers to be contacted by phone'
-                        : 'Waiting for you to reach out through the app'}
-                    </Text>
+                    <View style={{ flex: 1 }}>
+                      {req.shareEmail && req.senderEmail ? (
+                        <>
+                          <Text style={styles.contactText}>📧 Email: <Text style={{ fontWeight: '700', color: COLORS.text }}>{req.senderEmail}</Text></Text>
+                          <TouchableOpacity onPress={() => Linking.openURL(`mailto:${req.senderEmail}`)} style={{ marginTop: 4 }}>
+                            <Text style={{ fontSize: FONT_SIZES.xs, color: COLORS.purple, fontWeight: '600' }}>Tap to email →</Text>
+                          </TouchableOpacity>
+                        </>
+                      ) : req.sharePhone && req.requesterPhone ? (
+                        <>
+                          <Text style={styles.contactText}>📞 Phone: <Text style={{ fontWeight: '700', color: COLORS.text }}>{req.requesterPhone}</Text></Text>
+                          <TouchableOpacity onPress={() => Linking.openURL(`tel:${req.requesterPhone}`)} style={{ marginTop: 4 }}>
+                            <Text style={{ fontSize: FONT_SIZES.xs, color: COLORS.purple, fontWeight: '600' }}>Tap to call →</Text>
+                          </TouchableOpacity>
+                        </>
+                      ) : req.shareEmail ? (
+                        <Text style={styles.contactText}>Prefers email — contact info loading…</Text>
+                      ) : req.sharePhone ? (
+                        <Text style={styles.contactText}>Prefers phone — contact info loading…</Text>
+                      ) : (
+                        <Text style={styles.contactText}>They chose not to share contact info — they will reach out to you.</Text>
+                      )}
+                    </View>
                   </View>
 
                   {/* Forward to My Team button */}
@@ -235,11 +251,15 @@ export default function ProviderConnections() {
                     style={styles.forwardBtn}
                     activeOpacity={0.8}
                     onPress={() => {
-                      const contactLine = req.shareEmail
-                        ? `Contact preference: Email`
+                      const contactLine = req.shareEmail && req.senderEmail
+                        ? `Email: ${req.senderEmail}`
+                        : req.sharePhone && req.requesterPhone
+                        ? `Phone: ${req.requesterPhone}`
+                        : req.shareEmail
+                        ? `Contact preference: Email (address not yet loaded)`
                         : req.sharePhone
-                        ? `Contact preference: Phone`
-                        : `Contact preference: Not shared yet`;
+                        ? `Contact preference: Phone (number not yet loaded)`
+                        : `Contact preference: Not shared`;
                       const subject = encodeURIComponent(`New Patient Intro Request — ${req.requesterName}`);
                       const body = encodeURIComponent(
                         `Hi,\n\nA family has sent an introduction request through Autism Pathways.\n\nFamily name: ${req.requesterName}\n${contactLine}\nMessage: ${req.message || '(none)'}\nDate: ${new Date(req.createdAt).toLocaleDateString()}\n\nPlease follow up through your normal intake process.\n\nNote: This is a warm introduction request, not a clinical referral. No PHI was shared through the app.`

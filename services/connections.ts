@@ -23,7 +23,8 @@ export interface ConnectionRequest {
   providerSpecialty: string;
   providerCounty: string;
   senderSub?: string;
-  senderEmail?: string;
+  senderEmail?: string;       // email from Cognito — revealed when shareEmail=true
+  requesterPhone?: string;    // phone entered by parent — revealed when sharePhone=true
   requesterName: string;
   shareEmail: boolean;
   sharePhone: boolean;

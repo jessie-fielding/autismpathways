@@ -37,6 +37,7 @@ export default function RequestConnection() {
 
   const [requesterName, setRequesterName] = useState('');
   const [shareOption, setShareOption]     = useState<ShareOption>('neither');
+  const [phoneNumber, setPhoneNumber]     = useState('');
   const [message, setMessage]             = useState('');
   const [submitting, setSubmitting]       = useState(false);
 
@@ -47,6 +48,11 @@ export default function RequestConnection() {
     }
     setSubmitting(true);
     try {
+      if (shareOption === 'phone' && !phoneNumber.trim()) {
+        Alert.alert('Phone number required', 'Please enter your phone number so the provider can reach you.');
+        setSubmitting(false);
+        return;
+      }
       await addSentRequest({
         providerId:       params.providerId ?? 'unknown',
         providerName:     params.providerName ?? 'Provider',
@@ -55,6 +61,7 @@ export default function RequestConnection() {
         requesterName:    requesterName.trim(),
         shareEmail:       shareOption === 'email',
         sharePhone:       shareOption === 'phone',
+        requesterPhone:   shareOption === 'phone' ? phoneNumber.trim() : undefined,
         message:          message.trim(),
       });
 
@@ -153,6 +160,17 @@ export default function RequestConnection() {
               </TouchableOpacity>
             );
           })}
+        {shareOption === 'phone' && (
+          <TextInput
+            style={[styles.input, { marginTop: 8 }]}
+            value={phoneNumber}
+            onChangeText={setPhoneNumber}
+            placeholder="Your phone number"
+            placeholderTextColor={COLORS.textLight}
+            keyboardType="phone-pad"
+            autoComplete="tel"
+          />
+        )}
         </View>
 
         {/* Optional message */}
