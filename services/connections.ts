@@ -25,6 +25,9 @@ export interface ConnectionRequest {
   senderSub?: string;
   senderEmail?: string;       // email from Cognito — revealed when shareEmail=true
   requesterPhone?: string;    // phone entered by parent — revealed when sharePhone=true
+  insurance?: string;         // insurance provider name (free text)
+  hasMedicaid?: boolean;      // does the family have Medicaid?
+  okOutOfPocket?: boolean | null; // open to private pay?
   requesterName: string;
   shareEmail: boolean;
   sharePhone: boolean;
@@ -32,6 +35,7 @@ export interface ConnectionRequest {
   status: ConnectionStatus;
   createdAt: string;
   respondedAt?: string;
+  denialReason?: string;  // reason provided when declining
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -97,14 +101,15 @@ export async function getReceivedRequests(providerId?: string): Promise<Connecti
 export async function respondToRequest(
   requestId: string,
   status: 'accepted' | 'declined',
-  providerId?: string
+  providerId?: string,
+  denialReason?: string
 ): Promise<void> {
   const headers = await authHeaders();
   const pid = providerId || (await import('./api').then(m => m.getDeviceId()));
   const res = await fetch(`${AP_API_BASE}/api/connections/respond`, {
     method: 'PUT',
     headers,
-    body: JSON.stringify({ requestId, providerId: pid, status }),
+    body: JSON.stringify({ requestId, providerId: pid, status, denialReason }),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));

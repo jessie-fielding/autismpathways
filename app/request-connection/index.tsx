@@ -38,6 +38,9 @@ export default function RequestConnection() {
   const [requesterName, setRequesterName] = useState('');
   const [shareOption, setShareOption]     = useState<ShareOption>('neither');
   const [phoneNumber, setPhoneNumber]     = useState('');
+  const [insurance, setInsurance]         = useState('');
+  const [hasMedicaid, setHasMedicaid]     = useState<boolean | null>(null);
+  const [okOutOfPocket, setOkOutOfPocket] = useState<boolean | null>(null);
   const [message, setMessage]             = useState('');
   const [submitting, setSubmitting]       = useState(false);
 
@@ -62,6 +65,9 @@ export default function RequestConnection() {
         shareEmail:       shareOption === 'email',
         sharePhone:       shareOption === 'phone',
         requesterPhone:   shareOption === 'phone' ? phoneNumber.trim() : undefined,
+        insurance:        insurance.trim() || undefined,
+        hasMedicaid:      hasMedicaid ?? undefined,
+        okOutOfPocket:    okOutOfPocket ?? undefined,
         message:          message.trim(),
       });
 
@@ -173,6 +179,58 @@ export default function RequestConnection() {
         )}
         </View>
 
+        {/* Insurance & payment */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Insurance & Payment</Text>
+          <Text style={styles.sectionSub}>Helps the provider know if they can serve you</Text>
+
+          <Text style={[styles.fieldLabel, { marginTop: 4 }]}>Insurance provider (optional)</Text>
+          <TextInput
+            style={styles.input}
+            value={insurance}
+            onChangeText={setInsurance}
+            placeholder="e.g. Blue Cross Blue Shield, Aetna, Cigna…"
+            placeholderTextColor={COLORS.textLight}
+            autoCapitalize="words"
+          />
+
+          <Text style={styles.fieldLabel}>Do you have Medicaid?</Text>
+          <View style={styles.yesNoRow}>
+            {(['Yes', 'No'] as const).map((opt) => {
+              const val = opt === 'Yes';
+              const sel = hasMedicaid === val;
+              return (
+                <TouchableOpacity
+                  key={opt}
+                  style={[styles.yesNoBtn, sel && styles.yesNoBtnSelected]}
+                  onPress={() => setHasMedicaid(val)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.yesNoBtnText, sel && styles.yesNoBtnTextSelected]}>{opt}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          <Text style={styles.fieldLabel}>Are you open to out-of-pocket / private pay?</Text>
+          <View style={styles.yesNoRow}>
+            {(['Yes', 'No', 'Maybe'] as const).map((opt) => {
+              const val = opt === 'Yes' ? true : opt === 'No' ? false : null;
+              const sel = okOutOfPocket === val;
+              return (
+                <TouchableOpacity
+                  key={opt}
+                  style={[styles.yesNoBtn, sel && styles.yesNoBtnSelected]}
+                  onPress={() => setOkOutOfPocket(val)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.yesNoBtnText, sel && styles.yesNoBtnTextSelected]}>{opt}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+
         {/* Optional message */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Message (optional)</Text>
@@ -247,6 +305,13 @@ const styles = StyleSheet.create({
   shareRadio: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: COLORS.border, alignItems: 'center', justifyContent: 'center' },
   shareRadioSelected: { borderColor: COLORS.purple },
   shareRadioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: COLORS.purple },
+  // Insurance / payment
+  fieldLabel: { fontSize: FONT_SIZES.xs, fontWeight: '600', color: COLORS.textMid, marginTop: SPACING.xs },
+  yesNoRow: { flexDirection: 'row', gap: SPACING.sm, flexWrap: 'wrap' },
+  yesNoBtn: { paddingHorizontal: SPACING.md, paddingVertical: SPACING.xs + 2, borderRadius: RADIUS.md, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.bg },
+  yesNoBtnSelected: { borderColor: COLORS.purple, backgroundColor: '#F0EDFF' },
+  yesNoBtnText: { fontSize: FONT_SIZES.sm, color: COLORS.textMid, fontWeight: '600' },
+  yesNoBtnTextSelected: { color: COLORS.purple },
   // Privacy
   privacyBox: { flexDirection: 'row', gap: SPACING.sm, backgroundColor: '#E3F7F1', borderRadius: RADIUS.md, padding: SPACING.md, alignItems: 'flex-start' },
   privacyText: { flex: 1, fontSize: FONT_SIZES.xs, color: '#0A5A42', lineHeight: 18 },

@@ -111,12 +111,16 @@ export default function ProviderDashboard() {
             specialty: p.providerSpecialty || 'General',
             state: p.state || null,
             county: p.county || null,
+            phone: p.providerPhone || null,
+            website: p.providerWebsite || null,
+            bio: p.providerBio || null,
+            tags: p.providerTags
+              ? p.providerTags.split(',').map((t: string) => t.trim()).filter(Boolean)
+              : (p.providerReasons || []),
             openToConnect: profileOpenToConnect || currentRtc,
-            acceptingNew: true,
+            acceptingNew: p.acceptingNew !== undefined ? !!p.acceptingNew : true,
             medicaidAccepted: !!p.medicaidAccepted,
-            telehealth: false,
-            bio: null,
-            tags: p.providerReasons || [],
+            telehealth: !!p.telehealth,
           }).catch(() => {});
         }
       })();
@@ -189,6 +193,20 @@ export default function ProviderDashboard() {
             thumbColor={readyToConnect ? '#fff' : '#f4f3f4'}
           />
         </View>
+        {/* Claim existing profile CTA */}
+        <TouchableOpacity
+          style={styles.claimBanner}
+          onPress={() => router.push('/claim-profile' as any)}
+          activeOpacity={0.85}
+        >
+          <Text style={styles.claimBannerIcon}>🔗</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.claimBannerTitle}>Already in the directory?</Text>
+            <Text style={styles.claimBannerSub}>Claim your existing listing to manage it from the app</Text>
+          </View>
+          <Text style={styles.claimBannerArrow}>→</Text>
+        </TouchableOpacity>
+
         {/* Quick stats */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.statsScroll} contentContainerStyle={styles.statsContent}>
           {[
@@ -356,6 +374,12 @@ const styles = StyleSheet.create({
   connectionMeta: { fontSize: FONT_SIZES.xs, color: COLORS.textLight, marginTop: 2 },
   respondBtn: { backgroundColor: COLORS.purple, borderRadius: RADIUS.md, paddingHorizontal: SPACING.md, paddingVertical: SPACING.xs + 2 },
   respondBtnText: { fontSize: FONT_SIZES.xs, color: '#fff', fontWeight: '700' },
+  // Claim banner
+  claimBanner: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F5F0FF', borderRadius: RADIUS.lg, padding: SPACING.md, gap: SPACING.sm, borderWidth: 1, borderColor: COLORS.purple + '30' },
+  claimBannerIcon: { fontSize: 22 },
+  claimBannerTitle: { fontSize: FONT_SIZES.sm, fontWeight: '700', color: COLORS.purple },
+  claimBannerSub: { fontSize: FONT_SIZES.xs, color: COLORS.textMid, marginTop: 2 },
+  claimBannerArrow: { fontSize: FONT_SIZES.md, color: COLORS.purple, fontWeight: '700' },
   // Bottom nav
   bottomNav: { flexDirection: 'row', backgroundColor: COLORS.white, borderTopWidth: 1, borderTopColor: COLORS.border, paddingTop: SPACING.sm },
   navTab: { flex: 1, alignItems: 'center', gap: 2 },

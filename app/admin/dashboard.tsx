@@ -16,7 +16,7 @@ import { setImpersonatingUser } from '../../services/impersonation';
 
 const LAMBDA = 'https://inu3nb5lrfvftfyiwprftqshpy0zcegu.lambda-url.us-east-2.on.aws';
 
-type Tab = 'submissions' | 'hardship' | 'reports' | 'posts' | 'providers';
+type Tab = 'submissions' | 'hardship' | 'reports' | 'posts' | 'providers' | 'claims';
 
 const TABS: { id: Tab; label: string; emoji: string }[] = [
   { id: 'submissions', label: 'Submissions', emoji: '🏅' },
@@ -24,6 +24,7 @@ const TABS: { id: Tab; label: string; emoji: string }[] = [
   { id: 'reports',     label: 'Reports',     emoji: '🚩' },
   { id: 'posts',       label: 'Posts',       emoji: '💬' },
   { id: 'providers',   label: 'Providers',   emoji: '🏥' },
+  { id: 'claims',      label: 'Claims',      emoji: '📋' },
 ];
 
 async function adminFetch(path: string, options: RequestInit = {}) {
@@ -56,23 +57,26 @@ export default function AdminDashboard() {
   const [reports, setReports] = useState<any[]>([]);
   const [posts, setPosts] = useState<any[]>([]);
   const [providers, setProviders] = useState<any[]>([]);
+  const [claims, setClaims] = useState<any[]>([]);
 
   const fetchAll = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
     else setLoading(true);
     try {
-      const [subRes, hrdRes, rptRes, pstRes, prvRes] = await Promise.allSettled([
+      const [subRes, hrdRes, rptRes, pstRes, prvRes, clmRes] = await Promise.allSettled([
         adminFetch('/api/admin/submissions'),
         adminFetch('/api/admin/hardship'),
         adminFetch('/api/admin/forum-reports'),
         adminFetch('/api/admin/forum-posts'),
         adminFetch('/api/admin/providers'),
+        adminFetch('/api/admin/providers/claims'),
       ]);
       if (subRes.status === 'fulfilled') setSubmissions(subRes.value.submissions || []);
       if (hrdRes.status === 'fulfilled') setHardship(hrdRes.value.applications || []);
       if (rptRes.status === 'fulfilled') setReports(rptRes.value.reports || []);
       if (pstRes.status === 'fulfilled') setPosts(pstRes.value.posts || []);
       if (prvRes.status === 'fulfilled') setProviders(prvRes.value.providers || []);
+      if (clmRes.status === 'fulfilled') setClaims(clmRes.value.claims || []);
     } catch (e: any) {
       Alert.alert('Error', e.message || 'Failed to load admin data.');
     } finally {
@@ -364,6 +368,26 @@ export default function AdminDashboard() {
     </ScrollView>
   );
 
+  const verifyProvider = async (provId: string, action: 'verified' | 'rejected') => {
+    try {
+      await adminFetch(`/api/admin/providers/${provId}/verify`, {
+        method: 'PUT',
+        body: JSON.stringify({ verificationStatus: action }),
+      });
+      await fetchAll();
+    } catch (e: any) { Alert.alert('Error', e.message); }
+  };
+
+  const reviewClaim = async (claimId: string, action: 'approved' | 'denied') => {
+    try {
+      await adminFetch(`/api/admin/providers/claims/${claimId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ status: action }),
+      });
+      await fetchAll();
+    } catch (e: any) { Alert.alert('Error', e.message); }
+  };
+
   const renderProviders = () => (
     <ScrollView
       contentContainerStyle={styles.tabContent}
@@ -371,30 +395,119 @@ export default function AdminDashboard() {
     >
       <Text style={styles.tabTitle}>Registered Providers</Text>
       <Text style={styles.tabSub}>
-        {providers.length} registered · {providers.filter(p => p.openToConnect).length} open to connect
+        {providers.length} registered · {providers.filter(p => p.openToConnect).length} open to connect · {providers.filter(p => p.verificationStatus === 'pending_review').length} pending verification
       </Text>
       {providers.length === 0 && <Text style={styles.empty}>No self-registered providers yet.{"\n"}Providers appear here after they sign in and open their Provider Dashboard.</Text>}
-      {providers.map((prov, idx) => (
-        <View key={prov.id || idx} style={styles.card}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-            <Text style={[styles.cardName, { flex: 1 }]}>{prov.providerName || prov.provider_name || '—'}</Text>
-            <View style={[styles.statusBadge, { backgroundColor: prov.openToConnect ? COLORS.successBg : '#eee' }]}>
-              <Text style={[styles.statusText, { color: prov.openToConnect ? COLORS.successText : '#888' }]}>
-                {prov.openToConnect ? '🟢 Open to Connect' : '⚪ Not Connecting'}
-              </Text>
+      {providers.map((prov, idx) => {
+        const vStatus = prov.verificationStatus || 'unverified';
+        const vColor = vStatus === 'verified' ? COLORS.successText : vStatus === 'pending_review' ? '#B45309' : '#888';
+        const vBg = vStatus === 'verified' ? COLORS.successBg : vStatus === 'pending_review' ? '#FEF3C7' : '#eee';
+        const vLabel = vStatus === 'verified' ? '✅ Verified' : vStatus === 'pending_review' ? '⏳ Pending Review' : '⚪ Unverified';
+        return (
+          <View key={prov.id || idx} style={styles.card}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+              <Text style={[styles.cardName, { flex: 1 }]}>{prov.practiceName || prov.providerName || '—'}</Text>
+              <View style={[styles.statusBadge, { backgroundColor: prov.openToConnect ? COLORS.successBg : '#eee' }]}>
+                <Text style={[styles.statusText, { color: prov.openToConnect ? COLORS.successText : '#888' }]}>
+                  {prov.openToConnect ? '🟢 Open' : '⚪ Closed'}
+                </Text>
+              </View>
             </View>
+            {prov.practiceName ? <Text style={styles.cardMeta}>Contact: {prov.providerName}</Text> : null}
+            <Text style={styles.cardMeta}>{prov.specialty} · {prov.state || prov.city || '—'}</Text>
+            {prov.bio ? <Text style={styles.cardDesc} numberOfLines={2}>{prov.bio}</Text> : null}
+            <View style={[styles.statusBadge, { backgroundColor: vBg, alignSelf: 'flex-start', marginBottom: 6 }]}>
+              <Text style={[styles.statusText, { color: vColor }]}>{vLabel}</Text>
+            </View>
+            {prov.npiNumber ? <Text style={styles.cardDetail}>🔢 NPI: {prov.npiNumber}</Text> : null}
+            {prov.einNumber ? <Text style={styles.cardDetail}>🏢 EIN: {prov.einNumber}</Text> : null}
+            {prov.credentialPhotoUrl ? (
+              <TouchableOpacity onPress={() => Linking.openURL(prov.credentialPhotoUrl)}>
+                <Text style={[styles.cardDetail, { color: COLORS.purple }]}>📎 View Credential Photo →</Text>
+              </TouchableOpacity>
+            ) : null}
+            <Text style={styles.cardDetail}>
+              💳 Medicaid: {prov.medicaidAccepted ? 'Yes' : 'No'} · 📡 Telehealth: {prov.telehealth ? 'Yes' : 'No'}
+            </Text>
+            <Text style={styles.cardDetail}>
+              👥 Accepting: {prov.acceptingNew ? 'Yes' : 'No'} · 📧 {prov.userEmail || '—'}
+            </Text>
+            {prov.phone ? <Text style={styles.cardDetail}>📞 {prov.phone}</Text> : null}
+            {prov.website ? <TouchableOpacity onPress={() => Linking.openURL(prov.website)}><Text style={[styles.cardDetail, { color: COLORS.purple }]}>🌐 {prov.website}</Text></TouchableOpacity> : null}
+            <Text style={styles.cardDetail}>
+              🕐 Last seen: {prov.lastSeenAt ? new Date(prov.lastSeenAt).toLocaleDateString() : '—'}
+            </Text>
+            {vStatus === 'pending_review' && (
+              <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
+                <TouchableOpacity
+                  style={[styles.actionBtn, { backgroundColor: COLORS.successBg, borderColor: COLORS.successText }]}
+                  onPress={() => Alert.alert('Verify Provider', `Mark ${prov.practiceName || prov.providerName} as verified?`, [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Verify', onPress: () => verifyProvider(prov.id, 'verified') },
+                  ])}
+                >
+                  <Text style={[styles.actionBtnText, { color: COLORS.successText }]}>✅ Verify</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.actionBtn, { backgroundColor: '#FEE2E2', borderColor: '#EF4444' }]}
+                  onPress={() => Alert.alert('Reject Verification', `Reject credentials for ${prov.practiceName || prov.providerName}?`, [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Reject', style: 'destructive', onPress: () => verifyProvider(prov.id, 'rejected') },
+                  ])}
+                >
+                  <Text style={[styles.actionBtnText, { color: '#EF4444' }]}>✗ Reject</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
-          <Text style={styles.cardMeta}>{prov.specialty} · {prov.state || prov.city || '—'}</Text>
-          {prov.bio ? <Text style={styles.cardDesc} numberOfLines={2}>{prov.bio}</Text> : null}
-          <Text style={styles.cardDetail}>
-            💳 Medicaid: {prov.medicaidAccepted ? 'Yes' : 'No'} · 📡 Telehealth: {prov.telehealth ? 'Yes' : 'No'}
-          </Text>
-          <Text style={styles.cardDetail}>
-            👥 Accepting: {prov.acceptingNew ? 'Yes' : 'No'} · 📧 {prov.userEmail || '—'}
-          </Text>
-          <Text style={styles.cardDetail}>
-            🕐 Last seen: {prov.lastSeenAt ? new Date(prov.lastSeenAt).toLocaleDateString() : '—'}
-          </Text>
+        );
+      })}
+    </ScrollView>
+  );
+
+  const renderClaims = () => (
+    <ScrollView
+      contentContainerStyle={styles.tabContent}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => fetchAll(true)} tintColor={COLORS.purple} />}
+    >
+      <Text style={styles.tabTitle}>Profile Claims</Text>
+      <Text style={styles.tabSub}>{claims.filter(c => c.status === 'pending_review').length} pending · {claims.length} total</Text>
+      {claims.length === 0 && <Text style={styles.empty}>No profile claims yet.</Text>}
+      {claims.map((claim, idx) => (
+        <View key={claim.id || idx} style={styles.card}>
+          <Text style={styles.cardName}>{claim.listingName || claim.listingId}</Text>
+          <Text style={styles.cardMeta}>Claimant: {claim.claimantEmail}</Text>
+          <Text style={styles.cardDesc}>Verification: {claim.verificationInfo}</Text>
+          <Text style={styles.cardDetail}>Submitted: {claim.submittedAt ? new Date(claim.submittedAt).toLocaleDateString() : '—'}</Text>
+          <View style={[styles.statusBadge, { alignSelf: 'flex-start', marginBottom: 6,
+            backgroundColor: claim.status === 'approved' ? COLORS.successBg : claim.status === 'denied' ? '#FEE2E2' : '#FEF3C7',
+          }]}>
+            <Text style={[styles.statusText, { color: claim.status === 'approved' ? COLORS.successText : claim.status === 'denied' ? '#EF4444' : '#B45309' }]}>
+              {claim.status === 'approved' ? '✅ Approved' : claim.status === 'denied' ? '✗ Denied' : '⏳ Pending'}
+            </Text>
+          </View>
+          {claim.status === 'pending_review' && (
+            <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}>
+              <TouchableOpacity
+                style={[styles.actionBtn, { backgroundColor: COLORS.successBg, borderColor: COLORS.successText }]}
+                onPress={() => Alert.alert('Approve Claim', `Approve claim for ${claim.listingName}?`, [
+                  { text: 'Cancel', style: 'cancel' },
+                  { text: 'Approve', onPress: () => reviewClaim(claim.id, 'approved') },
+                ])}
+              >
+                <Text style={[styles.actionBtnText, { color: COLORS.successText }]}>✅ Approve</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.actionBtn, { backgroundColor: '#FEE2E2', borderColor: '#EF4444' }]}
+                onPress={() => Alert.alert('Deny Claim', `Deny claim for ${claim.listingName}?`, [
+                  { text: 'Cancel', style: 'cancel' },
+                  { text: 'Deny', style: 'destructive', onPress: () => reviewClaim(claim.id, 'denied') },
+                ])}
+              >
+                <Text style={[styles.actionBtnText, { color: '#EF4444' }]}>✗ Deny</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       ))}
     </ScrollView>
@@ -483,6 +596,7 @@ export default function AdminDashboard() {
           {tab === 'reports'     && renderReports()}
           {tab === 'posts'       && renderPosts()}
           {tab === 'providers'   && renderProviders()}
+          {tab === 'claims'      && renderClaims()}
         </>
       )}
     </View>
@@ -510,6 +624,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm,
     borderRadius: RADIUS.pill, backgroundColor: COLORS.bg,
   },
+  actionBtn: {
+    flex: 1, paddingVertical: 8, borderRadius: RADIUS.md,
+    borderWidth: 1, alignItems: 'center',
+  },
+  actionBtnText: { fontSize: FONT_SIZES.sm, fontWeight: '700' },
   tabBtnActive: { backgroundColor: COLORS.purple },
   tabBtnText: { fontSize: FONT_SIZES.xs, fontWeight: '600', color: COLORS.textMid },
   tabBtnTextActive: { color: '#fff' },

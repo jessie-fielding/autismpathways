@@ -58,8 +58,22 @@ const PROVIDER_REASONS = [
 
 // Provider specialty chips
 const PROVIDER_SPECIALTIES = [
-  'Pediatrician', 'BCBA', 'Speech Therapist', 'Psychologist',
-  'OT / PT', 'Social Worker', 'Educator', 'Other',
+  'ABA Therapy',
+  'Speech & Language',
+  'Occupational Therapy (OT)',
+  'Physical Therapy (PT)',
+  'Behavioral Health',
+  'Pediatrician',
+  'Psychologist / Neuropsychologist',
+  'BCBA',
+  'Social Worker',
+  'Educator / Special Ed',
+  'Advocacy',
+  'Non-Profit / Support Services',
+  'Transition Services',
+  'Respite Care',
+  'Telehealth',
+  'Other',
 ];
 
 const RELATIONSHIPS = [
@@ -68,6 +82,7 @@ const RELATIONSHIPS = [
 ];
 
 const STATES = [
+  'National (Serves All States)',
   'Alabama','Alaska','Arizona','Arkansas','California','Colorado','Connecticut',
   'Delaware','Florida','Georgia','Hawaii','Idaho','Illinois','Indiana','Iowa',
   'Kansas','Kentucky','Louisiana','Maine','Maryland','Massachusetts','Michigan',
@@ -107,6 +122,16 @@ export default function ProfileSetupScreen() {
   const [providerReasons, setProviderReasons]     = useState<string[]>([]);
   const [practiceName, setPracticeName]           = useState('');
   const [practiceAddress, setPracticeAddress]     = useState('');
+  const [providerPhone, setProviderPhone]         = useState('');
+  const [providerWebsite, setProviderWebsite]     = useState('');
+  const [providerBio, setProviderBio]             = useState('');
+  const [providerTags, setProviderTags]           = useState('');
+  const [acceptingNew, setAcceptingNew]           = useState(true);
+  const [telehealth, setTelehealth]               = useState(false);
+  // Verification
+  const [npiNumber, setNpiNumber]                 = useState('');
+  const [credentialPhotoUri, setCredentialPhotoUri] = useState<string | null>(null);
+  const [orgWebsite, setOrgWebsite]               = useState('');
   // 'browse' = Browse Only, 'connect' = Open to Connections
   const [providerVisibility, setProviderVisibility] = useState<'browse' | 'connect'>('browse');
   const [medicaidAccepted, setMedicaidAccepted] = useState(false);
@@ -132,6 +157,15 @@ export default function ProfileSetupScreen() {
         if (p.practiceAddress) setPracticeAddress(p.practiceAddress);
         if (p.providerVisibility) setProviderVisibility(p.providerVisibility);
         if (p.medicaidAccepted !== undefined) setMedicaidAccepted(!!p.medicaidAccepted);
+        if (p.providerPhone) setProviderPhone(p.providerPhone);
+        if (p.providerWebsite) setProviderWebsite(p.providerWebsite);
+        if (p.providerBio) setProviderBio(p.providerBio);
+        if (p.providerTags) setProviderTags(p.providerTags);
+        if (p.acceptingNew !== undefined) setAcceptingNew(!!p.acceptingNew);
+        if (p.telehealth !== undefined) setTelehealth(!!p.telehealth);
+        if (p.npiNumber) setNpiNumber(p.npiNumber);
+        if (p.orgWebsite) setOrgWebsite(p.orgWebsite);
+        if (p.credentialPhotoUri) setCredentialPhotoUri(p.credentialPhotoUri);
         if (p.concerns) setSelectedJourneys(p.concerns);
       } catch {}
     })();
@@ -272,6 +306,16 @@ export default function ProfileSetupScreen() {
           practiceAddress: practiceAddress.trim() || null,
           providerVisibility,
           medicaidAccepted,
+          providerPhone: providerPhone.trim() || null,
+          providerWebsite: providerWebsite.trim() || null,
+          providerBio: providerBio.trim() || null,
+          providerTags: providerTags.trim() || null,
+          acceptingNew,
+          telehealth,
+          npiNumber: npiNumber.trim() || null,
+          orgWebsite: orgWebsite.trim() || null,
+          credentialPhotoUri: credentialPhotoUri || null,
+          verificationStatus: (npiNumber.trim() || orgWebsite.trim() || credentialPhotoUri) ? 'pending' : 'unverified',
           createdAt: new Date().toISOString(),
         });
         // Store provider flag and visibility for routing + badge
@@ -477,6 +521,71 @@ export default function ProfileSetupScreen() {
                 }}
                 placeholder="Start typing your practice address…"
               />
+              <Text style={styles.label}>Phone Number</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="(555) 000-0000"
+                placeholderTextColor={COLORS.textLight}
+                value={providerPhone}
+                onChangeText={setProviderPhone}
+                keyboardType="phone-pad"
+                autoComplete="tel"
+              />
+              <Text style={styles.label}>Website</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="https://yourpractice.com"
+                placeholderTextColor={COLORS.textLight}
+                value={providerWebsite}
+                onChangeText={setProviderWebsite}
+                keyboardType="url"
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+              <Text style={styles.label}>About Your Practice</Text>
+              <TextInput
+                style={[styles.input, { height: 100, textAlignVertical: 'top' }]}
+                placeholder="Describe your practice, who you serve, and what makes you unique…"
+                placeholderTextColor={COLORS.textLight}
+                value={providerBio}
+                onChangeText={setProviderBio}
+                multiline
+                maxLength={500}
+              />
+              <Text style={styles.label}>Tags (comma-separated)</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="e.g. Children, Telehealth, In-home ABA"
+                placeholderTextColor={COLORS.textLight}
+                value={providerTags}
+                onChangeText={setProviderTags}
+                autoCapitalize="words"
+              />
+              {/* Toggles */}
+              <View style={styles.toggleRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.label}>Currently Accepting</Text>
+                  <Text style={styles.toggleSub}>Show families you have openings</Text>
+                </View>
+                <Switch
+                  value={acceptingNew}
+                  onValueChange={setAcceptingNew}
+                  trackColor={{ false: COLORS.border, true: COLORS.teal }}
+                  thumbColor="#fff"
+                />
+              </View>
+              <View style={styles.toggleRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.label}>Telehealth Available</Text>
+                  <Text style={styles.toggleSub}>You offer virtual appointments</Text>
+                </View>
+                <Switch
+                  value={telehealth}
+                  onValueChange={setTelehealth}
+                  trackColor={{ false: COLORS.border, true: COLORS.teal }}
+                  thumbColor="#fff"
+                />
+              </View>
               {/* Medicaid toggle */}
               <View style={styles.toggleRow}>
                 <View style={{ flex: 1 }}>
@@ -530,6 +639,62 @@ export default function ProfileSetupScreen() {
                 </View>
               </TouchableOpacity>
             </View>
+
+            {/* Verification section — shown when Open to Connections is selected */}
+            {providerVisibility === 'connect' && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Verify Your Identity 🔐</Text>
+                <Text style={styles.sectionSub}>Required to appear in the directory. Your info is reviewed by the Autism Pathways team before your listing goes live.</Text>
+
+                {/* NPI or EIN */}
+                <Text style={styles.label}>NPI Number (for clinicians)</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="10-digit NPI number"
+                  placeholderTextColor={COLORS.textLight}
+                  value={npiNumber}
+                  onChangeText={setNpiNumber}
+                  keyboardType="number-pad"
+                  maxLength={10}
+                />
+                <Text style={[styles.label, { marginTop: SPACING.sm }]}>Organization Website or EIN (for non-profits)</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="https://yourorg.org or EIN: 12-3456789"
+                  placeholderTextColor={COLORS.textLight}
+                  value={orgWebsite}
+                  onChangeText={setOrgWebsite}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+
+                {/* Credential photo */}
+                <Text style={[styles.label, { marginTop: SPACING.sm }]}>Credential or License Photo</Text>
+                <Text style={styles.toggleSub}>Upload a photo of your license, certification, or official letterhead</Text>
+                <TouchableOpacity
+                  style={[styles.input, { height: 80, justifyContent: 'center', alignItems: 'center', borderStyle: 'dashed' }]}
+                  onPress={async () => {
+                    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+                    if (!perm.granted) { Alert.alert('Permission needed', 'Please allow photo access to upload a credential.'); return; }
+                    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.7 });
+                    if (!result.canceled && result.assets[0]) setCredentialPhotoUri(result.assets[0].uri);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  {credentialPhotoUri ? (
+                    <Image source={{ uri: credentialPhotoUri }} style={{ width: 60, height: 60, borderRadius: 8 }} />
+                  ) : (
+                    <Text style={{ color: COLORS.textLight, fontSize: FONT_SIZES.sm }}>📎 Tap to upload photo</Text>
+                  )}
+                </TouchableOpacity>
+
+                <View style={[styles.toggleRow, { backgroundColor: '#F0FDF4', borderRadius: RADIUS.md, padding: SPACING.sm, marginTop: SPACING.sm }]}>
+                  <Text style={{ fontSize: FONT_SIZES.xs, color: '#166534', flex: 1 }}>
+                    🔒 Your verification documents are only seen by the Autism Pathways admin team and are never shared with families. Your listing will show as "Pending Review" until approved.
+                  </Text>
+                </View>
+              </View>
+            )}
 
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>What brings you here? 🗺️</Text>

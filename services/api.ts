@@ -41,12 +41,16 @@ export interface ProviderRegistrationPayload {
   county?: string | null;
   email?: string | null;
   phone?: string | null;
+  website?: string | null;
   openToConnect?: boolean;
   acceptingNew?: boolean;
   medicaidAccepted?: boolean;
   telehealth?: boolean;
   bio?: string | null;
   tags?: string[];
+  npiNumber?: string | null;
+  einNumber?: string | null;
+  credentialPhotoUrl?: string | null;
 }
 
 export async function registerProviderProfile(payload: ProviderRegistrationPayload): Promise<void> {
@@ -103,6 +107,8 @@ export interface LiveProvider {
   state: string | null;
   city: string | null;
   county: string | null;
+  phone?: string | null;
+  website?: string | null;
   acceptingNew: boolean;
   medicaidAccepted: boolean;
   telehealth: boolean;
@@ -110,6 +116,7 @@ export interface LiveProvider {
   tags: string[];
   lastSeenAt: string | null;
   openToConnect: boolean;
+  verificationStatus?: string;
   source?: 'self_registered' | 'admin_approved';
 }
 
@@ -145,5 +152,53 @@ export async function fetchLiveProviders(
   } catch (e) {
     console.warn('[API] Fetch live providers error:', e);
     return { openToConnect: [], adminApproved: [] };
+  }
+}
+
+// ── Provider directory search (for claim flow) ──────────────────────────────────────────────
+export interface DirectorySearchResult {
+  id: string;
+  name: string;
+  specialty: string;
+  state: string;
+  city: string;
+  phone: string;
+  website: string;
+}
+
+export async function searchProviderListings(query: string): Promise<DirectorySearchResult[]> {
+  try {
+    const res = await fetch(`${AP_API_BASE}/api/providers/search?q=${encodeURIComponent(query)}`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.results || [];
+  } catch (e) {
+    console.warn('[API] Provider search error:', e);
+    return [];
+  }
+}
+
+export async function claimProviderProfile(payload: {
+  listingId: string;
+  listingName: string;
+  verificationInfo: string;
+  claimantEmail?: string;
+}): Promise<{ success: boolean; error?: string }> {
+  try {
+    const token = await getValidToken();
+    const res = await fetch(`${AP_API_BASE}/api/providers/claim`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!res.ok) return { success: false, error: data.error || 'Failed to submit claim.' };
+    return { success: true };
+  } catch (e) {
+    console.warn('[API] Claim provider error:', e);
+    return { success: false, error: 'Network error. Please try again.' };
   }
 }

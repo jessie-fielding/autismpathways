@@ -491,87 +491,6 @@ export default function ProviderDirectoryScreen() {
           </View>
         )}
 
-        {/* Live providers — On the App section */}
-        {liveProviders.length > 0 && (
-          <View style={styles.liveSection}>
-            <View style={styles.liveSectionHeader}>
-              <Text style={styles.liveSectionTitle}>💜 On the App — Open to Connect</Text>
-              <Text style={styles.liveSectionSub}>These providers are actively using Autism Pathways and are ready to hear from you</Text>
-            </View>
-            {liveProviders.map((lp) => (
-              <TouchableOpacity
-                key={String(lp.id)}
-                style={styles.liveCard}
-                onPress={() => router.push({
-                  pathname: '/request-connection',
-                  params: {
-                    providerId: String(lp.deviceId || lp.id),
-                    providerName: lp.practiceName || lp.providerName,
-                    providerSpecialty: lp.specialty,
-                    providerCounty: lp.county || '',
-                  },
-                })}
-                activeOpacity={0.85}
-              >
-                <View style={styles.liveCardLeft}>
-                  <View style={styles.liveCardAvatar}>
-                    <Text style={styles.liveCardEmoji}>{SPECIALTY_EMOJIS[lp.specialty] || '🏥'}</Text>
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.liveCardName}>{lp.practiceName || lp.providerName}</Text>
-                    {lp.practiceName ? <Text style={styles.liveCardPractice}>{lp.providerName}</Text> : null}
-                    <Text style={styles.liveCardSpecialty}>{lp.specialty}{lp.state ? ` · ${lp.state}` : ''}</Text>
-                    {lp.medicaidAccepted && (
-                      <Text style={styles.liveCardMedicaid}>✓ Medicaid Accepted</Text>
-                    )}
-                  </View>
-                </View>
-                <View style={styles.liveCardBadge}>
-                  <Text style={styles.liveCardBadgeText}>Request →</Text>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
-
-        {/* Admin-approved / Selected Listings section */}
-        {adminApprovedProviders.length > 0 && (
-          <View style={styles.liveSection}>
-            <View style={styles.liveSectionHeader}>
-              <Text style={styles.liveSectionTitle}>✅ Selected Listings</Text>
-              <Text style={styles.liveSectionSub}>Providers verified and approved by the Autism Pathways team</Text>
-            </View>
-            {adminApprovedProviders.map((lp) => (
-              <TouchableOpacity
-                key={String(lp.id)}
-                style={[styles.liveCard, { borderLeftColor: '#10B981', borderLeftWidth: 3 }]}
-                onPress={() => {
-                  if (lp.website) Linking.openURL(lp.website);
-                  else if (lp.phone) Linking.openURL(`tel:${lp.phone}`);
-                }}
-                activeOpacity={0.85}
-              >
-                <View style={styles.liveCardLeft}>
-                  <View style={[styles.liveCardAvatar, { backgroundColor: '#10B98118' }]}>
-                    <Text style={styles.liveCardEmoji}>{SPECIALTY_EMOJIS[lp.specialty] || '🏥'}</Text>
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.liveCardName}>{lp.practiceName || lp.providerName}</Text>
-                    {lp.practiceName ? <Text style={styles.liveCardPractice}>{lp.providerName}</Text> : null}
-                    <Text style={styles.liveCardSpecialty}>{lp.specialty}{lp.state ? ` · ${lp.state}` : ''}</Text>
-                    {lp.medicaidAccepted && (
-                      <Text style={styles.liveCardMedicaid}>✓ Medicaid Accepted</Text>
-                    )}
-                  </View>
-                </View>
-                <View style={[styles.liveCardBadge, { backgroundColor: '#10B98118' }]}>
-                  <Text style={[styles.liveCardBadgeText, { color: '#10B981' }]}>View →</Text>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
-
         {/* Results count */}
         <View style={styles.resultsHeader}>
           <Text style={styles.resultsCount}>
@@ -590,15 +509,99 @@ export default function ProviderDirectoryScreen() {
           </View>
         )}
 
-        {displayList.map(provider => (
-          <ProviderCard
-            key={provider.id}
-            provider={provider}
-            isPremium={isPremium}
-            isLocked={false}
-            onAppIds={onAppIds}
-            onPress={() => router.push({ pathname: '/provider-directory/detail', params: { id: provider.id } })}
-          />
+        {displayList.map((provider, idx) => (
+          <React.Fragment key={provider.id}>
+            {/* Inject a live/app provider card every 3 static listings */}
+            {idx > 0 && idx % 3 === 0 && liveProviders[Math.floor(idx / 3) - 1] && (() => {
+              const lp = liveProviders[Math.floor(idx / 3) - 1];
+              return (
+                <TouchableOpacity
+                  key={`live-${lp.id}-${idx}`}
+                  style={styles.weavedLiveCard}
+                  onPress={() => router.push({
+                    pathname: '/request-connection',
+                    params: {
+                      providerId: String(lp.deviceId || lp.id),
+                      providerName: lp.practiceName || lp.providerName,
+                      providerSpecialty: lp.specialty,
+                      providerCounty: lp.county || '',
+                    },
+                  })}
+                  activeOpacity={0.85}
+                >
+                  <View style={styles.weavedLiveAccent} />
+                  <View style={styles.weavedLiveAvatar}>
+                    <Text style={styles.weavedLiveEmoji}>{SPECIALTY_EMOJIS[lp.specialty] || '🏥'}</Text>
+                  </View>
+                  <View style={styles.weavedLiveBody}>
+                    <View style={styles.weavedLiveBadgeRow}>
+                      <View style={styles.weavedLiveOnAppBadge}>
+                        <Text style={styles.weavedLiveOnAppText}>💜 On the App</Text>
+                      </View>
+                      {lp.medicaidAccepted && (
+                        <View style={styles.weavedMedicaidBadge}>
+                          <Text style={styles.weavedMedicaidText}>Medicaid ✓</Text>
+                        </View>
+                      )}
+                    </View>
+                    <Text style={styles.weavedLiveName}>{lp.practiceName || lp.providerName}</Text>
+                    {lp.practiceName ? <Text style={styles.weavedLiveSub}>{lp.providerName}</Text> : null}
+                    <Text style={styles.weavedLiveSpecialty}>{lp.specialty}{lp.state ? ` · ${lp.state}` : ''}</Text>
+                    {lp.bio ? <Text style={styles.weavedLiveBio} numberOfLines={2}>{lp.bio}</Text> : null}
+                  </View>
+                  <View style={styles.weavedLiveRequestBtn}>
+                    <Text style={styles.weavedLiveRequestText}>Request →</Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            })()}
+            {/* Inject admin-approved cards at position 2, 5, 8... */}
+            {idx > 0 && (idx + 1) % 3 === 0 && adminApprovedProviders[Math.floor(idx / 3)] && (() => {
+              const lp = adminApprovedProviders[Math.floor(idx / 3)];
+              return (
+                <TouchableOpacity
+                  key={`admin-${lp.id}-${idx}`}
+                  style={[styles.weavedLiveCard, { borderLeftColor: '#10B981' }]}
+                  onPress={() => {
+                    if (lp.website) Linking.openURL(lp.website);
+                    else if (lp.phone) Linking.openURL(`tel:${lp.phone}`);
+                  }}
+                  activeOpacity={0.85}
+                >
+                  <View style={[styles.weavedLiveAccent, { backgroundColor: '#10B981' }]} />
+                  <View style={[styles.weavedLiveAvatar, { backgroundColor: '#10B98118' }]}>
+                    <Text style={styles.weavedLiveEmoji}>{SPECIALTY_EMOJIS[lp.specialty] || '🏥'}</Text>
+                  </View>
+                  <View style={styles.weavedLiveBody}>
+                    <View style={styles.weavedLiveBadgeRow}>
+                      <View style={[styles.weavedLiveOnAppBadge, { backgroundColor: '#D1FAE5' }]}>
+                        <Text style={[styles.weavedLiveOnAppText, { color: '#065F46' }]}>✅ Verified Listing</Text>
+                      </View>
+                      {lp.medicaidAccepted && (
+                        <View style={styles.weavedMedicaidBadge}>
+                          <Text style={styles.weavedMedicaidText}>Medicaid ✓</Text>
+                        </View>
+                      )}
+                    </View>
+                    <Text style={styles.weavedLiveName}>{lp.practiceName || lp.providerName}</Text>
+                    {lp.practiceName ? <Text style={styles.weavedLiveSub}>{lp.providerName}</Text> : null}
+                    <Text style={styles.weavedLiveSpecialty}>{lp.specialty}{lp.state ? ` · ${lp.state}` : ''}</Text>
+                    {lp.bio ? <Text style={styles.weavedLiveBio} numberOfLines={2}>{lp.bio}</Text> : null}
+                  </View>
+                  <View style={[styles.weavedLiveRequestBtn, { backgroundColor: '#10B98118' }]}>
+                    <Text style={[styles.weavedLiveRequestText, { color: '#10B981' }]}>View →</Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            })()}
+            <ProviderCard
+              provider={provider}
+              isPremium={isPremium}
+              isLocked={false}
+              onAppIds={onAppIds}
+              onPress={() => router.push({ pathname: '/provider-directory/detail', params: { id: provider.id } })}
+            />
+          </React.Fragment>
         ))}
 
         {/* Premium gate */}
@@ -836,6 +839,23 @@ const styles = StyleSheet.create({
   },
   cityBadgeText: { fontSize: FONT_SIZES.xs, fontWeight: '600', color: '#0369A1' },
   cityBadgeClear: { fontSize: 12, color: '#0369A1', fontWeight: '700', paddingLeft: 2 },
+  // Weaved live provider cards
+  weavedLiveCard: { flexDirection: 'row', alignItems: 'flex-start', backgroundColor: COLORS.white, marginHorizontal: SPACING.lg, marginBottom: SPACING.sm, borderRadius: RADIUS.lg, padding: SPACING.md, gap: SPACING.sm, borderLeftWidth: 3, borderLeftColor: COLORS.purple, ...SHADOWS.sm },
+  weavedLiveAccent: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, backgroundColor: COLORS.purple, borderTopLeftRadius: RADIUS.lg, borderBottomLeftRadius: RADIUS.lg },
+  weavedLiveAvatar: { width: 44, height: 44, borderRadius: 12, backgroundColor: COLORS.lavender, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  weavedLiveEmoji: { fontSize: 22 },
+  weavedLiveBody: { flex: 1, gap: 3 },
+  weavedLiveBadgeRow: { flexDirection: 'row', gap: 6, flexWrap: 'wrap' },
+  weavedLiveOnAppBadge: { backgroundColor: COLORS.lavender, borderRadius: RADIUS.pill, paddingHorizontal: 8, paddingVertical: 2 },
+  weavedLiveOnAppText: { fontSize: 10, color: COLORS.purple, fontWeight: '700' },
+  weavedMedicaidBadge: { backgroundColor: '#D1FAE5', borderRadius: RADIUS.pill, paddingHorizontal: 8, paddingVertical: 2 },
+  weavedMedicaidText: { fontSize: 10, color: '#065F46', fontWeight: '700' },
+  weavedLiveName: { fontSize: FONT_SIZES.sm, fontWeight: '800', color: COLORS.text },
+  weavedLiveSub: { fontSize: FONT_SIZES.xs, color: COLORS.textMid },
+  weavedLiveSpecialty: { fontSize: FONT_SIZES.xs, color: COLORS.purple, fontWeight: '600' },
+  weavedLiveBio: { fontSize: FONT_SIZES.xs, color: COLORS.textLight, lineHeight: 16, marginTop: 2 },
+  weavedLiveRequestBtn: { backgroundColor: COLORS.purple, borderRadius: RADIUS.md, paddingHorizontal: SPACING.sm, paddingVertical: SPACING.xs, alignSelf: 'center', flexShrink: 0 },
+  weavedLiveRequestText: { fontSize: FONT_SIZES.xs, color: '#fff', fontWeight: '700' },
   liveSection: { marginHorizontal: SPACING.lg, marginTop: SPACING.md, marginBottom: SPACING.sm },
   liveSectionHeader: { marginBottom: SPACING.sm },
   liveSectionTitle: { fontSize: FONT_SIZES.base, fontWeight: '800', color: COLORS.purpleDark, marginBottom: 2 },

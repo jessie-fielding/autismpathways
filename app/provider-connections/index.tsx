@@ -9,7 +9,7 @@
  */
 import React, { useState, useCallback } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert, Linking,
+  View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert, Linking, Modal,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
@@ -26,6 +26,18 @@ import {
 
 type Tab = 'pending' | 'accepted' | 'declined';
 
+const DENIAL_REASONS = [
+  'Not currently accepting new clients',
+  'Practice is full',
+  'Not in network / insurance not accepted',
+  'Outside our service area',
+  'Age range not served',
+  'Specialty does not match needs',
+  'Waitlist is too long to be helpful',
+  'Other',
+] as const;
+type DenialReason = typeof DENIAL_REASONS[number];
+
 export default function ProviderConnections() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -34,6 +46,8 @@ export default function ProviderConnections() {
   const [requests, setRequests]     = useState<ConnectionRequest[]>([]);
 
   const [providerId, setProviderId] = useState<string | null>(null);
+  const [denialModalReq, setDenialModalReq] = useState<ConnectionRequest | null>(null);
+  const [selectedDenialReason, setSelectedDenialReason] = useState<DenialReason | null>(null);
 
   const load = useCallback(async () => {
     const pid = await getDeviceId();
@@ -46,18 +60,29 @@ export default function ProviderConnections() {
 
   const filtered = requests.filter((r) => r.status === activeTab);
 
+  const handleDecline = (req: ConnectionRequest) => {
+    setSelectedDenialReason(null);
+    setDenialModalReq(req);
+  };
+
+  const confirmDecline = async () => {
+    if (!denialModalReq) return;
+    await respondToRequest(denialModalReq.id, 'declined', providerId ?? undefined, selectedDenialReason ?? undefined);
+    setDenialModalReq(null);
+    await load();
+  };
+
   const handleRespond = (req: ConnectionRequest, status: 'accepted' | 'declined') => {
-    const verb = status === 'accepted' ? 'accept' : 'decline';
+    if (status === 'declined') { handleDecline(req); return; }
+    const verb = 'accept';
     Alert.alert(
-      `${verb.charAt(0).toUpperCase() + verb.slice(1)} Request`,
-      status === 'accepted'
-        ? `Accept the introduction request from ${req.requesterName}? Their contact preference will be revealed.`
-        : `Decline the request from ${req.requesterName}? They will be notified.`,
+      `Accept Request`,
+      `Accept the introduction request from ${req.requesterName}? Their contact preference will be revealed.`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: status === 'accepted' ? 'Accept' : 'Decline',
-          style: status === 'declined' ? 'destructive' : 'default',
+          text: 'Accept',
+          style: 'default',
           onPress: async () => {
             await respondToRequest(req.id, status, providerId ?? undefined);
             await load();
@@ -296,6 +321,49 @@ export default function ProviderConnections() {
           ))
         )}
       </ScrollView>
+
+      {/* Denial Reason Modal */}
+      <Modal
+        visible={!!denialModalReq}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setDenialModalReq(null)}
+      >
+        <TouchableOpacity
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' }}
+          activeOpacity={1}
+          onPress={() => setDenialModalReq(null)}
+        />
+        <View style={styles.denialSheet}>
+          <View style={styles.denialHandle} />
+          <Text style={styles.denialTitle}>Reason for Declining</Text>
+          <Text style={styles.denialSub}>This helps families understand next steps. It will be shared with them.</Text>
+          {DENIAL_REASONS.map((reason) => (
+            <TouchableOpacity
+              key={reason}
+              style={[styles.denialOption, selectedDenialReason === reason && styles.denialOptionActive]}
+              onPress={() => setSelectedDenialReason(reason)}
+              activeOpacity={0.8}
+            >
+              <View style={[styles.denialRadio, selectedDenialReason === reason && styles.denialRadioActive]}>
+                {selectedDenialReason === reason && <View style={styles.denialRadioDot} />}
+              </View>
+              <Text style={[styles.denialOptionText, selectedDenialReason === reason && styles.denialOptionTextActive]}>{reason}</Text>
+            </TouchableOpacity>
+          ))}
+          <TouchableOpacity
+            style={[styles.denialConfirmBtn, !selectedDenialReason && { opacity: 0.4 }]}
+            onPress={confirmDecline}
+            disabled={!selectedDenialReason}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.denialConfirmText}>Decline Request</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.denialCancelBtn} onPress={() => setDenialModalReq(null)}>
+            <Text style={styles.denialCancelText}>Cancel</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -343,4 +411,20 @@ const styles = StyleSheet.create({
   declineBtnText: { fontSize: FONT_SIZES.sm, fontWeight: '700', color: COLORS.textMid },
   acceptBtn: { flex: 2, borderRadius: RADIUS.md, backgroundColor: COLORS.purple, paddingVertical: SPACING.sm, alignItems: 'center', ...SHADOWS.sm },
   acceptBtnText: { fontSize: FONT_SIZES.sm, fontWeight: '800', color: '#fff' },
+  // Denial modal
+  denialSheet: { backgroundColor: COLORS.white, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: SPACING.lg, paddingBottom: 40, paddingTop: SPACING.md },
+  denialHandle: { width: 40, height: 4, backgroundColor: COLORS.border, borderRadius: 2, alignSelf: 'center', marginBottom: SPACING.md },
+  denialTitle: { fontSize: FONT_SIZES.lg, fontWeight: '800', color: COLORS.text, marginBottom: 4 },
+  denialSub: { fontSize: FONT_SIZES.xs, color: COLORS.textMid, marginBottom: SPACING.md, lineHeight: 18 },
+  denialOption: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, paddingVertical: SPACING.sm, paddingHorizontal: SPACING.md, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.border, marginBottom: 8 },
+  denialOptionActive: { borderColor: COLORS.purple, backgroundColor: COLORS.lavender },
+  denialRadio: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: COLORS.border, alignItems: 'center', justifyContent: 'center' },
+  denialRadioActive: { borderColor: COLORS.purple },
+  denialRadioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: COLORS.purple },
+  denialOptionText: { flex: 1, fontSize: FONT_SIZES.sm, color: COLORS.text },
+  denialOptionTextActive: { color: COLORS.purple, fontWeight: '700' },
+  denialConfirmBtn: { backgroundColor: '#EF4444', borderRadius: RADIUS.md, paddingVertical: SPACING.md, alignItems: 'center', marginTop: SPACING.md },
+  denialConfirmText: { fontSize: FONT_SIZES.sm, fontWeight: '800', color: '#fff' },
+  denialCancelBtn: { paddingVertical: SPACING.sm, alignItems: 'center', marginTop: 4 },
+  denialCancelText: { fontSize: FONT_SIZES.sm, color: COLORS.textMid, fontWeight: '600' },
 });
