@@ -12,7 +12,7 @@
  * Falls back gracefully if the user is not signed in or network is unavailable.
  */
 import { AP_API_BASE } from './api';
-import { getValidToken } from './useAuth';
+import { getValidToken, lambdaFetch } from './useAuth';
 
 export type ConnectionStatus = 'pending' | 'accepted' | 'declined';
 
@@ -48,10 +48,8 @@ async function authHeaders(): Promise<Record<string, string>> {
 export async function addSentRequest(
   req: Omit<ConnectionRequest, 'id' | 'status' | 'createdAt' | 'senderSub' | 'senderEmail'>
 ): Promise<ConnectionRequest> {
-  const headers = await authHeaders();
-  const res = await fetch(`${AP_API_BASE}/api/connections/send`, {
+  const res = await lambdaFetch(`${AP_API_BASE}/api/connections/send`, {
     method: 'POST',
-    headers,
     body: JSON.stringify(req),
   });
   if (!res.ok) {
