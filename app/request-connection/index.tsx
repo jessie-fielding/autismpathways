@@ -38,6 +38,7 @@ export default function RequestConnection() {
   const [requesterName, setRequesterName] = useState('');
   const [shareOption, setShareOption]     = useState<ShareOption>('neither');
   const [phoneNumber, setPhoneNumber]     = useState('');
+  const [emailAddress, setEmailAddress]   = useState('');
   const [insurance, setInsurance]         = useState('');
   const [hasMedicaid, setHasMedicaid]     = useState<boolean | null>(null);
   const [okOutOfPocket, setOkOutOfPocket] = useState<boolean | null>(null);
@@ -56,6 +57,11 @@ export default function RequestConnection() {
         setSubmitting(false);
         return;
       }
+      if (shareOption === 'email' && !emailAddress.trim()) {
+        Alert.alert('Email required', 'Please enter your email address so the provider can reach you.');
+        setSubmitting(false);
+        return;
+      }
       await addSentRequest({
         providerId:       params.providerId ?? 'unknown',
         providerName:     params.providerName ?? 'Provider',
@@ -65,6 +71,7 @@ export default function RequestConnection() {
         shareEmail:       shareOption === 'email',
         sharePhone:       shareOption === 'phone',
         requesterPhone:   shareOption === 'phone' ? phoneNumber.trim() : undefined,
+        senderEmail:      shareOption === 'email' ? emailAddress.trim() : undefined,
         insurance:        insurance.trim() || undefined,
         hasMedicaid:      hasMedicaid ?? undefined,
         okOutOfPocket:    okOutOfPocket ?? undefined,
@@ -184,6 +191,18 @@ export default function RequestConnection() {
             placeholderTextColor={COLORS.textLight}
             keyboardType="phone-pad"
             autoComplete="tel"
+          />
+        )}
+        {shareOption === 'email' && (
+          <TextInput
+            style={[styles.input, { marginTop: 8 }]}
+            value={emailAddress}
+            onChangeText={setEmailAddress}
+            placeholder="Your email address"
+            placeholderTextColor={COLORS.textLight}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoComplete="email"
           />
         )}
         </View>

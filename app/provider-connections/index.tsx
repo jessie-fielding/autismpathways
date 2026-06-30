@@ -233,6 +233,15 @@ export default function ProviderConnections() {
                 )}
               </View>
 
+              {/* Insurance & Payment info */}
+              {(req.insurance || req.hasMedicaid != null || req.okOutOfPocket != null) ? (
+                <View style={[styles.messageBox, { backgroundColor: '#F0FDF4', borderLeftWidth: 3, borderLeftColor: '#22C55E' }]}>
+                  <Text style={[styles.messageLabel, { color: '#166534' }]}>💳 Insurance & Payment</Text>
+                  {req.insurance ? <Text style={styles.messageText}>Insurance: {req.insurance}</Text> : null}
+                  {req.hasMedicaid === true ? <Text style={styles.messageText}>Medicaid: Yes ✓</Text> : req.hasMedicaid === false ? <Text style={styles.messageText}>Medicaid: No</Text> : null}
+                  {req.okOutOfPocket === true ? <Text style={styles.messageText}>Open to private pay: Yes ✓</Text> : req.okOutOfPocket === false ? <Text style={styles.messageText}>Open to private pay: No</Text> : null}
+                </View>
+              ) : null}
               {/* Message */}
               {req.message ? (
                 <View style={styles.messageBox}>

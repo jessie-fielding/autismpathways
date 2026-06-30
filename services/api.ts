@@ -202,3 +202,23 @@ export async function claimProviderProfile(payload: {
     return { success: false, error: 'Network error. Please try again.' };
   }
 }
+
+// ── Push token registration ───────────────────────────────────────────────────
+// Registers the user's Expo push token with the backend so they can receive
+// push notifications (e.g., when a connection request is received/accepted).
+export async function registerPushToken(pushToken: string): Promise<void> {
+  try {
+    const token = await getValidToken();
+    if (!token) return;
+    await fetch(`${AP_API_BASE}/api/push/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ pushToken }),
+    });
+  } catch (e) {
+    console.warn('[API] registerPushToken error:', e);
+  }
+}

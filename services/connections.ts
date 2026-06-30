@@ -51,7 +51,7 @@ async function authHeaders(): Promise<Record<string, string>> {
 // ── Send a connection request (parent → provider) ─────────────────────────────
 
 export async function addSentRequest(
-  req: Omit<ConnectionRequest, 'id' | 'status' | 'createdAt' | 'senderSub' | 'senderEmail'>
+  req: Omit<ConnectionRequest, 'id' | 'status' | 'createdAt' | 'senderSub'>
 ): Promise<ConnectionRequest> {
   const res = await lambdaFetch(`${AP_API_BASE}/api/connections/send`, {
     method: 'POST',

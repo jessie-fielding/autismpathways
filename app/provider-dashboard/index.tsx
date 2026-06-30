@@ -18,7 +18,8 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { setProviderAvailability, registerProviderProfile } from '../../services/api';
+import { setProviderAvailability, registerProviderProfile, registerPushToken } from '../../services/api';
+import * as Notifications from 'expo-notifications';
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { COLORS, SPACING, FONT_SIZES, RADIUS, SHADOWS } from '../../lib/theme';
@@ -105,6 +106,16 @@ export default function ProviderDashboard() {
         setRecentRequests(all.slice(0, 3));
         const rtcRaw = await AsyncStorage.getItem('provider_ready_to_connect');
         if (rtcRaw !== null) setReadyToConnect(JSON.parse(rtcRaw));
+        // Register push token so provider receives notifications for new connection requests
+        try {
+          const { status } = await Notifications.requestPermissionsAsync();
+          if (status === 'granted') {
+            const tokenData = await Notifications.getExpoPushTokenAsync();
+            if (tokenData?.data) {
+              registerPushToken(tokenData.data).catch(() => {});
+            }
+          }
+        } catch { /* non-blocking */ }
         // Sync provider profile to backend on each focus so availability stays current
         const profileRaw = await AsyncStorage.getItem('profile');
         if (profileRaw) {
