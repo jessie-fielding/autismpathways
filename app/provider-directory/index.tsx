@@ -604,6 +604,84 @@ export default function ProviderDirectoryScreen() {
           </React.Fragment>
         ))}
 
+        {/* Remaining live/app providers not yet woven in */}
+        {liveProviders.slice(Math.max(0, Math.floor(displayList.length / 3))).map((lp) => (
+          <TouchableOpacity
+            key={`live-tail-${lp.id}`}
+            style={styles.weavedLiveCard}
+            onPress={() => router.push({
+              pathname: '/request-connection',
+              params: {
+                providerId: String(lp.deviceId || lp.id),
+                providerName: lp.practiceName || lp.providerName,
+                providerSpecialty: lp.specialty,
+                providerCounty: lp.county || '',
+              },
+            })}
+            activeOpacity={0.85}
+          >
+            <View style={styles.weavedLiveAccent} />
+            <View style={styles.weavedLiveAvatar}>
+              <Text style={styles.weavedLiveEmoji}>{SPECIALTY_EMOJIS[lp.specialty] || '🏥'}</Text>
+            </View>
+            <View style={styles.weavedLiveBody}>
+              <View style={styles.weavedLiveBadgeRow}>
+                <View style={styles.weavedLiveOnAppBadge}>
+                  <Text style={styles.weavedLiveOnAppText}>💜 On the App</Text>
+                </View>
+                {lp.medicaidAccepted && (
+                  <View style={styles.weavedMedicaidBadge}>
+                    <Text style={styles.weavedMedicaidText}>Medicaid ✓</Text>
+                  </View>
+                )}
+              </View>
+              <Text style={styles.weavedLiveName}>{lp.practiceName || lp.providerName}</Text>
+              {lp.practiceName ? <Text style={styles.weavedLiveSub}>{lp.providerName}</Text> : null}
+              <Text style={styles.weavedLiveSpecialty}>{lp.specialty}{lp.state ? ` · ${lp.state}` : ''}</Text>
+              {lp.bio ? <Text style={styles.weavedLiveBio} numberOfLines={2}>{lp.bio}</Text> : null}
+            </View>
+            <View style={styles.weavedLiveRequestBtn}>
+              <Text style={styles.weavedLiveRequestText}>Request →</Text>
+            </View>
+          </TouchableOpacity>
+        ))}
+        {/* Remaining admin-approved providers not yet woven in */}
+        {adminApprovedProviders.slice(Math.max(0, Math.floor(displayList.length / 3))).map((lp) => (
+          <TouchableOpacity
+            key={`admin-tail-${lp.id}`}
+            style={[styles.weavedLiveCard, { borderLeftColor: '#10B981' }]}
+            onPress={() => {
+              if (lp.website) Linking.openURL(lp.website);
+              else if (lp.phone) Linking.openURL(`tel:${lp.phone}`);
+            }}
+            activeOpacity={0.85}
+          >
+            <View style={[styles.weavedLiveAccent, { backgroundColor: '#10B981' }]} />
+            <View style={[styles.weavedLiveAvatar, { backgroundColor: '#10B98118' }]}>
+              <Text style={styles.weavedLiveEmoji}>{SPECIALTY_EMOJIS[lp.specialty] || '🏥'}</Text>
+            </View>
+            <View style={styles.weavedLiveBody}>
+              <View style={styles.weavedLiveBadgeRow}>
+                <View style={[styles.weavedLiveOnAppBadge, { backgroundColor: '#D1FAE5' }]}>
+                  <Text style={[styles.weavedLiveOnAppText, { color: '#065F46' }]}>✅ Verified Listing</Text>
+                </View>
+                {lp.medicaidAccepted && (
+                  <View style={styles.weavedMedicaidBadge}>
+                    <Text style={styles.weavedMedicaidText}>Medicaid ✓</Text>
+                  </View>
+                )}
+              </View>
+              <Text style={styles.weavedLiveName}>{lp.practiceName || lp.providerName}</Text>
+              {lp.practiceName ? <Text style={styles.weavedLiveSub}>{lp.providerName}</Text> : null}
+              <Text style={styles.weavedLiveSpecialty}>{lp.specialty}{lp.state ? ` · ${lp.state}` : ''}</Text>
+              {lp.bio ? <Text style={styles.weavedLiveBio} numberOfLines={2}>{lp.bio}</Text> : null}
+            </View>
+            <View style={[styles.weavedLiveRequestBtn, { backgroundColor: '#10B98118' }]}>
+              <Text style={[styles.weavedLiveRequestText, { color: '#10B981' }]}>View →</Text>
+            </View>
+          </TouchableOpacity>
+        ))}
+
         {/* Premium gate */}
         {!isPremium && lockedCount > 0 && (
           <View style={styles.premiumGate}>

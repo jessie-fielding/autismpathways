@@ -437,7 +437,7 @@ export default function AdminDashboard() {
             <Text style={styles.cardDetail}>
               🕐 Last seen: {prov.lastSeenAt ? new Date(prov.lastSeenAt).toLocaleDateString() : '—'}
             </Text>
-            {vStatus === 'pending_review' && (
+            {(vStatus === 'pending_review' || vStatus === 'unverified') && (
               <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
                 <TouchableOpacity
                   style={[styles.actionBtn, { backgroundColor: COLORS.successBg, borderColor: COLORS.successText }]}
