@@ -76,8 +76,17 @@ export default function RequestConnection() {
         `Your introduction request has been sent to ${params.providerName ?? 'the provider'}. They will review it and respond — you'll be notified when they do.`,
         [{ text: 'Done', onPress: () => router.back() }]
       );
-    } catch {
-      Alert.alert('Error', 'Something went wrong. Please try again.');
+    } catch (err: any) {
+      const msg = err?.message || '';
+      if (msg.toLowerCase().includes('pending')) {
+        Alert.alert(
+          'Request Already Sent',
+          `You already have a pending connection request with ${params.providerName ?? 'this provider'}. Check "My Connections" to see its status.`,
+          [{ text: 'OK', onPress: () => router.back() }]
+        );
+      } else {
+        Alert.alert('Error', 'Something went wrong. Please check your connection and try again.');
+      }
     } finally {
       setSubmitting(false);
     }

@@ -202,6 +202,8 @@ export default function ProviderDirectoryScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { isPremium } = useIsPremium();
+  // Providers bypass the premium gate — they need to see the full directory
+  const [isProvider, setIsProvider] = useState(false);
   const [onAppIds, setOnAppIds] = useState<Set<string>>(new Set());
   const [liveProviders, setLiveProviders] = useState<LiveProvider[]>([]);
   const [adminApprovedProviders, setAdminApprovedProviders] = useState<LiveProvider[]>([]);
@@ -213,6 +215,10 @@ export default function ProviderDirectoryScreen() {
         _onAppIds = new Set(ids);
         setOnAppIds(new Set(ids));
       }
+    });
+    // Check if user is a provider — providers bypass the premium gate
+    AsyncStorage.getItem('ap_is_provider').then((val) => {
+      setIsProvider(val === 'true');
     });
   }, []);
 
@@ -291,13 +297,61 @@ export default function ProviderDirectoryScreen() {
       .slice(0, 3);
   }, [selectedState]);
 
+  // Effective premium: actual premium OR provider account (providers see full directory)
+  const effectivePremium = isPremium || isProvider;
+
+  // Filter live/admin providers by search text and state so they appear in search results
+  const filteredLiveProviders = useMemo(() => {
+    let list = liveProviders;
+    if (selectedState !== 'ALL') {
+      list = list.filter(p => !p.state || p.state === selectedState || p.state === 'National');
+    }
+    if (searchText.trim()) {
+      const q = searchText.toLowerCase();
+      list = list.filter(p =>
+        (p.providerName || '').toLowerCase().includes(q) ||
+        (p.practiceName || '').toLowerCase().includes(q) ||
+        (p.specialty || '').toLowerCase().includes(q) ||
+        (p.bio || '').toLowerCase().includes(q) ||
+        (p.tags || []).some((t: string) => t.toLowerCase().includes(q))
+      );
+    }
+    if (medicaidOnly) list = list.filter(p => p.medicaidAccepted);
+    if (acceptingOnly) list = list.filter(p => p.acceptingNew);
+    return list;
+  }, [liveProviders, selectedState, searchText, medicaidOnly, acceptingOnly]);
+
+  const filteredAdminProviders = useMemo(() => {
+    let list = adminApprovedProviders;
+    if (selectedState !== 'ALL') {
+      list = list.filter(p => !p.state || p.state === selectedState || p.state === 'National');
+    }
+    if (searchText.trim()) {
+      const q = searchText.toLowerCase();
+      list = list.filter(p =>
+        (p.providerName || '').toLowerCase().includes(q) ||
+        (p.practiceName || '').toLowerCase().includes(q) ||
+        (p.specialty || '').toLowerCase().includes(q) ||
+        (p.bio || '').toLowerCase().includes(q) ||
+        (p.description || '').toLowerCase().includes(q) ||
+        (p.tags || []).some((t: string) => t.toLowerCase().includes(q))
+      );
+    }
+    if (medicaidOnly) list = list.filter(p => p.medicaidAccepted);
+    if (acceptingOnly) list = list.filter(p => p.acceptingNew);
+    return list;
+  }, [adminApprovedProviders, selectedState, searchText, medicaidOnly, acceptingOnly]);
+
   // For free users: show 2 providers, rest locked
   const displayList = useMemo(() => {
-    if (isPremium) return filtered;
+    if (effectivePremium) return filtered;
     return filtered.slice(0, 2);
-  }, [filtered, isPremium]);
+  }, [filtered, effectivePremium]);
 
-  const lockedCount = isPremium ? 0 : Math.max(0, filtered.length - 2);
+  const lockedCount = effectivePremium ? 0 : Math.max(0, filtered.length - 2);
+
+  // Total results including live/admin providers (for empty state check)
+  const totalResults = filtered.length + filteredLiveProviders.length + filteredAdminProviders.length;
 
   return (
     <View style={styles.container}>
@@ -310,7 +364,7 @@ export default function ProviderDirectoryScreen() {
         <Text style={styles.headerTitle}>Provider Directory</Text>
         <TouchableOpacity
           style={styles.submitBtn}
-          onPress={() => isPremium ? router.push('/provider-directory/submit') : (trackPaywallViewed('provider_directory'), router.push('/paywall'))}
+          onPress={() => effectivePremium ? router.push('/provider-directory/submit') : (trackPaywallViewed('provider_directory'), router.push('/paywall'))}
         >
           <Text style={styles.submitBtnText}>+ Submit</Text>
         </TouchableOpacity>
@@ -463,7 +517,7 @@ export default function ProviderDirectoryScreen() {
                 <TouchableOpacity
                   key={provider.id}
                   style={styles.featuredCard}
-                  onPress={() => isPremium ? router.push({ pathname: '/provider-directory/detail', params: { id: provider.id } }) : (trackPaywallViewed('provider_directory'), router.push('/paywall'))}
+                  onPress={() => effectivePremium ? router.push({ pathname: '/provider-directory/detail', params: { id: provider.id } }) : (trackPaywallViewed('provider_directory'), router.push('/paywall'))}
                   activeOpacity={0.8}
                 >
                   <View style={[styles.featuredCardTop, { backgroundColor: (SPECIALTY_COLORS[provider.specialty] || COLORS.purple) + '18' }]}>
@@ -494,14 +548,14 @@ export default function ProviderDirectoryScreen() {
         {/* Results count */}
         <View style={styles.resultsHeader}>
           <Text style={styles.resultsCount}>
-            {isPremium
+            {effectivePremium
               ? `${filtered.length} provider${filtered.length !== 1 ? 's' : ''} found`
               : `${Math.min(2, filtered.length)} of ${filtered.length} providers shown`}
           </Text>
         </View>
 
         {/* Provider list */}
-        {displayList.length === 0 && (
+        {totalResults === 0 && (
           <View style={styles.emptyState}>
             <Text style={styles.emptyEmoji}>🔍</Text>
             <Text style={styles.emptyTitle}>No providers found</Text>
@@ -512,8 +566,8 @@ export default function ProviderDirectoryScreen() {
         {displayList.map((provider, idx) => (
           <React.Fragment key={provider.id}>
             {/* Inject a live/app provider card every 3 static listings */}
-            {idx > 0 && idx % 3 === 0 && liveProviders[Math.floor(idx / 3) - 1] && (() => {
-              const lp = liveProviders[Math.floor(idx / 3) - 1];
+            {idx > 0 && idx % 3 === 0 && filteredLiveProviders[Math.floor(idx / 3) - 1] && (() => {
+              const lp = filteredLiveProviders[Math.floor(idx / 3) - 1];
               return (
                 <TouchableOpacity
                   key={`live-${lp.id}-${idx}`}
@@ -556,8 +610,8 @@ export default function ProviderDirectoryScreen() {
               );
             })()}
             {/* Inject admin-approved cards at position 2, 5, 8... */}
-            {idx > 0 && (idx + 1) % 3 === 0 && adminApprovedProviders[Math.floor(idx / 3)] && (() => {
-              const lp = adminApprovedProviders[Math.floor(idx / 3)];
+            {idx > 0 && (idx + 1) % 3 === 0 && filteredAdminProviders[Math.floor(idx / 3)] && (() => {
+              const lp = filteredAdminProviders[Math.floor(idx / 3)];
               return (
                 <TouchableOpacity
                   key={`admin-${lp.id}-${idx}`}
@@ -596,7 +650,7 @@ export default function ProviderDirectoryScreen() {
             })()}
             <ProviderCard
               provider={provider}
-              isPremium={isPremium}
+              isPremium={effectivePremium}
               isLocked={false}
               onAppIds={onAppIds}
               onPress={() => router.push({ pathname: '/provider-directory/detail', params: { id: provider.id } })}
@@ -605,7 +659,7 @@ export default function ProviderDirectoryScreen() {
         ))}
 
         {/* Remaining live/app providers not yet woven in */}
-        {liveProviders.slice(Math.max(0, Math.floor(displayList.length / 3))).map((lp) => (
+        {filteredLiveProviders.slice(Math.max(0, Math.floor(displayList.length / 3))).map((lp) => (
           <TouchableOpacity
             key={`live-tail-${lp.id}`}
             style={styles.weavedLiveCard}
@@ -646,7 +700,7 @@ export default function ProviderDirectoryScreen() {
           </TouchableOpacity>
         ))}
         {/* Remaining admin-approved providers not yet woven in */}
-        {adminApprovedProviders.slice(Math.max(0, Math.floor(displayList.length / 3))).map((lp) => (
+        {filteredAdminProviders.slice(Math.max(0, Math.floor(displayList.length / 3))).map((lp) => (
           <TouchableOpacity
             key={`admin-tail-${lp.id}`}
             style={[styles.weavedLiveCard, { borderLeftColor: '#10B981' }]}
@@ -683,7 +737,7 @@ export default function ProviderDirectoryScreen() {
         ))}
 
         {/* Premium gate */}
-        {!isPremium && lockedCount > 0 && (
+        {!effectivePremium && lockedCount > 0 && (
           <View style={styles.premiumGate}>
             <View style={styles.premiumGateInner}>
               <Text style={styles.premiumGateEmoji}>⭐</Text>
@@ -701,7 +755,7 @@ export default function ProviderDirectoryScreen() {
         )}
 
         {/* Submit CTA */}
-        {isPremium && (
+        {effectivePremium && (
           <TouchableOpacity
             style={styles.submitCta}
             onPress={() => router.push('/provider-directory/submit')}

@@ -64,6 +64,15 @@ const FEATURE_CARDS = [
     route: '/provider-encyclopedia',
     lightText: false,
   },
+  {
+    id: 'provider-directory',
+    title: 'Provider Directory',
+    sub: 'Browse & connect with other providers',
+    icon: '🗂️',
+    colors: ['#FFF7ED', '#FFEDD5'] as [string, string],
+    route: '/provider-directory',
+    lightText: false,
+  },
 ];
 
 export default function ProviderDashboard() {

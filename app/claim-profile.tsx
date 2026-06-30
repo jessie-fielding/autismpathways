@@ -54,7 +54,7 @@ export default function ClaimProfileScreen() {
       );
       if (res.ok) {
         const data = await res.json();
-        setResults(data.providers || []);
+        setResults(data.results || data.providers || []);
       } else {
         setResults([]);
       }
