@@ -152,11 +152,31 @@ export function useNotifications() {
     if (!Notifications) return;
     try {
       const tokenData = await Notifications.getExpoPushTokenAsync({
-        projectId: 'autism-pathways', // Replace with your EAS project ID
+        projectId: '429f799b-1ef4-410c-a473-2eba40f30df4',
       });
       await AsyncStorage.setItem(KEY_PUSH_TOKEN, tokenData.data);
+      // Send token to Lambda so admin push notifications work
+      await sendTokenToLambda(tokenData.data);
     } catch {
       // Token registration can fail in simulators — that's fine
+    }
+  };
+
+  const sendTokenToLambda = async (token: string) => {
+    try {
+      const { getValidToken } = require('./useAuth');
+      const authToken = await getValidToken();
+      if (!authToken) return;
+      await fetch('https://inu3nb5lrfvftfyiwprftqshpy0zcegu.lambda-url.us-east-2.on.aws/api/admin/register-push-token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({ pushToken: token }),
+      });
+    } catch {
+      // Non-critical — silently ignore
     }
   };
 
