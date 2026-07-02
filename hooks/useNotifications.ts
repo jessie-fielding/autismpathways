@@ -167,14 +167,16 @@ export function useNotifications() {
       const { getValidToken } = require('./useAuth');
       const authToken = await getValidToken();
       if (!authToken) return;
-      await fetch('https://inu3nb5lrfvftfyiwprftqshpy0zcegu.lambda-url.us-east-2.on.aws/api/admin/register-push-token', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${authToken}`,
-        },
-        body: JSON.stringify({ pushToken: token }),
-      });
+      const headers = {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${authToken}`,
+      };
+      const body = JSON.stringify({ pushToken: token });
+      const BASE = 'https://inu3nb5lrfvftfyiwprftqshpy0zcegu.lambda-url.us-east-2.on.aws';
+      // Register for admin push (owner notifications)
+      await fetch(`${BASE}/api/admin/register-push-token`, { method: 'POST', headers, body });
+      // Register per-user push token (provider connection request notifications)
+      await fetch(`${BASE}/api/push/register`, { method: 'POST', headers, body });
     } catch {
       // Non-critical — silently ignore
     }
